@@ -1,0 +1,689 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_MasterCart" Id="{05baaa0e-c853-48bc-a37c-d593cfa5bf2b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MasterCart
+VAR
+	//  IO and check
+	m_endoScopePedalIO AT%I* :BOOL;
+	m_endoScopeIOCheck :FB_IOCheck;
+	
+	m_clutchPedalIO AT%I* :BOOL;
+	m_clutchIOCheck :FB_IOCheck;
+	
+	m_surgonHeadInIO AT%I* :BOOL;
+	m_headInCheck:FB_IOCheck;
+	
+	m_armSwitchIO AT%I* :BOOL;
+	m_armSwitchCheck:FB_IOToggleCheck;
+	
+	m_electricCutLeft AT %I* :BOOL;
+	m_electricCutLeftAllow AT %I* :BOOL;
+	
+	m_electricCutRight AT %I* :BOOL;
+	m_electricCutRightAllow AT %I* :BOOL;
+	
+	m_electricCoagulLeft AT %I* :BOOL;
+	m_electricCoagulLeftAllow AT %I* :BOOL;
+	
+	m_electricCoagulRight AT %I* :BOOL;
+	m_electricCoagulRightAllow AT %I* :BOOL;
+	
+	m_elecKnifeCtrlWord AT %Q* :DINT;
+	
+	// cart status
+	m_cartStatus  : ST_CartStatus;
+	
+	// cart joints
+	// [monitor lift, monitor rotate, armset, pedal]
+	m_cartJoints:ARRAY[1..4] OF FB_CartJoint;
+	
+	// cart joint motion control IO
+	//[monitor_up, monitor_down, monitor_cwRotate, monitor_ccwRotate, armset_up, armset_down, pedal_in, pedal_out]
+	m_cartJointCtrlIO AT%I* :ARRAY[1..8] OF BOOL ;
+	m_cartJointCtrlIOCheck :ARRAY[1..8] OF FB_IOCheck;
+	
+	//electrotome control io
+	m_electricCutLeftOn :BOOL;
+	m_electricCutRightOn :BOOL;
+	m_electricCoagulLeftOn : BOOL;
+	m_electricCoagulRightOn : BOOL;
+	//Triggering several energies at once
+	m_eleCtrlState : UINT;
+	//The type of instrument energy of the master hand corresponding to the slave hand
+	m_energyType :ARRAY[1..g_mArmNum] OF UINT :=[2(0)];
+	
+	// cart joint control data
+	m_jntEnableCounts:Vec4i ;
+	m_jntDisableCounts:Vec4i ;
+	m_jntEnableCountsThres:INT:=500;
+	m_jntCmdMotionDir :Vec4i;
+	m_cmdJntTrq :Vec4d;
+	m_cmdJntPos :Vec4d;
+	m_cmdJntVel :Vec4d;
+	m_jntEnableFlag :Vec4b;
+	
+	//cart ergonomic adjust data
+	m_UIData : ST_CartUIData;
+	m_carInMotion : INT; // 0:  no mition, 1: mamual adjust, 2: ergonomic adjust
+	m_jntSoftwareLimit :ARRAY [1..4] OF LREAL := [0.01, 1*g_deg2Rad, 0.015, 0.005];
+	m_cmdArrival : Vec4b;
+	
+	// cart joint status data
+	m_curMotorPos :Vec4d;
+	m_curLinkPos :Vec4d;
+	m_curJntPos :Vec4d;
+	m_curJntVel :Vec4d;
+	m_curJntTrq :Vec4d;
+	m_rawJntCurrent :Vec4d;
+	m_filtJntCurrent :Vec4d;
+	m_cmdJntCurrent : Vec4d;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Folder Name="property" Id="{37b9f91a-fbe1-4cae-807d-574d49e247d7}" />
+    <Method Name="eleKnifeCtrl" Id="{802e30d4-05e6-4f42-9cf9-00572025b770}">
+      <Declaration><![CDATA[METHOD eleKnifeCtrl : DINT
+VAR_IN_OUT CONSTANT
+	m_armState:ARRAY[1..g_mArmNum] OF E_masterArmState ;
+	m_teleSlaveArmIdx :ARRAY[1..g_mArmNum] OF E_MatchedSlaveArmIdx;
+	m_instruStauts: ARRAY[1..g_sArmNum] OF ST_InstruStatus;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//Foot trigger check
+m_electricCutLeftOn := m_electricCutLeft AND m_electricCutLeftAllow AND m_armState[1] = MasterArmState_MasterSlave ;
+m_electricCutRightOn := m_electricCutRight AND m_electricCutRightAllow AND m_armState[2] = MasterArmState_MasterSlave ;
+m_electricCoagulLeftOn := m_electricCoagulLeft AND m_electricCoagulLeftAllow AND m_armState[1] = MasterArmState_MasterSlave ;
+m_electricCoagulRightOn := m_electricCoagulRight AND m_electricCoagulRightAllow AND m_armState[2] = MasterArmState_MasterSlave ;
+
+//You cannot excite two energies at the same time
+m_eleCtrlState := BOOL_TO_UINT(m_electricCutLeftOn) + BOOL_TO_UINT(m_electricCutRightOn)
+										 + BOOL_TO_UINT(m_electricCoagulLeftOn) + BOOL_TO_UINT(m_electricCoagulRightOn);
+
+IF m_teleSlaveArmIdx[1] > 0 THEN
+	m_energyType[1] := m_instruStauts[m_teleSlaveArmIdx[1]].m_energyType;
+	m_energyType[2] := m_instruStauts[m_teleSlaveArmIdx[2]].m_energyType;
+END_IF
+
+IF m_eleCtrlState = 1 THEN
+	IF (m_electricCutLeftOn AND  m_energyType[1] = InstruType_isMonopole) OR (m_electricCutRightOn AND  m_energyType[2] = InstruType_isMonopole) THEN
+		eleKnifeCtrl := EnergyCtrlWord_isMonopoleCut;
+	ELSIF (m_electricCoagulLeftOn AND m_energyType[1] = InstruType_isMonopole) OR (m_electricCoagulRightOn AND  m_energyType[2] = InstruType_isMonopole) THEN
+		eleKnifeCtrl := EnergyCtrlWord_isMonopoleCoagul;
+	ELSIF (m_electricCoagulLeftOn AND m_energyType[1] = InstruType_isBipolar) OR (m_electricCoagulRightOn AND  m_energyType[2] = InstruType_isBipolar) THEN
+		eleKnifeCtrl := EnergyCtrlWord_isBipolarCoagul;
+	ELSIF (m_electricCutLeftOn AND m_energyType[1] = InstruType_isUltraKnife) OR (m_electricCutRightOn AND  m_energyType[2] = InstruType_isUltraKnife) THEN
+		eleKnifeCtrl := EnergyCtrlWord_isUltraMin;
+	ELSIF (m_electricCoagulLeftOn AND m_energyType[1] = InstruType_isUltraKnife) OR (m_electricCoagulRightOn AND  m_energyType[2] = InstruType_isUltraKnife) THEN
+		eleKnifeCtrl := EnergyCtrlWord_isUltraMax;
+		
+	ELSE
+		eleKnifeCtrl := EnergyCtrlWord_NoOutput;
+	END_IF
+ELSE
+	eleKnifeCtrl := EnergyCtrlWord_NoOutput;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ergonomicAdjust" Id="{2e585813-8b6a-4acc-85dd-29e49a47183d}">
+      <Declaration><![CDATA[METHOD ergonomicAdjust : INT
+VAR_INPUT
+END_VAR
+VAR
+	i : INT;
+	err:Vec4d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[vecSub(m_UIData.m_cmdJntPos,m_curJntPos, err);
+ergonomicAdjust := 2;
+//only update command after joints is truly enabled
+FOR i := 1 TO 4 DO
+	IF m_jntEnableFlag[i] AND m_cartJoints[i].isEnabled() AND m_jntEnableCounts[i]>= m_jntEnableCountsThres THEN
+		m_cmdJntVel[i]:=sign(m_UIData.m_cmdJntPos[i]-m_cartJoints[i].jntPos)*(GVL_CartJointParameters.g_jntCtrlMotionVel[i]);
+		IF ABS(err[i]) < m_jntSoftwareLimit[i]/3 THEN
+			m_cmdJntVel[i]:=0;
+		END_IF
+		m_cmdJntPos[i] := LIMIT(GVL_CartJointParameters.g_minJntPos[i] + m_jntSoftwareLimit[i],  m_cmdJntPos[i] + m_cmdJntVel[i]*g_cartCtrlCycleTime, GVL_CartJointParameters.g_maxJntPos[i] - m_jntSoftwareLimit[i]);
+	
+	ELSE
+		m_cmdJntVel[i]:=0;
+		m_cmdJntPos[i] := m_cartJoints[i].jntPos;
+	END_IF	
+END_FOR
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="getStatus" Id="{3f39e291-1358-48a2-aa04-62d9bb4689e3}">
+      <Declaration><![CDATA[METHOD PUBLIC getStatus : BOOL
+VAR_IN_OUT
+	// cart status data
+	r_cartStatus :ST_CartStatus;
+	
+	// cart joint data
+	r_cartJointData :ST_CartJointData;
+	
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[r_cartStatus := m_cartStatus;
+
+
+// current joint data
+r_cartJointData.m_curMotorPos:=m_curMotorPos;
+r_cartJointData.m_curLinkPos:=m_curLinkPos;
+r_cartJointData.m_curJntPos:=m_curJntPos;
+r_cartJointData.m_curJntVel:=m_curJntVel;
+r_cartJointData.m_curJntTrq:=m_curJntVel;
+r_cartJointData.m_rawJntCurrent:=m_rawJntCurrent;
+r_cartJointData.m_filtJntCurrent:=m_filtJntCurrent;
+
+// command joint data
+r_cartJointData.m_cmdJntPos:=m_cmdJntPos;
+r_cartJointData.m_cmdJntVel:=m_cmdJntVel;
+r_cartJointData.m_cmdJntTrq:=m_cmdJntTrq;
+r_cartJointData.m_cmdJntCurrent:=m_cmdJntCurrent;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{a9830b95-e937-4a29-b70e-785e20452d37}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_INPUT
+END_VAR
+VAR
+	i:INT;
+	initLinkPos :LREAl;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// joint init
+FOR i:=1 TO 4 DO
+	m_cartJoints[i].init(i,g_cartCtrlCycleTime);
+	m_cartJoints[i].initJntPos();
+END_FOR
+
+// motor and link encoder of  monitor rotation are on different  joints
+// transfer monitor angle from link side to motor side
+initLinkPos:= monitorAngLink2Motor(m_cartJoints[2].initLinkPos);
+m_cartJoints[2].initJntPosReset(initLinkPos);
+
+// init commands
+FOR i:=1 TO 4 DO
+	m_jntEnableCounts[i]:=0;
+	m_jntDisableCounts[i]:=0;
+	m_jntEnableFlag[i]:=FALSE;
+	m_jntCmdMotionDir[i]:=0;
+	m_cmdJntTrq[i]:=0;
+	m_cmdJntVel[i]:=0;
+	m_cmdJntPos[i]:=m_cartJoints[i].jntPos;
+END_FOR
+
+m_cartStatus.m_initFlag :=true;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="manualAdjust" Id="{9030940b-1f5c-4fe8-8e49-9b86403f7e35}">
+      <Declaration><![CDATA[METHOD manualAdjust : INT
+VAR_INPUT
+END_VAR
+VAR
+	i : INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// update joint command positon
+manualAdjust := 1;
+//only update command after joints is truly enabled
+FOR i := 1 TO 4 DO
+	IF  m_jntEnableFlag[i] AND m_cartJoints[i].isEnabled() AND m_jntEnableCounts[i]>= m_jntEnableCountsThres THEN
+		//  update command joint velocity
+		m_cmdJntVel[i]:=m_jntCmdMotionDir[i]*GVL_CartJointParameters.g_jntCtrlMotionVel[i];
+		
+		// limit handle
+		IF (m_cmdJntPos[i]> GVL_CartJointParameters.g_maxJntPos[i] - m_jntSoftwareLimit[i] AND m_cmdJntVel[i] >0 ) OR 
+				(m_cmdJntPos[i]< GVL_CartJointParameters.g_minJntPos[i] + m_jntSoftwareLimit[i] AND m_cmdJntVel[i] <0 )  THEN
+				m_cmdJntVel[i] := 0.0;
+		END_IF
+		m_cmdJntPos[i]:= m_cmdJntPos[i]+ m_cmdJntVel[i]*g_cartCtrlCycleTime;
+	ELSE
+		m_cmdJntVel[i]:=0;
+		m_cmdJntPos[i] := m_cartJoints[i].jntPos;
+	END_IF
+END_FOR
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="monitorAngLink2Image" Id="{861c9491-a144-4c69-8a78-ffe9100ce0d2}">
+      <Declaration><![CDATA[// TODO
+METHOD PROTECTED monitorAngLink2Image : LREAL
+VAR_INPUT
+	i_linkPos:LREAL;
+END_VAR
+VAR
+	A,B,C,D,E,F,G,H,I,X0,X1,X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,Z0:LREAL;	
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+X0:=i_linkPos;  //监视器旋转
+
+A:=222; B:=191.5; C:=232.7073; D:=135.5031; E:=186; F:=164; G:=178; H:=45; I:=160;
+X4:=ATAN(H/I); X5:=ATAN(F/G);
+X8:=SQRT(F*F+G*G);
+X12:=sqrt(H*H+I*I);
+X9:=sqrt(E*E+X12*X12-2*E*X12*cos(X0));
+X6:=acos((B*B+X8*X8-X9*X9)/(2*B*X8));
+X10:=acos((B*B+X9*X9-X8*X8)/(2*B*X9));
+X11:=acos((X9*X9+X12*X12-E*E)/(2*X9*X12));
+X7:=X10+X11;
+X2:=X5-X6;
+X3:=pi-X7+X2;
+X1:=X3-X4;
+
+monitorAngLink2Image:=X1;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="monitorAngLink2Motor" Id="{be375282-cfa2-4973-91da-b3215777ab52}">
+      <Declaration><![CDATA[// TODO
+METHOD PROTECTED monitorAngLink2Motor : LREAL
+VAR_INPUT
+	i_linkPos:LREAL;
+END_VAR
+VAR
+	A,B,C,D,E,F,G,H,I,X0,X1,X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,Z0:LREAL;	
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+X0:=i_linkPos;  //监视器旋转
+
+A:=222; B:=191.5; C:=232.7073; D:=135.5031; E:=186; F:=164; G:=178; H:=45; I:=160;
+X4:=ATAN(H/I); X5:=ATAN(F/G);
+X8:=SQRT(F*F+G*G);
+X12:=sqrt(H*H+I*I);
+X9:=sqrt(E*E+X12*X12-2*E*X12*cos(X0));
+X6:=acos((B*B+X8*X8-X9*X9)/(2*B*X8));
+X10:=acos((B*B+X9*X9-X8*X8)/(2*B*X9));
+X11:=acos((X9*X9+X12*X12-E*E)/(2*X9*X12));
+X7:=X10+X11;
+X2:=X5-X6;
+X3:=pi-X7+X2;
+X1:=X3-X4;
+
+monitorAngLink2Motor:=X2;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="monitorAngMotor2Link" Id="{5a608b24-1792-4091-9318-b2f1f860af4d}">
+      <Declaration><![CDATA[//TODO
+METHOD PROTECTED monitorAngMotor2Link : LREAL
+VAR_INPUT
+	i_motorPos:LREAL;
+END_VAR
+VAR
+	A,B,C,D,E,F,G,H,I,X0,X1,X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,Z0:LREAL;	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[X2:=i_motorPos;
+
+A:=222; B:=191.5; C:=232.7073; D:=135.5031; E:=186; F:=164; G:=178; H:=45; I:=160;
+X5:=atan(F/G);
+X6:=X5-X2;
+X8:=sqrt(F*F+G*G);
+X9:=sqrt(B*B+X8*X8-2*B*X8*cos(X6));
+X12:=SQRT(H*H+I*I);
+X0:=ACOS((E*E+X12*X12-X9*X9)/(2*E*X12));
+
+monitorAngMotor2Link:=X0;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="reachUITargetCheck" Id="{58f1d629-33ee-4e90-90f3-a5c453c13e46}">
+      <Declaration><![CDATA[METHOD reachUITargetCheck : bool
+VAR
+	i :INT;
+	err:Vec4d;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[vecSub(m_UIData.m_cmdJntPos,m_curJntPos, err);
+
+// joint error check
+FOR i:=1 TO 4 DO 
+	m_cmdArrival[i] :=  ABS(err[i]) < m_jntSoftwareLimit[i]/2;
+END_FOR
+	]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="run" Id="{5adedbe6-c484-4199-b427-bc8af7c6d1b0}">
+      <Declaration><![CDATA[METHOD PUBLIC run : BOOL
+VAR_IN_OUT CONSTANT
+	i_cartUIData : ST_CartUIData;
+END_VAR
+VAR
+	i:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// update IO signals
+updateIO(i_cartUIData);
+
+// update cart status
+updateStatus();
+
+// update controller and command
+updateCmds();
+
+// send command to joint driver
+FOR i:=1 TO 4 DO
+	// joint enable
+	IF m_jntEnableFlag[i] AND NOT(SafetyCheck.m_safetyCheckData.m_cartErrFlag[i]) AND MasterArmControl.m_masterStatus.m_armState[1] <> MasterArmState_MasterSlave 
+								AND MasterArmControl.m_masterStatus.m_armState[2] <> MasterArmState_MasterSlave THEN
+		m_cartJoints[i].enable();
+	ELSE
+		m_cartJoints[i].disable();
+	END_IF
+	
+	// set command position
+	m_cartJoints[i].updateCmds(DriverOPMode_Pos,m_cmdJntPos[i],m_cmdJntTrq[i]);
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="status" Id="{cd2a750f-147a-42a5-85cd-a7d5a815c963}" FolderPath="property\">
+      <Declaration><![CDATA[PROPERTY status : ST_CartStatus]]></Declaration>
+      <Get Name="Get" Id="{c1788322-40e1-4e3e-a26b-a8239c1e1e6d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[status := m_cartStatus;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="updateCmds" Id="{a083537e-6f52-4b88-8b83-3c9a5d0db87a}">
+      <Declaration><![CDATA[METHOD PROTECTED updateCmds : BOOL
+VAR_INPUT
+END_VAR
+VAR
+	i:INT;
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF (m_jntCmdMotionDir[1] <>0 OR m_jntCmdMotionDir[2]<>0 OR m_jntCmdMotionDir[3] <>0 OR m_jntCmdMotionDir[4] <>0) AND m_carInMotion <> 2 THEN
+	m_carInMotion := manualAdjust();
+ELSIF (m_UIData.m_ergonomicCrl.m_recovErgonEnable OR m_UIData.m_ergonomicCrl.m_cancelRecovErgonEnable) AND m_carInMotion <> 1 THEN
+	m_carInMotion := ergonomicAdjust();
+ELSE
+	m_carInMotion := 0;
+END_IF
+
+reachUITargetCheck();
+IF m_cmdArrival[1] AND m_cmdArrival[2] AND m_cmdArrival[3] AND m_cmdArrival[4] THEN
+	IF m_UIData.m_ergonomicCrl.m_recovErgonEnable THEN
+		m_cartStatus.m_cancelErgonAdjustArrival := FALSE;
+		m_cartStatus.m_ergonAdjustArrival := TRUE;
+	END_IF
+	IF m_UIData.m_ergonomicCrl.m_cancelRecovErgonEnable THEN
+		m_cartStatus.m_ergonAdjustArrival := FALSE;
+		m_cartStatus.m_cancelErgonAdjustArrival := TRUE;
+	END_IF
+ELSE
+	m_cartStatus.m_ergonAdjustArrival := FALSE;
+	IF m_UIData.m_ergonomicCrl.m_recovErgonEnable THEN
+		m_cartStatus.m_cancelErgonAdjustArrival := FALSE;
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="updateIO" Id="{2eedbee2-a8d4-4513-b19a-4a2795c7d360}">
+      <Declaration><![CDATA[METHOD PROTECTED updateIO : BOOL
+VAR_INPUT
+	i_cartUIData : ST_CartUIData;
+END_VAR
+VAR
+	i:INT;
+	idxOffset:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// updata IO signals
+m_cartStatus.m_clutchSwitch:= m_clutchIOCheck.check(m_clutchPedalIO);
+m_cartStatus.m_endoscopeSwitch := m_endoScopeIOCheck.check(m_endoScopePedalIO);
+m_cartStatus.m_surgonReady := m_headInCheck.check(m_surgonHeadInIO);
+m_cartStatus.m_armSwitch :=m_armSwitchCheck.check(m_armSwitchIO);
+m_UIData := i_cartUIData;
+
+//updata Electrotome control
+m_elecKnifeCtrlWord := eleKnifeCtrl(MasterArmControl.m_masterStatus.m_armState , MasterArmControl.m_masterStatus.m_teleSlaveArmIdx , MasterArmControl.m_masterInputDataPool.m_slaveStatus.m_instruStauts );
+
+//updata pedal hover and pedal trigger
+m_cartStatus. m_pedalHover[1] := m_electricCutLeftAllow OR m_electricCoagulLeftAllow;
+m_cartStatus. m_pedalHover[2] := m_electricCutRightAllow OR m_electricCoagulRightAllow;
+IF m_electricCutLeftOn AND m_eleCtrlState = 1 THEN
+	m_cartStatus.m_electricKnifePedalTrigger[1] := 1;
+ELSIF m_electricCoagulLeftOn AND m_eleCtrlState = 1 THEN
+	m_cartStatus.m_electricKnifePedalTrigger[1] := 2;
+ELSE
+	m_cartStatus.m_electricKnifePedalTrigger[1] := 0;
+END_IF
+
+IF m_electricCutRightOn AND m_eleCtrlState = 1 THEN
+	m_cartStatus.m_electricKnifePedalTrigger[2] := 1;
+ELSIF m_electricCoagulRightOn AND m_eleCtrlState = 1 THEN
+	m_cartStatus.m_electricKnifePedalTrigger[2] := 2;
+ELSE
+	m_cartStatus.m_electricKnifePedalTrigger[2] := 0;
+END_IF
+
+//update cart joint control switch
+FOR i:=1 TO 4 DO 
+	idxOffset:= 2*(i-1);
+	IF m_cartJointCtrlIOCheck[1+idxOffset].check(m_cartJointCtrlIO[1+idxOffset]) THEN
+		m_jntCmdMotionDir[i]:=1;
+	ELSIF  m_cartJointCtrlIOCheck[2+idxOffset].check(m_cartJointCtrlIO[2+idxOffset]) THEN
+		m_jntCmdMotionDir[i]:=-1;
+	ELSE
+		m_jntCmdMotionDir[i]:=0;
+	END_IF
+END_FOR
+
+
+// if console is already in motion, only check the currently moving joint
+IF m_cartStatus.m_consoleInAdjust THEN
+	FOR i:=1 TO 4 DO
+		IF NOT(m_cartJoints[i].isEnabled()) THEN
+			m_jntCmdMotionDir[i] := 0;
+		END_IF
+	END_FOR
+END_IF
+
+
+// update joint enable flag
+FOR i:= 1 TO 4 DO
+	IF m_jntCmdMotionDir[i] <> 0 OR m_UIData.m_ergonomicCrl.m_recovErgonEnable OR m_UIData.m_ergonomicCrl.m_cancelRecovErgonEnable THEN
+		m_jntEnableFlag[i] := TRUE;
+		m_jntEnableCounts[i]:= LIMIT(0, m_jntEnableCounts[i]+1, m_jntEnableCountsThres);
+		m_jntDisableCounts[i]:=m_jntEnableCountsThres;
+	ELSE
+		m_jntEnableCounts[i]:=0;
+		m_jntDisableCounts[i]:= LIMIT(0, m_jntDisableCounts[i]-1, m_jntEnableCountsThres);
+		m_jntEnableFlag[i] :=m_jntDisableCounts[i]>0; 
+	END_IF
+END_FOR
+
+// Do not adjust during master-slave control
+IF MasterArmControl.m_masterStatus.m_armState[1] = MasterArmState_MasterSlave OR MasterArmControl.m_masterStatus.m_armState[1] = MasterArmState_Endoscope OR
+	MasterArmControl.m_masterStatus.m_armState[2] = MasterArmState_MasterSlave OR MasterArmControl.m_masterStatus.m_armState[2] = MasterArmState_Endoscope  THEN
+	m_jntCmdMotionDir := g_zeroVec4i;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="updateStatus" Id="{7dc0698e-0910-43df-8937-4fb176791915}">
+      <Declaration><![CDATA[METHOD PROTECTED updateStatus : BOOL
+VAR_INPUT
+END_VAR
+VAR
+	i:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// update cart joints status
+FOR i:=1  TO 4 DO
+	m_cartJoints[i].updateStatus();
+END_FOR
+
+// get joint data
+FOR i:=1 TO 4 DO
+	m_curMotorPos[i]:=m_cartJoints[i].motorPos;
+	m_curLinkPos[i]:=m_cartJoints[i].linkPos;
+	m_curJntPos[i]:=m_cartJoints[i].jntPos;
+	m_curJntVel[i]:=m_cartJoints[i].jntVel;
+	m_curJntTrq[i]:=m_cartJoints[i].jntTrq;
+	m_rawJntCurrent[i]:=m_cartJoints[i].rawCurrent;
+	m_filtJntCurrent[i]:=m_cartJoints[i].filtCurrent;
+	m_cmdJntCurrent[i]:=m_cartJoints[i].cmdCurrent;
+END_FOR 
+
+// transfer monitor angle from link side to motor side
+m_curLinkPos[2]:= monitorAngLink2Motor(m_cartJoints[2].linkPos);
+
+// get monitor angle
+m_cartStatus.m_monitorAngle:= monitorAngLink2Image(m_cartJoints[2].linkPos);
+
+// check if cart in motion
+m_cartStatus.m_consoleInAdjust:=FALSE;
+FOR i:=1 TO 4 DO
+	IF m_cartJoints[i].isEnabled() THEN
+		m_cartStatus.m_consoleInAdjust:=TRUE;
+		EXIT;
+	END_IF
+END_FOR
+
+// check if monitor in motion
+m_cartStatus.m_monitorInAdjust:=m_cartJoints[2].isEnabled();
+
+// check if cart in manual adjustment
+m_cartStatus.m_consoleInManualAdjust := FALSE;
+FOR i:=1 TO 4 DO
+	IF m_jntCmdMotionDir[i] <> 0 AND m_cartJoints[i].isEnabled() THEN
+		m_cartStatus.m_consoleInManualAdjust := TRUE;
+		EXIT;
+	END_IF
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_MasterCart">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.eleKnifeCtrl">
+      <LineId Id="131" Count="31" />
+      <LineId Id="18" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.ergonomicAdjust">
+      <LineId Id="59" Count="19" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.getStatus">
+      <LineId Id="81" Count="0" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="57" Count="5" />
+      <LineId Id="95" Count="1" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.init">
+      <LineId Id="9" Count="2" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="54" Count="1" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="72" Count="1" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="37" Count="2" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.manualAdjust">
+      <LineId Id="72" Count="8" />
+      <LineId Id="98" Count="2" />
+      <LineId Id="84" Count="8" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.monitorAngLink2Image">
+      <LineId Id="6" Count="17" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.monitorAngLink2Motor">
+      <LineId Id="6" Count="17" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.monitorAngMotor2Link">
+      <LineId Id="6" Count="7" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="18" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.reachUITargetCheck">
+      <LineId Id="123" Count="0" />
+      <LineId Id="125" Count="2" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.run">
+      <LineId Id="42" Count="12" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="55" Count="6" />
+      <LineId Id="19" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.status.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.updateCmds">
+      <LineId Id="139" Count="10" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="150" Count="2" />
+      <LineId Id="168" Count="0" />
+      <LineId Id="153" Count="2" />
+      <LineId Id="169" Count="2" />
+      <LineId Id="156" Count="0" />
+      <LineId Id="119" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.updateIO">
+      <LineId Id="154" Count="63" />
+      <LineId Id="219" Count="4" />
+      <LineId Id="91" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.updateStatus">
+      <LineId Id="69" Count="30" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="114" Count="1" />
+      <LineId Id="100" Count="6" />
+      <LineId Id="59" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

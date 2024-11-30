@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_StateCtrlPowerOff" Id="{7988e477-8dca-44f9-aa08-df96f391d1da}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Master Arm Home Posture
+FUNCTION_BLOCK PUBLIC FB_StateCtrlPowerOff EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	m_homePlanner : FB_TrajMoveJ;
+	
+	m_powerOffPosture:ARRAY [1..2, 1..7] OF LREAL:=[0.0, -1.75, 0.42, -4.70,  4.82, 1.97, 0,
+							 			  			0.0, -1.75, 0.42, 0.50,   1.55, -1.97, 0];	
+	
+	m_powerOffJntVel:Vec7d:=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+	m_powerOffJntAcc:Vec7d:=[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0];
+	m_powerOffJntJerk:Vec7d:=[7(4.0)];
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{b5f9ffbd-8781-4418-9388-9f2cff58ae99}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+	i :INT;
+	curJntVel :Vec7d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// check if planner is ready
+IF m_homePlanner.isGene = FALSE THEN
+	calcCmdJntPos:=FALSE;
+	RETURN;
+END_IF
+
+// traj plan
+calcCmdJntPos :=m_homePlanner.evaluate(m_timePeriod, jntPos=> m_cmdJntPos, jntVel=>m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+
+// check if to terminate
+curJntVel :=i_masterArm.curJntVel;
+m_isFinished :=m_timePeriod > m_homePlanner.duration  AND norm(curJntVel)<7*g_jntStaticVelThres;
+
+IF m_isFinished THEN
+m_jntOPMode:=g_allPosMode;
+
+// disable all joints
+m_jntEnableFlag :=g_zeroVec7i;
+GVL_interactUI.g_plcPowerOffEnable := TRUE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{d6c512e3-d709-47c8-bda4-4821c236b7ec}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i,j :INT;
+	startJntPos,endJntPos :Vec7d;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+
+// traj plan
+startJntPos:=i_masterArm.curJntPos;
+FOR j:=1 TO 7 DO 
+endJntPos[j]:=m_powerOffPosture[i_masterArm.armIdx,j];
+END_FOR
+m_homePlanner.init(startJntPos,endJntPos,m_powerOffJntVel,m_powerOffJntAcc,m_powerOffJntJerk);
+
+// update commands to arm
+copyCmds(r_masterArmCtrlCmd);]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlPowerOff">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPowerOff.calcCmdJntPos">
+      <LineId Id="41" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="39" Count="1" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="84" Count="2" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="79" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPowerOff.init">
+      <LineId Id="57" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="113" Count="1" />
+      <LineId Id="112" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

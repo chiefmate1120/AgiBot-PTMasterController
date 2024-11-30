@@ -1,0 +1,389 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_StateCtrlClutch" Id="{093bd9ec-6cc6-4389-91e4-f8586e50bb1f}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Master Arm Clutch
+FUNCTION_BLOCK PUBLIC FB_StateCtrlClutch EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	// orientation tracking parameters
+	m_rotTrackKp : LREAL := 200;
+	m_maxTrackVel :LREAL := PI;
+	
+	// redundant control parameters
+	m_jnt4AdjustKp : LREAL :=10;
+	m_jnt4MaxVel :LREAL :=pi/3 ;
+	m_linearVelLb :LREAL := 0.01;
+	m_linearVelUb :LREAL :=0.1;	
+	
+	m_initJntPos :Vec7d;
+	
+	// joint4 dynamic limit 
+	m_jntPosUb, m_jntPosLb:LREAL;
+	m_jntLimitBuffer : LREAL :=2*g_deg2Rad;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{333a90ec-7de9-44a1-afdb-da87410216d3}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+var 
+	i,j : INT;
+	rotT,rotErr:Mat3d;
+	angle : LREAL;
+	axis,localAxis :Vec3d;
+	oriJaco:Mat34;
+	oriJt:Mat43;
+	oriJJt:Mat3d;
+	oriJJtInv:Mat3d;
+	oriJPinv:Mat43;
+	cartTrackVel:Vec3d;
+	jntTrackVel:Vec4d;
+	JpinvJ, nullJ:Mat4d;
+	eye4d :Mat4d := g_eye4d;
+	redunCtrlVel :Vec4d;
+	jnt4TrackVel :LREAL;
+	cmdRotInMonitor:Mat3d;
+	invRot:Mat3d;
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF MasterArmControl.m_masterRobot.m_USKnifeRotClutch[i_slaveIdx] THEN
+	calcCmdJntPos_USKnife(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+ELSE
+	calcCmdJntPos_BasicInstru(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_BasicInstru" Id="{39edb72b-1f1a-4ef0-b18e-f83066079791}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_BasicInstru : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+var 
+	i,j : INT;
+	rotT,rotErr:Mat3d;
+	angle : LREAL;
+	axis,localAxis :Vec3d;
+	oriJaco:Mat34;
+	oriJt:Mat43;
+	oriJJt:Mat3d;
+	oriJJtInv:Mat3d;
+	oriJPinv:Mat43;
+	cartTrackVel:Vec3d;
+	jntTrackVel:Vec4d;
+	JpinvJ, nullJ:Mat4d;
+	eye4d :Mat4d := g_eye4d;
+	redunCtrlVel :Vec4d;
+	jnt4TrackVel :LREAL;
+	cmdRotInMonitor:Mat3d;
+	invRot:Mat3d;
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// use matched slave arm orientation as target, and transform from view coordinate to arm coordinate 
+//IF i_slaveStatus.m_armState[i_slaveIdx] = SlaveArmState_InstruReady THEN
+//	cmdRotInMonitor := i_slaveStatus.m_curArmPose[i_slaveIdx].m_rot;
+//	matTranspose(i_shoulderPose.m_rot, invRot);
+//	matMultiply(invRot, cmdRotInMonitor, m_cmdCartPose.m_rot);
+//	m_cmdCartPose.m_pos:= i_masterArm.curCartPose.m_pos;
+//END_IF
+
+
+// first three joints is passive control
+FOR i:=1 TO 3 DO 
+	m_cmdJntPos[i]:=i_masterArm.curJntPos[i];
+	m_cmdJntVel[i]:=i_masterArm.curJntVel[i];
+END_FOR
+
+// compute cartesian tracking velocity
+matTranspose(i_masterArm.simCartPose.m_rot, rotT);
+matMultiply(rotT, m_cmdCartPose.m_rot, rotErr);
+rot2AngAxis(rotErr, angle=>angle,axis=>localAxis);
+matMultiVec(i_masterArm.simCartPose.m_rot, localAxis, axis);
+vecMultiNum(axis, LIMIT(-m_maxTrackVel, angle*m_rotTrackKp, m_maxTrackVel), cartTrackVel);
+
+// compute pinv of orientation jacobian
+FOR i:=1 TO 3 DO
+	FOR j:=1 TO 4 DO
+		oriJaco[i,j]:=i_masterArm.simJaco[i+3,j+3];
+	END_FOR
+END_FOR
+matTranspose(oriJaco, oriJt);
+matMultiply(oriJaco ,oriJt , oriJJt);
+invMat3(oriJJt, oriJJtInv);
+matMultiply(oriJt, oriJJtInv, oriJPinv);
+matMultiVec(oriJpinv, cartTrackVel, jntTrackVel);
+
+// calculate nullspace
+matMultiply(oriJPinv, oriJaco, JpinvJ);
+matSub(eye4d , JpinvJ, nullJ);
+
+// redundant velocity
+jnt4TrackVel:=calcRedunVel(i_masterArm);
+redunCtrlVel[1]:=nullJ[1,1]*jnt4TrackVel;
+redunCtrlVel[2]:=nullJ[2,1]*jnt4TrackVel;
+redunCtrlVel[3]:=nullJ[3,1]*jnt4TrackVel;
+redunCtrlVel[4]:=nullJ[4,1]*jnt4TrackVel;
+
+// update final command joint position and velocity
+FOR i :=1 TO 4 DO 
+	m_cmdJntVel[i+3]:=jntTrackVel[i]+redunCtrlVel[i];
+	m_cmdJntPos[i+3]:=m_cmdJntPos[i+3]+m_cmdJntVel[i+3]*g_armCtrlCycleTime;
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_USKnife" Id="{8428292c-3e51-41c1-ba12-27886a07c446}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_USKnife : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+var 
+	i,j : INT;
+	rotT,rotErr:Mat3d;
+	angle : LREAL;
+	axis,localAxis :Vec3d;
+	oriJaco:Mat34;
+	oriJt:Mat43;
+	oriJJt:Mat3d;
+	oriJJtInv:Mat3d;
+	oriJPinv:Mat43;
+	cartTrackVel:Vec3d;
+	jntTrackVel:Vec4d;
+	JpinvJ, nullJ:Mat4d;
+	eye4d :Mat4d := g_eye4d;
+	redunCtrlVel :Vec4d;
+	jnt4TrackVel :LREAL;
+	cmdRotInMonitor:Mat3d;
+	invRot:Mat3d;
+	
+	cmdZAxis, curZAxis :Vec3d;
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// use matched slave arm orientation as target, and transform from view coordinate to arm coordinate 
+//IF i_slaveStatus.m_armState[i_slaveIdx] = SlaveArmState_InstruReady THEN
+//	cmdRotInMonitor := i_slaveStatus.m_curArmPose[i_slaveIdx].m_rot;
+//	matTranspose(i_shoulderPose.m_rot, invRot);
+//	matMultiply(invRot, cmdRotInMonitor, m_cmdCartPose.m_rot);
+//	m_cmdCartPose.m_pos:= i_masterArm.curCartPose.m_pos;
+//END_IF
+
+// first three joints is passive control
+FOR i:=1 TO 3 DO 
+	m_cmdJntPos[i]:=i_masterArm.curJntPos[i];
+	m_cmdJntVel[i]:=i_masterArm.curJntVel[i];
+END_FOR
+
+// compute cartesian tracking velocity
+FOR i:=1 TO 3 DO
+	cmdZAxis[i] :=  m_cmdCartPose.m_rot[i,3];
+	curZAxis[i] := i_masterArm.simCartPose.m_rot[i,3];
+END_FOR
+angle := ACOS(LIMIT(-1,vecDot(cmdZAxis,curZAxis),1));
+axis := cross(curZAxis, cmdZAxis);
+IF ABS(angle)> g_smallAng AND ABS(angle-pi)> g_smallAng THEN
+	normalize(axis);
+END_IF
+vecMultiNum(axis, LIMIT(-m_maxTrackVel, angle*m_rotTrackKp, m_maxTrackVel), cartTrackVel);
+
+// compute pinv of orientation jacobian
+FOR i:=1 TO 3 DO
+	FOR j:=1 TO 4 DO
+		oriJaco[i,j]:=i_masterArm.simJaco[i+3,j+3];
+	END_FOR
+END_FOR
+matTranspose(oriJaco, oriJt);
+matMultiply(oriJaco ,oriJt , oriJJt);
+invMat3(oriJJt, oriJJtInv);
+matMultiply(oriJt, oriJJtInv, oriJPinv);
+matMultiVec(oriJpinv, cartTrackVel, jntTrackVel);
+
+// calculate nullspace
+matMultiply(oriJPinv, oriJaco, JpinvJ);
+matSub(eye4d , JpinvJ, nullJ);
+
+// redundant velocity
+jnt4TrackVel:=calcRedunVel(i_masterArm);
+redunCtrlVel[1]:=nullJ[1,1]*jnt4TrackVel;
+redunCtrlVel[2]:=nullJ[2,1]*jnt4TrackVel;
+redunCtrlVel[3]:=nullJ[3,1]*jnt4TrackVel;
+redunCtrlVel[4]:=nullJ[4,1]*jnt4TrackVel;
+
+// update final command joint position and velocity
+FOR i :=1 TO 3 DO 
+	m_cmdJntVel[i+3]:=jntTrackVel[i]+redunCtrlVel[i];
+	m_cmdJntPos[i+3]:=m_cmdJntPos[i+3]+m_cmdJntVel[i+3]*g_armCtrlCycleTime;
+END_FOR
+
+// allow user to rotate joint7 if hand clutch is triggered
+IF i_masterArm.handClutchSwitch THEN
+	m_cmdJntPos[7] := i_masterArm.curJntPos[7];
+	m_cmdJntVel[7] := i_masterArm.curJntVel[7];
+ELSE
+	m_cmdJntPos[7] := m_initJntPos[7];
+	m_cmdJntVel[7] := 0;
+END_IF
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcRedunVel" Id="{e23d7933-67bc-411c-a163-bdd1a130fde2}">
+      <Declaration><![CDATA[METHOD PROTECTED calcRedunVel : LREAL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+
+VAR 
+	j6Bias,j5Bias :LREAL;
+	velScale :LREAL;
+	linearVel :Vec3d;
+	curJntPos : Vec7d;
+	jnt4LinkPos :LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// compute desired joint4 link position
+curJntPos :=  i_masterArm.cmdJntPos;
+jnt4LinkPos:=i_masterArm.jnt4MotorToLink(curJntPos[2],curJntPos[3],curJntPos[4]);
+IF 1= i_masterArm.armIdx THEN
+	j6Bias :=curJntPos[6]+PI/2;
+ELSE 
+	j6Bias := curJntPos[6]-PI/2;
+END_IF
+
+// scale based on joint5 position
+j5Bias :=  LIMIT (0, ABS(curJntPos[5] -pi), pi/2);
+j6Bias := j6Bias * ABS(COS(j5Bias));
+
+// scale based on linear velocity
+linearVel[1]:=i_masterArm.curCartTwist[1];
+linearVel[2]:=i_masterArm.curCartTwist[2];
+linearVel[3]:=i_masterArm.curCartTwist[3];
+velScale :=LIMIT(0, (norm(linearVel)-m_linearVelLb)/(m_linearVelUb-m_linearVelLb),1.0);
+
+calcRedunVel := LIMIT(-m_jnt4MaxVel, -j6Bias * m_jnt4AdjustKp * velScale ,m_jnt4MaxVel);
+
+// joint limit
+IF (calcRedunVel > 0 AND jnt4LinkPos+calcRedunVel * g_armCtrlCycleTime > GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4])
+	 OR ( calcRedunVel <0 AND  jnt4LinkPos +calcRedunVel * g_armCtrlCycleTime< GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]) THEN
+	 calcRedunVel :=0;
+END_IF
+
+// position limit check
+m_jntPosUb:=i_masterArm.jnt4LinkToMotor(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],
+						 GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-m_jntLimitBuffer);
+m_jntPosLb:=i_masterArm.jnt4LinkToMotor(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],
+						 GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]+m_jntLimitBuffer);
+IF m_cmdJntPos[4] >=m_jntPosUb OR m_cmdJntPos[4]<m_jntPosLb THEN
+	calcRedunVel:=0;
+	m_cmdJntPos[4]:=LIMIT(m_jntPosLb,m_cmdJntPos[4],m_jntPosUb);
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{1106e191-9e61-4227-a6e7-a957758f71da}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i:INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+
+m_jntOPMode[1] := DriverOPMode_Trq;
+m_jntOPMode[2] := DriverOPMode_Trq;
+m_jntOPMode[3] := DriverOPMode_Trq;
+m_jntOPMode[4] := DriverOPMode_PosTrq;
+m_jntOPMode[5] := DriverOPMode_PosTrq;
+m_jntOPMode[6] := DriverOPMode_PosTrq;
+m_jntOPMode[7] := DriverOPMode_PosTrq;
+
+m_initJntPos := i_masterArm.curJntPos;
+
+// update commands to arm
+copyCmds(r_masterArmCtrlCmd);
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlClutch">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcCmdJntPos">
+      <LineId Id="326" Count="0" />
+      <LineId Id="355" Count="0" />
+      <LineId Id="357" Count="1" />
+      <LineId Id="356" Count="0" />
+      <LineId Id="131" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcCmdJntPos_BasicInstru">
+      <LineId Id="385" Count="49" />
+      <LineId Id="131" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcCmdJntPos_USKnife">
+      <LineId Id="527" Count="64" />
+      <LineId Id="131" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcRedunVel">
+      <LineId Id="77" Count="1" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="79" Count="4" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="85" Count="1" />
+      <LineId Id="134" Count="5" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="99" Count="3" />
+      <LineId Id="154" Count="5" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="161" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.init">
+      <LineId Id="13" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="66" Count="5" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="12" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

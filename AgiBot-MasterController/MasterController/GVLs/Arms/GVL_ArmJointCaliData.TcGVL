@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <GVL Name="GVL_ArmJointCaliData" Id="{110f2ddd-8f6e-45b7-a97a-8030310c3113}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+// Robot3 Data-RightArm
+VAR_GLOBAL CONSTANT									 
+	// absolute encoder value at minimal joint positon
+	g_minLinkEncoder :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF DINT :=
+		[122745, 128228, 36292, 22430, 20158, 65855, 0,
+		 35855, 68924, 4429, 107164, 130111, 42645, 0];
+		 
+	// absolute encoder value at maximum joint positon
+	g_maxLinkEncoder :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF DINT :=
+		[36223, 83720, 69818, 109643, 52927, 45700, 0,
+		 79841, 24455, 37956, 63571, 31889, 22283, 0];
+	
+	// absolute encoder value at calibrated positon
+	g_caliLinkEncoder :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF DINT :=
+		[12232, 104860, 48044, 76302, 102239, 88760, 21202,
+		 57523, 46542, 15769, 8255, 81176, 131007, 56205];
+	
+	 // if absolute encoder value cross zeros within joint motion range
+	 // NOTICE: joint 7 is always 0.
+	g_linkEncZeroCross :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF INT :=
+		[1, 0, 0, 0, 1, 1, 1,
+		 0, 0, 1, 1, 0, 1, 1];
+		 
+	// limit value of gripper hall sensor
+	g_minHallSensorValue :ARRAY[1..2] OF DINT:=[9702292,9964273];
+	g_maxHallSensorValue :ARRAY[1..2] OF DINT  :=[114690234,116983959];
+		 
+ 	//################ DO NOT modify parameters below ###########################	
+	// abolute encoder expanded limit buffer in case there is calibrtion error at limit position
+	g_linkEncLimitBuffer : DINT := 1000;
+	
+	// flag if joint can rotate multiple cycles
+	g_multipleCyclesJoint :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF INT :=
+		[0, 0, 0, 0, 0, 0, 1,
+		 0, 0, 0, 0, 0, 0, 1];
+		 
+	// joint position at link encoder calibrated point
+	g_linkEncCaliJntPos :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF LREAL :=
+		[0.0, -PI/2, 0.0, -pi, pi, -PI/2, 0.0,
+		 0.0, -PI/2, 0.0, 0.0, pi, PI/2, 0.0];
+
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

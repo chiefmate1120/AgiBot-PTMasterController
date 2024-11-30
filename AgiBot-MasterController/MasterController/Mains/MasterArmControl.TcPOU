@@ -1,0 +1,275 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MasterArmControl" Id="{6192c11b-cd6e-4883-b627-958acfb9caf3}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MasterArmControl
+VAR
+	// slave robot data, input from slave controller box
+	m_slaveRobotData AT %I* : MSCommu_slaveStatus;
+	
+	// all data from other tasks and controller 
+	m_masterInputDataPool : ST_MasterInputDataPool;
+	
+	// master robot information, including arm status and cartesian data, output to other tasks
+	m_masterStatus AT %Q* :ST_MasterStatus;
+	
+	// master robot joint data, output to other tasks
+	m_masterJointsData AT %Q* :ST_MasterJointData;
+		
+	// master robot data, ouput to slave controller box
+	m_masterRobotData AT %Q* :MSCommu_MasterStatus;
+	
+	// flag to init robot
+	m_robotInit :BOOL :=FALSE;
+	
+	// wait time before robot init  for ethercat to be statble 
+	m_robotInitWaitTime : LREAL:=0;
+	
+	// master robot
+	m_masterRobot:FB_MasterRobot;
+	
+	// code execute time measure
+	m_codeTime : Profiler;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[m_codeTime(START:=TRUE, RESET:=TRUE);
+
+// wait communication to be stable
+IF(m_robotInitWaitTime<g_robotInitWaitTime) THEN
+	m_robotInitWaitTime := m_robotInitWaitTime+g_armCtrlCycleTime;
+	RETURN;
+END_IF
+
+// robot init
+IF m_robotInit =FALSE THEN
+	m_masterRobot.Init();
+	m_robotInit:=TRUE;
+END_IF
+
+// input from UI
+UIInputProcess();
+
+// slave input data cast
+slaveInputDataCast(m_slaveRobotData, m_masterInputDataPool.m_slaveStatus);
+
+// robot run
+m_masterRobot.run(m_masterInputDataPool);
+
+// update data pool
+m_masterRobot.getStatus(m_masterStatus,m_masterJointsData);
+
+// master output data cast
+masterOutputDataCast(m_masterRobot.m_shoulderPoseInMonitor, m_masterStatus, m_masterRobotData);
+
+// output to UI
+UIOutputProcess();
+
+m_codeTime(START:=FALSE);]]></ST>
+    </Implementation>
+    <Method Name="masterOutputDataCast" Id="{688f8323-8b5a-4cc7-b4b2-cb5f74424c3f}">
+      <Declaration><![CDATA[// convert from local ST_MasterStatus for control to MSCommu_MasterStatus for master-slave communication
+METHOD masterOutputDataCast : BOOL
+VAR_IN_OUT CONSTANT
+	shoulderPose :ARRAY[1..2] OF ST_Frame;
+	masterStatus :ST_MasterStatus;
+END_VAR
+VAR_IN_OUT
+	masterOutputData:MSCommu_MasterStatus;
+END_VAR
+
+VAR
+	i,j : INT;
+	poseInMonitor:ST_Frame;
+	velInShoulder, wVelInShoulder :Vec3d;
+	velInMonitor, wVelInMonitor :Vec3d;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Master heart beat
+IF masterOutputData.m_heartBeat >= 10 THEN
+	masterOutputData.m_heartBeat := 0;
+ELSE
+	masterOutputData.m_heartBeat := masterOutputData.m_heartBeat + 1;
+END_IF
+
+masterOutputData.m_motionScale :=masterStatus.m_motionScale;
+masterOutputData.m_slaveSelfCheckFlag := m_masterInputDataPool.m_UIData.m_selfCheckFlag;
+masterOutputData.m_pedalHover := m_masterInputDataPool.m_cartStatus.m_pedalHover;
+masterOutputData.m_electricKnifePedalTrigger := m_masterInputDataPool.m_cartStatus.m_electricKnifePedalTrigger;
+masterOutputData.m_tryMSControl[1] := BOOL_TO_INT(m_masterInputDataPool.m_cartStatus.m_surgonReady);
+masterOutputData.m_tryMSControl[2] := BOOL_TO_INT(m_masterInputDataPool.m_cartStatus.m_surgonReady);
+masterOutputData.m_uiResetFault := GVL_interactUI.g_uiResetFault;
+masterOutputData.m_masterStopButton := NOT SafetyCheck.m_stopButton;
+
+FOR i:=1 TO g_mArmNum DO
+	masterOutputData.m_armState[i] := masterStatus.m_armState[i];
+	masterOutputData.m_teleSlaveArmIdx[i] :=masterStatus.m_teleSlaveArmIdx[i];
+	masterOutputData.m_gripAngle[i] := masterStatus.m_gripAngle[i] ;
+	
+	poseInMonitor := transform(shoulderPose[i],  masterStatus.m_curArmPose[i]);
+	masterOutputData.m_curArmPose[i].m_pos := poseInMonitor.m_pos ;
+	masterOutputData.m_curArmPose[i].m_rot := poseInMonitor.m_rot ;
+	
+	FOR j:=1 TO 3 DO
+		velInShoulder[j]:=masterStatus.m_curArmTwist[i][j];
+		wVelInShoulder[j]:=masterStatus.m_curArmTwist[i][j+3];
+	END_FOR
+	matMultiVec(shoulderPose[i].m_rot, velInShoulder,velInMonitor);
+	matMultiVec(shoulderPose[i].m_rot, wVelInShoulder,wVelInMonitor);
+	
+	FOR j:=1 TO 3 DO
+		masterOutputData.m_curArmTwist[i][j]:=velInMonitor[j];
+		masterOutputData.m_curArmTwist[i][j+3]:=wVelInMonitor[j];
+	END_FOR
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="slaveInputDataCast" Id="{110717ec-abfc-4dc8-a3ed-d3c3fbcf321b}">
+      <Declaration><![CDATA[// convert from MSCommu_Slavetatus for master-slave communication to local ST_SlaveStatus for control
+METHOD slaveInputDataCast : BOOL
+VAR_IN_OUT CONSTANT
+		slaveInputData : MSCommu_SlaveStatus; 
+END_VAR
+VAR_IN_OUT
+	slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR
+	i :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[slaveStatus.m_selfCheckPass := slaveInputData.m_selfCheckPass;
+slaveStatus.m_slaveHeartBeat := slaveInputData.m_heartBeat;
+slaveStatus.m_endoscopeMounted :=slaveInputData.m_endoscopeMounted;
+slaveStatus.m_endoscopePose.m_pos :=slaveInputData.m_endoscopePose.m_pos;
+slaveStatus.m_endoscopePose.m_rot :=slaveInputData.m_endoscopePose.m_rot;
+slaveStatus.m_slaveAllowInMS := slaveInputData.m_slaveAllowInMS;
+slaveStatus.m_slaveStopButton := slaveInputData.m_slaveStopButton;
+FOR i:= 1 TO g_sArmNum DO
+	slaveStatus.m_armState[i] := slaveInputData.m_armState[i];
+	slaveStatus.m_instruStauts[i].m_fingerAngle := slaveInputData.m_instruStauts[i].m_fingerAngle;
+	slaveStatus.m_instruStauts[i].m_ready := slaveInputData.m_instruStauts[i].m_ready;
+	slaveStatus.m_instruStauts[i].m_type := slaveInputData.m_instruStauts[i].m_type;
+	slaveStatus.m_instruStauts[i].m_energyType := slaveInputData.m_instruEnergyType[i];
+	slaveStatus.m_curArmPose[i].m_pos :=slaveInputData.m_curArmPose[i].m_pos;
+	slaveStatus.m_curArmPose[i].m_rot :=slaveInputData.m_curArmPose[i].m_rot;
+	slaveStatus.m_masterSlavePoseError[i] := slaveInputData.m_masterSlavePoseError[i];
+END_FOR
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="UIInputProcess" Id="{9dd02246-5151-482e-a090-b6247e0a96d4}">
+      <Declaration><![CDATA[// tranform data from UI(global variable write by ADS) to ST_UIData
+METHOD UIInputProcess : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// master-slave control scale
+IF 2 = GVL_interactUI.g_masterSlaveScaling THEN
+	m_masterInputDataPool.m_UIData.m_motionScale := 2;
+ELSIF 3 = GVL_interactUI.g_masterSlaveScaling THEN
+	m_masterInputDataPool.m_UIData.m_motionScale := 3;
+ELSE
+	m_masterInputDataPool.m_UIData.m_motionScale := 1.5;
+END_IF
+
+// self-check
+m_masterInputDataPool.m_UIData.m_selfCheckFlag := GVL_interactUI.g_slaveCheckEnbale;
+
+// hand clutch
+m_masterInputDataPool.m_UIData.m_enableHandClutch := GVL_interactUI.g_fingerClutchOnOff;
+
+// arm disable
+m_masterInputDataPool.m_UIData.m_masterArmDisableFlag[1]:=FALSE;
+m_masterInputDataPool.m_UIData.m_masterArmDisableFlag[2]:=FALSE;
+IF 1=GVL_interactUI.g_armIsDisbale OR 2=GVL_interactUI.g_armIsDisbale THEN
+	m_masterInputDataPool.m_UIData.m_masterArmDisableFlag[GVL_interactUI.g_armIsDisbale] := TRUE;
+END_IF
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="UIOutputProcess" Id="{d0fa8c54-c1d5-4f7b-80a8-06c5ca1c6dd6}">
+      <Declaration><![CDATA[METHOD UIOutputProcess : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//slave arm self check status
+IF m_masterInputDataPool.m_slaveStatus.m_armState[1] = SlaveArmState_SelfCheck OR m_masterInputDataPool.m_slaveStatus.m_armState[2] = SlaveArmState_SelfCheck OR 
+			m_masterInputDataPool.m_slaveStatus.m_armState[3] = SlaveArmState_SelfCheck OR m_masterInputDataPool.m_slaveStatus.m_armState[4] = SlaveArmState_SelfCheck THEN
+	GVL_interactUI.g_slaveCheckStatus := 1;
+ELSIF m_masterInputDataPool.m_slaveStatus.m_selfCheckPass THEN
+	GVL_interactUI.g_slaveCheckStatus := 2;
+ELSE
+	GVL_interactUI.g_slaveCheckStatus := 0;
+END_IF
+
+//GVL_interactUI.g_masterSelfCheckFinshed := m_masterStatus.m_selfCheckStatus;
+
+GVL_interactUI.g_stateMachineArm1 := m_masterStatus.m_armState[1];
+GVL_interactUI.g_stateMachineArm2 := m_masterStatus.m_armState[2];
+GVL_interactUI.g_teleSlaveArm1Idx := m_masterStatus.m_teleSlaveArmIdx[1];
+GVL_interactUI.g_teleSlaveArm2Idx := m_masterStatus.m_teleSlaveArmIdx[2];
+GVL_interactUI.g_screenLockEnable := (MasterArmState_MasterSlave <= m_masterStatus.m_armState[1]  AND MasterArmState_Endoscope >= m_masterStatus.m_armState[1]) OR (MasterArmState_MasterSlave <= m_masterStatus.m_armState[2]  AND MasterArmState_Endoscope >= m_masterStatus.m_armState[2]);
+IF m_masterInputDataPool.m_cartStatus.m_armSwitch THEN
+	// ui reset variable
+	GVL_interactUI.g_armSwitchEnable := 1;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="MasterArmControl">
+      <LineId Id="85" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="112" Count="1" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="114" Count="2" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="211" Count="1" />
+      <LineId Id="172" Count="0" />
+      <LineId Id="213" Count="0" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="174" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="175" Count="1" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="215" Count="1" />
+      <LineId Id="214" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="87" Count="0" />
+    </LineIds>
+    <LineIds Name="MasterArmControl.masterOutputDataCast">
+      <LineId Id="137" Count="36" />
+      <LineId Id="17" Count="0" />
+    </LineIds>
+    <LineIds Name="MasterArmControl.slaveInputDataCast">
+      <LineId Id="102" Count="19" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="MasterArmControl.UIInputProcess">
+      <LineId Id="101" Count="22" />
+      <LineId Id="17" Count="0" />
+    </LineIds>
+    <LineIds Name="MasterArmControl.UIOutputProcess">
+      <LineId Id="50" Count="19" />
+      <LineId Id="19" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

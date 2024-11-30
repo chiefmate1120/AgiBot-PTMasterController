@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_StateCtrlGraCali" Id="{531d8d14-1bd3-4a7e-a3de-2b1adfd1c86b}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Master Arm Home Posture
+FUNCTION_BLOCK PUBLIC FB_StateCtrlGraCali EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR CONSTANT
+	m_caliMotionSegs :INT :=18;	
+END_VAR
+VAR
+	// cali trajectory
+	m_leftGraCaliTraj :ARRAY [1..m_caliMotionSegs, 1..g_mJntNum] OF LREAL:=
+		// joint6
+		[0,  -90*g_deg2Rad,    0.0,  -180*g_deg2Rad,  90*g_deg2rad,  -40*g_deg2rad, 0.0 , 
+		 0, -90*g_deg2rad,   0.0,  -180*g_deg2rad,   90*g_deg2rad,  -140*g_deg2rad,  0,
+		 0,  -90*g_deg2Rad,    0.0,  -180*g_deg2Rad,  90*g_deg2rad,  -40*g_deg2rad, 0.0 , 
+		// joint5
+		 0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  270*g_deg2Rad,  -90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,    0,
+		// joint4
+		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -150*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  -30*g_deg2Rad, -210*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -150*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		// joint3
+		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		// joint2
+		 0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  -120*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
+		0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		// joint1/7
+		 0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    45*g_deg2Rad,
+		 -30.0*g_deg2Rad,  -90*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     -45*g_deg2Rad,
+		0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    45*g_deg2Rad];
+		
+	m_rightGraCaliTraj :ARRAY [1..m_caliMotionSegs, 1..g_mJntNum] OF LREAL:=
+		// joint6
+		[0,  -90*g_deg2Rad,    0.0,  0*g_deg2Rad,  270*g_deg2rad,  40*g_deg2rad, 0.0 , 
+		 0, -90*g_deg2rad,   0.0,  0*g_deg2rad,   270*g_deg2rad,  140*g_deg2rad,  0,
+		 0,  -90*g_deg2Rad,    0.0,  0*g_deg2Rad,  270*g_deg2rad,  40*g_deg2rad, 0.0 , 
+		// joint5
+		 0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  90*g_deg2Rad,  90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,    0,
+		// joint4
+		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  30*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  -30*g_deg2Rad, -30*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  30*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		// joint3
+		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		// joint2
+		 0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  -120*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
+		0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		// joint1/7
+		 0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    45*g_deg2Rad,
+		 30.0*g_deg2Rad,  -90*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     -45*g_deg2Rad,
+		0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    45*g_deg2Rad];
+		
+	
+
+	m_transMaxjntVel:Vec7d:=[7(30*g_deg2rad)];
+	m_caliMaxjntVel:Vec7d:=[7(5.0*g_deg2rad)];
+	m_caliMaxjntAcc:Vec7d:=[7(1.0)];
+	m_caliMaxjntJerk:Vec7d:=[7(2.0)];
+	
+	m_caliTrajIdx: INT := 1;
+	m_caliPlanner: ARRAY[1..m_caliMotionSegs] OF FB_TrajMoveJ;
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{b8af1196-17b2-45bb-b1e8-2b897062d5c6}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+	i :INT;
+	curJntVel :Vec7d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// check if planner is ready
+IF m_caliPlanner[m_caliTrajIdx].isGene = FALSE THEN
+	calcCmdJntPos:=FALSE;
+	RETURN;
+END_IF
+
+// traj plan
+calcCmdJntPos :=m_caliPlanner[m_caliTrajIdx].evaluate(m_timePeriod, jntPos=> m_cmdJntPos, jntVel=>m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+
+// check if to transit to next segment
+curJntVel :=i_masterArm.curJntVel;
+IF(m_timePeriod > m_caliPlanner[m_caliTrajIdx].duration  AND norm(curJntVel)<7*g_jntStaticVelThres) THEN
+	m_caliTrajIdx:=m_caliTrajIdx+1;
+	m_timePeriod:=0;
+END_IF
+
+// check if to terminated
+IF(m_caliTrajIdx > m_caliMotionSegs) THEN
+	m_isFinished:=TRUE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{b84cb55c-49a8-4c63-863a-72920a96b291}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i,j :INT;
+	startJntPos,endJntPos ,maxVel :Vec7d;
+	
+	
+	
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+
+m_caliTrajIdx :=1;
+
+FOR i:=1 TO m_caliMotionSegs DO
+	IF (i mod 3) = 1 THEN
+		maxVel := m_transMaxjntVel;
+	ELSE
+		maxVel := m_caliMaxjntVel;
+	END_IF
+	
+	IF i_masterArm.armIdx=1 THEN
+		FOR j:=1 TO 7 DO 
+			endJntPos[j]:=m_leftGraCaliTraj[i,j];
+			IF i =1 THEN
+				startJntPos[j]:=i_masterArm.curJntPos[j];
+			ELSE
+				startJntPos[j]:=m_leftGraCaliTraj[i-1,j];
+			END_IF
+		END_FOR
+	ELSE
+		FOR j:=1 TO 7 DO 
+			endJntPos[j]:=m_rightGraCaliTraj[i,j];
+			IF i =1 THEN
+				startJntPos[j]:=i_masterArm.curJntPos[j];
+			ELSE
+				startJntPos[j]:=m_rightGraCaliTraj[i-1,j];
+			END_IF
+		END_FOR
+	END_IF
+	
+	m_caliPlanner[i].init(startJntPos,endJntPos,maxVel, m_caliMaxJntAcc, m_caliMaxJntAcc);
+END_FOR
+
+
+// update commands to arm
+copyCmds(r_masterArmCtrlCmd);]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlGraCali">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlGraCali.calcCmdJntPos">
+      <LineId Id="82" Count="18" />
+      <LineId Id="32" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlGraCali.init">
+      <LineId Id="264" Count="0" />
+      <LineId Id="314" Count="0" />
+      <LineId Id="265" Count="33" />
+      <LineId Id="169" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

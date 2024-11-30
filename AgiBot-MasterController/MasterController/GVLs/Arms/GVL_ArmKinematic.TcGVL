@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <GVL Name="GVL_ArmKinematic" Id="{fa1bdebf-5188-4d48-a57d-03bec0a3a2f4}">
+    <Declaration><![CDATA[// use slot attribute larger than 49990, which is the default one, if it depends on variable in other file
+{attribute 'global_init_slot' := '49991'} 
+VAR_GLOBAL CONSTANT 
+
+// distance between shoulders of left and right arm
+g_shoulderDistance :LREAL := 0.5;
+
+// master arm shoulder rotation in base monitor pose(0 rotate angle)
+g_shoulderRotInMonitor : Mat3d :=[0.0,	-1.0,	0.0,
+								  0.0,	0.0,	1.0,
+								  -1.0,	0.0,	0.0];
+ 	
+(* 
+% DH definetion
+% !!!!NOTE: q4 is the DH joint position, NOT the motor one
+% paramters definiton:
+% d1: arm origin to joint1 
+% a3: upper arm length
+% a4: lower arm length
+% d4: wrist height
+% a9: parallel structure width
+% DH definition:
+% index     parent  alpha   a       theta   d       active
+% 1         0       0       0       q1      d1      1
+% 2         1       -90     0       q2      0       1
+% 3         0       0       a3      q3      0       0
+% 4         3       -90     a4      q4      d4      1
+% 5         4       90      0       q5      0       1
+% 6         5       -90     0       q6      0       1
+% 7         6       90      0       q7      0       1
+
+% 8         1       -90     0       q8      0       1
+% 9         8       0       a9      q9      0       0
+% 10        9       0       a3      q10     0       0
+% 11        3       0       a9      0       0       fixed
+
+%q4 = motor_q4+q8-q2-90
+%q3 = q8 - q2;
+%q9 = q2-q8;
+%q10 = q8-q2
+
+*)
+g_d1:LREAL:=0.26085;
+g_d4:LREAL:=0.156;
+g_a3:LREAL:=0.278;
+g_a4:LREAL:=0.365;
+g_a9:LREAL:=0.06;
+
+//alpha,a,d,theta	
+g_masterArmDH:ARRAY[1..9,1..4] OF LREAL :=[0,	0,		g_d1,	0,      
+										-pi/2,	0,		0,		0,
+										0,		g_a3,	0,		0,
+										-pi/2,	g_a4,	g_d4,	0,       
+										pi/2,	0,		0,		0,
+										-pi/2,	0,		0,		0,
+										pi/2,	0,		0,		0,
+										-pi/2,	0,		0,		0,// joint 8
+										0,		g_a9, 	0,		0];
+											
+// master grip angle fitting coefficients(wrt normalized hall sensor value)
+g_masterGripAngleFitCoeff : ARRAY[1..6] OF LREAL :=
+	[-6.2568, 13.9762, -11.8938, 4.56924, -0.9183, 0.52359];
+g_maxGripAngle : LREAL := 30.0 * g_deg2Rad;
+g_minGripAngle :LREAL  := 0.0;
+
+// software limit for joint6
+g_jnt6LowLimit :ARRAY[1..2] OF LREAL :=[-pi/2 - 55*g_deg2rad, pi/2 - 65*g_deg2rad];
+g_jnt6UpLimit :ARRAY[1..2] OF LREAL :=[-pi/2 + 65*g_deg2rad, pi/2 + 55*g_deg2rad];
+
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

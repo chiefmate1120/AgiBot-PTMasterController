@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_StateCtrlDisable" Id="{cdb57e54-fa38-4cad-b467-29f4110c1ee2}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Master Arm Error Hold
+FUNCTION_BLOCK PUBLIC FB_StateCtrlDisable EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{89de411a-bd80-47a9-a64c-96ec6b6393ef}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+var 
+	i,j : INT;
+
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_cmdJntPos:= i_masterArm.curJntPos;
+m_cmdJntVel := g_zeroVec7d;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{7ec4f7df-df49-4afd-a16c-f71bb7ca37e5}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i:INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+m_jntOPMode:=g_allPosMode;
+
+// disable all joints
+m_jntEnableFlag :=g_zeroVec7i;
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlDisable">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlDisable.calcCmdJntPos">
+      <LineId Id="105" Count="0" />
+      <LineId Id="215" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlDisable.init">
+      <LineId Id="67" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="12" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,381 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_RedunJntControl" Id="{37b286e5-bc24-4f0b-8ee5-459813960fda}" SpecialFunc="None">
+    <Declaration><![CDATA[// Author: Feijian Ni
+// Date: 2024.11.26
+FUNCTION_BLOCK FB_RedunJntControl
+
+VAR
+	// joint 6 deviation from center
+	m_jnt6Bias :LREAL;
+	
+	// static velocity threshold
+	m_staticWVelThres :LREAL := 10 *g_deg2Rad;
+	m_staticVelThres :LREAL := 0.01;
+	m_staticTime:LREAL:=0;
+	m_staticTimeThres:LREAL:=1;
+
+	// rudundancy track flag
+	m_trackFlag :BOOL;
+	
+	// orientation nullspace jacobian
+	m_oriNullJaco: Mat4d;
+	
+	// current manipulation velocity
+	m_curManipWVel :LREAL :=0;
+	m_curManipVel:LREAL:=0;
+	
+	// joint4 dynamic limit and limit buffer
+	m_jntPosUb, m_jntPosLb:LREAL;
+	m_targetVelUb, m_targetVelLb:LREAL;
+	m_jntLimitBufferUb : LREAL :=20*g_deg2Rad;
+	m_jntLimitBufferLb : LREAL :=2*g_deg2Rad;
+	
+	// scale near singularity
+	m_singScale:LREAL;
+	
+	// control paramters for redundant joint4 position control
+//	m_redunJntKp: LREAL:=8.0;
+//	m_redunJntKd:LREAL:=0.2;
+//	m_redunJntKp: LREAL:=3.0;
+//	m_redunJntKd:LREAL:=0.1;
+	m_redunJntKp: LREAL:=40;
+	m_redunJntKd:LREAL:=2;
+	m_redunJntKi:LREAL:=0;
+	m_redunJntKiLimit: LREAL:=200;
+	m_redunJntCtrlLimit:LREAL:=1000;
+
+	// redundant track parameters
+	m_redunKp:LREAL:=6;
+	m_deadband :LREAL := 2*g_deg2rad;
+	m_minDeadband:LREAL:=2*g_deg2rad;
+	m_maxDeadband:LREAL:=30*g_deg2rad;
+	m_maxCmdVel :LREAL := 15;
+	m_maxJntAcc :LREAL := 30;
+	m_targetJntVel:LREAL;
+	
+	// command joint4 position and veloicty in motor for next cycle
+	m_cmdJntPos: LREAL;
+	m_cmdJntVel: LREAL;
+	m_cmdJntAcc: LREAL;
+
+	// PID for joint position
+	m_jntPIDCtrl: FB_PID;
+	m_jntCtrlTrq: LREAL;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcDynaLimit" Id="{517b99e7-4531-4f19-8583-0402b1708b64}">
+      <Declaration><![CDATA[METHOD calcDynaLimit : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR
+		curLinkPos:LREAL;
+		scale:LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// position limit check
+m_jntPosUb:=i_masterArm.jnt4LinkToMotor(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],
+						 GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-m_jntLimitBufferLb);
+m_jntPosLb:=i_masterArm.jnt4LinkToMotor(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],
+						 GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]+m_jntLimitBufferLb);
+
+// velocity limit 
+m_targetVelUb := m_maxCmdVel;
+m_targetVelLb:= -m_maxCmdVel;
+curLinkPos := i_masterArm.jnt4MotorToLink(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],i_masterArm.curJntPos[4]);
+IF (curLinkPos > GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-m_jntLimitBufferUb ) THEN
+	scale:=(GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-m_jntLimitBufferLb-curLinkPos)/(m_jntLimitBufferUb-m_jntLimitBufferLb);
+	m_targetVelUb:=m_maxCmdVel*LIMIT(0,scale,1);
+ELSIF (curLinkPos < GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]+m_jntLimitBufferUb)  THEN
+		scale:=(curLinkPos-GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]-m_jntLimitBufferLb)/(m_jntLimitBufferUb-m_jntLimitBufferLb);
+	m_targetVelLb:=-m_maxCmdVel*LIMIT(0,scale,1);
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcJnt6Bias" Id="{68b27b82-124b-4f1a-bd1d-2edb5f51bb26}">
+      <Declaration><![CDATA[METHOD PROTECTED calcJnt6Bias : LREAL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF 1= i_masterArm.armIdx THEN
+	calcJnt6Bias :=i_masterArm.curJntPos[6]+PI/2;
+ELSE 
+	calcJnt6Bias := i_masterArm.curJntPos[6]-PI/2;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcManipVel" Id="{bb7eb50a-f66e-4f62-804f-4f7088909c44}">
+      <Declaration><![CDATA[// calculate orientation manipulation velocity(in local coordinate)
+METHOD calcManipVel : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR
+	vel:Vec3d;
+	wVelWrd,wVelLocal:Vec3d;
+	rotT:Mat3d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[vel[1]:= i_masterArm.m_curCartLinkTwist[1];
+vel[2]:= i_masterArm.m_curCartLinkTwist[2];
+vel[3]:= i_masterArm.m_curCartLinkTwist[3];
+m_curManipVel:=norm(vel);
+
+wVelWrd[1]:= i_masterArm.m_curCartLinkTwist[4];
+wVelWrd[2]:= i_masterArm.m_curCartLinkTwist[5];
+wVelWrd[3]:= i_masterArm.m_curCartLinkTwist[6];
+
+matTranspose(i_masterArm.m_curCartLinkPose.m_rot, rotT);
+matMultiVec(rotT, wVelWrd, wVelLocal);
+
+wVelLocal[3]:=0;
+m_curManipWVel:=norm(wVelLocal);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcNullJaco" Id="{c6e14663-5511-49c6-9219-88a5073286c6}">
+      <Declaration><![CDATA[METHOD PROTECTED calcNullJaco : Mat4d;
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR
+	i,j:INT;
+	oriJaco:Mat34;
+	oriJt:Mat43;
+	oriJJt:Mat3d;
+	oriJJtInv:Mat3d;
+	oriJPinv:Mat43;
+	JpinvJ :Mat4d;
+	eye4d :Mat4d := g_eye4d;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// compute pinv of orientation jacobian
+FOR i:=1 TO 3 DO
+	FOR j:=1 TO 4 DO
+		oriJaco[i,j]:=i_masterArm.simJaco[i+3,j+3];
+	END_FOR
+END_FOR
+matTranspose(oriJaco, oriJt);
+matMultiply(oriJaco ,oriJt , oriJJt);
+invMat3(oriJJt, oriJJtInv);
+matMultiply(oriJt, oriJJtInv, oriJPinv);
+
+// calculate nullspace
+matMultiply(oriJPinv, oriJaco, JpinvJ);
+matSub(eye4d , JpinvJ, calcNullJaco);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="cmdReduntJntVel" Id="{2fd991d4-386e-4878-8418-3b3ca124be07}">
+      <Declaration><![CDATA[METHOD cmdReduntJntVel : LREAL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR
+	twist:Vec6d;
+
+	cmdJntVel:Vec6d;
+	i,j:INT;
+
+
+	jnt4CurLinkPos: LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF ABS(m_oriNullJaco[1,1])<g_smallNum THEN
+	m_singScale :=0;
+ELSE
+	m_singScale := MIN(1.0, ABS(m_oriNullJaco[3,1]/m_oriNullJaco[1,1]));
+END_IF
+
+m_deadband:=abs(COS(i_masterArm.curJntPos[5]-pi));
+m_deadband := m_maxDeadband-(m_maxDeadband-m_minDeadband)*m_deadband;
+//m_deadband:=m_minDeadband;
+
+IF ABS(m_jnt6Bias)>m_deadband THEN
+	cmdReduntJntVel:=-1*(m_jnt6Bias-sign(m_jnt6Bias)*m_deadband)*m_redunKp*ABS(m_singScale);
+ELSE
+	cmdReduntJntVel :=0;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{cb17a605-fa56-4121-9a65-f80dc96a20aa}">
+      <Declaration><![CDATA[METHOD init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR
+	currentRatioMotor2Jnt:LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_cmdJntPos:=i_masterArm.curJntPos[4];
+m_cmdJntVel:=0;
+
+// init controller
+currentRatioMotor2Jnt:=GVL_ArmJointParameters.g_motorTrqConst[4]*GVL_ArmJointParameters.g_motorReduction[4]/1000;
+m_jntPIDCtrl.init(g_armCtrlCycleTime,m_redunJntKp,m_redunJntKd,m_redunJntKi,
+		m_redunJntKiLimit* currentRatioMotor2Jnt,	m_redunJntCtrlLimit*currentRatioMotor2Jnt);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="run" Id="{d8042a90-18c2-4767-bdb7-fbc7b91a9fb4}">
+      <Declaration><![CDATA[METHOD run : LREAL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR_INPUT
+	i_followEnable :BOOL;
+END_VAR
+
+
+VAR
+	velScale,limitScale:LREAL;
+	maxAcc, minDec:LREAL;
+	wVel:Vec3d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// joint 6 deviation from center
+m_jnt6Bias := calcJnt6Bias(i_masterArm);
+
+// calculate nullspace jacobian
+m_oriNullJaco := calcNullJaco(i_masterArm);
+
+// calculate manipulation angular velocity(exclude roll velocity)
+ calcManipVel(i_masterArm);
+
+// check if arm is static
+m_trackFlag:=startTrackCheck();
+
+// redundant tracking velocity
+IF m_trackFlag THEN
+	m_targetJntVel := cmdReduntJntVel(i_masterArm);
+ELSE
+	m_targetJntVel :=0;
+END_IF
+
+// dynamic limit 
+calcDynaLimit(i_masterArm);
+m_targetJntVel := LIMIT(m_targetVelLb, m_targetJntVel, m_targetVelUb);
+
+// integrate to get position
+m_cmdJntAcc := LIMIT(-m_maxJntAcc, (m_targetJntVel - m_cmdJntVel)*g_armCtrlFreq, m_maxJntAcc);
+m_cmdJntPos:= m_cmdJntPos + m_cmdJntVel * g_armCtrlCycleTime + 0.5*m_cmdJntAcc*g_armCtrlCycleTime*g_armCtrlCycleTime;
+m_cmdJntVel := m_cmdJntVel + m_cmdJntAcc *g_armCtrlCycleTime;
+m_cmdJntPos:=LIMIT(m_jntPosLb, m_cmdJntPos, m_jntPosUb);
+
+// joint position control torque control
+m_jntCtrlTrq:=m_jntPIDCtrl.run(m_cmdJntPos,i_masterArm.curJntPos[4], m_cmdJntVel, i_masterArm.curJntVel[4]);
+run:=m_jntCtrlTrq;
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="startTrackCheck" Id="{a1bf9092-beb2-41f4-a07f-012eb1275972}">
+      <Declaration><![CDATA[METHOD startTrackCheck : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF m_curManipWVel<m_staticWVelThres and m_curManipVel<m_staticVelThres THEN
+	m_staticTime:=m_staticTime+g_armCtrlCycleTime;
+ELSE
+	m_staticTime:=0;
+END_IF
+startTrackCheck:=m_staticTime<m_staticTimeThres;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_RedunJntControl">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_RedunJntControl.calcDynaLimit">
+      <LineId Id="20" Count="4" />
+      <LineId Id="28" Count="1" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="30" Count="1" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="32" Count="1" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_RedunJntControl.calcJnt6Bias">
+      <LineId Id="6" Count="3" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_RedunJntControl.calcManipVel">
+      <LineId Id="27" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="29" Count="1" />
+      <LineId Id="9" Count="7" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_RedunJntControl.calcNullJaco">
+      <LineId Id="6" Count="9" />
+      <LineId Id="17" Count="2" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_RedunJntControl.cmdReduntJntVel">
+      <LineId Id="61" Count="4" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="14" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_RedunJntControl.init">
+      <LineId Id="51" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="84" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_RedunJntControl.run">
+      <LineId Id="566" Count="7" />
+      <LineId Id="739" Count="0" />
+      <LineId Id="716" Count="0" />
+      <LineId Id="740" Count="1" />
+      <LineId Id="574" Count="0" />
+      <LineId Id="632" Count="0" />
+      <LineId Id="649" Count="0" />
+      <LineId Id="651" Count="1" />
+      <LineId Id="650" Count="0" />
+      <LineId Id="767" Count="0" />
+      <LineId Id="682" Count="0" />
+      <LineId Id="687" Count="0" />
+      <LineId Id="769" Count="0" />
+      <LineId Id="742" Count="0" />
+      <LineId Id="712" Count="0" />
+      <LineId Id="708" Count="0" />
+      <LineId Id="692" Count="0" />
+      <LineId Id="690" Count="0" />
+      <LineId Id="743" Count="0" />
+      <LineId Id="764" Count="0" />
+      <LineId Id="613" Count="1" />
+      <LineId Id="713" Count="0" />
+      <LineId Id="724" Count="0" />
+      <LineId Id="721" Count="0" />
+      <LineId Id="634" Count="0" />
+      <LineId Id="617" Count="0" />
+      <LineId Id="125" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_RedunJntControl.startTrackCheck">
+      <LineId Id="122" Count="4" />
+      <LineId Id="115" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

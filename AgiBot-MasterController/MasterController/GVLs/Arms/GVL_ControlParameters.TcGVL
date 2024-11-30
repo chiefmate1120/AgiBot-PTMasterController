@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_ControlParameters" Id="{a18ea7d5-0bf1-4d07-b60e-bcda0f9a3000}">
+    <Declaration><![CDATA[{attribute 'global_init_slot' := '49991'}
+VAR_GLOBAL CONSTANT
+	// master arm joint position controller parameters
+//	g_posKp :ARRAY[1..7] OF LREAL :=[80.0, 50.0, 50.0, 8.0, 5.0, 3.0, 1.5];
+//	g_posKd :ARRAY[1..7] OF LREAL :=[3.5, 1.5, 1.5, 0.2, 0.1, 0.1, 0.025];
+//	g_posKi :ARRAY[1..7] OF LREAL :=[160.0, 100.0, 100.0, 20.0, 10.0, 10.0, 5.0];
+	g_posKp :ARRAY[1..7] OF LREAL :=[50.0, 50.0, 30.0, 8.0, 3.0, 2.0, 1.5];
+	g_posKd :ARRAY[1..7] OF LREAL :=[3, 1.5, 1, 0.2, 0.05, 0.05, 0.025];
+	g_posKi :ARRAY[1..7] OF LREAL :=[100.0, 100.0, 60.0, 20.0, 10.0, 10.0, 5.0];
+	g_posKiLimit :ARRAY[1..7] OF LREAL :=[3000,3000,3000,500,150,150,150];// define in current
+	g_posCtrlLimit :ARRAY[1..7] OF LREAL :=[9*1000,9*1000,9*1000,1.01*1000,314,314,314];// define in current
+	
+	// redundant joint4 following motion parameters
+	g_jnt4MaxFollowVel :LREAL :=2*pi;
+	g_jnt4MaxFollowAcc :LREAL :=6*pi;
+	
+	// control tolerance
+	g_jntCtrlAngTolLow :LREAL :=0.2*g_deg2Rad;
+	g_jntCtrlAngTolHigh :LREAL :=1.0*g_deg2Rad;
+	g_cartCtrlPosTol :LREAL :=0.0002;
+	g_cartCtrlOriTol :LREAL :=0.2*g_deg2Rad;
+	
+	// filter cut-off frequency for master grip angle
+	g_gripAngLpfCutoffFreq :LREAL := 20;
+	
+	// filter cut-off frequency for velocity and torque
+	g_curJntVelLpfCutoffFreq :LREAL := 30;
+	g_cmdJntPosLpfCutoffFreq :LREAL := 30;
+	g_curJntTrqLpfCutoffFreq :LREAL := 300;
+	g_cmdJntTrqLpfCutoffFreq :LREAL := 300;
+	
+	// controller would keep command unchanged when error 
+	// between command and current value is less than this value
+	g_jntCtrlErrForCmdHold :LREAL :=2.0*g_deg2Rad;
+	
+	// joint is assumed to be static if velocity is less than this value
+	g_jntStaticVelThres :LREAL :=0.2*g_deg2Rad;
+	
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

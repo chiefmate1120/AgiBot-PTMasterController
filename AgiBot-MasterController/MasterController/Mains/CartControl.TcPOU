@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="CartControl" Id="{c247957a-c15a-480d-acbc-bde71223345b}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM CartControl
+VAR
+	// cart instance
+	m_masterCart :FB_MasterCart;
+	
+	//cart related UI
+	m_cartUIData : ST_CartUIData;
+	
+	// Output cart status
+	m_cartStatus AT%Q* : ST_CartStatus;
+	
+	// Cart  joint data
+	m_cartJointData AT %Q* :ST_CartJointData;
+	
+	// wait time before cart init for ethercat to be statble 
+	m_cartInitWaitTime : LREAL:=0;
+	
+	// cart init flag
+	m_cartInit :BOOL :=FALSE;
+	
+	m_workHeartTon0 : TON;
+	m_workHeartTon1 : TON;
+	m_ergonInfoHeightF : F_TRIG;
+	m_userLoggedR : R_TRIG;
+	m_ergonInfoHeight : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// wait communication to be stable
+IF(m_cartInitWaitTime<g_robotInitWaitTime) THEN
+	m_cartInitWaitTime := m_cartInitWaitTime+g_armCtrlCycleTime;
+	RETURN;
+END_IF
+
+// cart init
+IF m_cartInit =FALSE THEN
+	m_masterCart.Init();
+	m_cartInit:=TRUE;
+END_IF
+
+// input from UI
+UIInputProcess();
+
+// cart run
+m_masterCart.run(m_cartUIData);
+
+// status/joint data output
+m_masterCart.getStatus(m_cartStatus, m_cartJointData);
+]]></ST>
+    </Implementation>
+    <Method Name="UIInputProcess" Id="{572b15b0-e408-437d-abc5-fa6c233e3112}">
+      <Declaration><![CDATA[// tranform data from UI(global variable write by ADS) to ST_UIData
+METHOD UIInputProcess : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//init cart joint postion
+IF (GVL_interactUI.g_uiParaReload=TRUE) THEN
+	GVL_interactUI.g_uiParaReload:=FALSE;
+	m_cartUIData.m_cmdCancelErgonPos := m_cartJointData.m_curJntPos;
+	m_cartUIData.m_cmdJntPos:= g_zeroVec4d;
+	GVL_interactUI.g_ergonomicCtrl.m_ergonInfoModify:=TRUE;
+END_IF
+
+//recover the ergonomic button and cancel recover ergonomic button
+m_cartUIData.m_ergonomicCrl.m_recovErgonEnable := GVL_interactUI.g_ergonomicCtrl.m_recovErgonEnable;
+m_cartUIData.m_ergonomicCrl.m_cancelRecovErgonEnable := GVL_interactUI.g_ergonomicCtrl.m_cancelRecovErgonEnable;
+
+//recover the ergonomic update commend position
+m_userLoggedR(CLK:= GVL_interactUI.g_userLogged, Q=> );
+IF m_userLoggedR.Q THEN
+	m_cartUIData.m_cmdJntPos:= g_zeroVec4d;
+END_IF
+IF ((GVL_interactUI.g_ergonomicCtrl.m_recovErgonEnable AND NOT GVL_interactUI.g_ergonomicCtrlEnableLast.m_recovErgonEnable))  THEN
+	GVL_interactUI.g_ergonomicCtrl.m_recovErgonFinshed:=FALSE;
+	m_cartUIData.m_cmdCancelErgonPos := m_cartJointData.m_curJntPos;
+	m_cartUIData.m_cmdJntPos[1] := GVL_interactUI.g_ergonomicCtrlData.m_monitorHeight;
+	m_cartUIData.m_cmdJntPos[2] := GVL_interactUI.g_ergonomicCtrlData.m_headAngle;
+	m_cartUIData.m_cmdJntPos[3] := GVL_interactUI.g_ergonomicCtrlData.m_handrailHeight;
+	m_cartUIData.m_cmdJntPos[4] := GVL_interactUI.g_ergonomicCtrlData.m_footDistance;
+END_IF
+
+//cancel recover the ergonomic update commend position
+IF (GVL_interactUI.g_ergonomicCtrlEnableLast.m_cancelRecovErgonEnable=FALSE) AND (GVL_interactUI.g_ergonomicCtrl.m_cancelRecovErgonEnable=TRUE) THEN
+	GVL_interactUI.g_ergonomicCtrl.m_cancelRecovErgonFinshed:=FALSE;
+	m_cartUIData.m_cmdJntPos := m_cartUIData.m_cmdCancelErgonPos;
+END_IF
+GVL_interactUI.g_ergonomicCtrlEnableLast:=GVL_interactUI.g_ergonomicCtrl;
+
+GVL_interactUI.g_ergonomicCtrl.m_cancelRecovErgonFinshed := m_cartStatus.m_cancelErgonAdjustArrival;
+GVL_interactUI.g_ergonomicCtrl.m_recovErgonFinshed := m_cartStatus.m_ergonAdjustArrival;
+GVL_interactUI.g_surgonHeadIn:=m_cartStatus.m_surgonReady;
+
+//cart adjustment complete , update ui information
+m_ergonInfoHeightF(CLK:= m_cartStatus.m_consoleInAdjust, Q=>m_ergonInfoHeight);
+IF m_ergonInfoHeight THEN
+	GVL_interactUI.g_ergonomicCtrl.m_ergonInfoModify := TRUE;
+END_IF
+GVL_interactUI.g_ergonomicCurData.m_monitorHeight := m_cartJointData.m_curJntPos[1];
+GVL_interactUI.g_ergonomicCurData.m_headAngle := m_cartJointData.m_curJntPos[2];
+GVL_interactUI.g_ergonomicCurData.m_handrailHeight := m_cartJointData.m_curJntPos[3];
+GVL_interactUI.g_ergonomicCurData.m_footDistance:= m_cartJointData.m_curJntPos[4];
+GVL_interactUI.g_cartInMotion := m_cartStatus.m_consoleInManualAdjust;
+
+
+//work heart
+m_workHeartTon0(IN:= GVL_interactUI.g_heartBeat = 1, PT:= T#1S, Q=> , ET=> );
+m_workHeartTon1(IN:= GVL_interactUI.g_heartBeat = 0, PT:= T#1S, Q=> , ET=> );
+IF m_workHeartTon0.Q THEN
+	GVL_interactUI.g_heartBeat :=0 ;
+ELSIF m_workHeartTon1.Q THEN
+	GVL_interactUI.g_heartBeat  :=1 ;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="CartControl">
+      <LineId Id="16" Count="10" />
+      <LineId Id="95" Count="1" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="31" Count="1" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="CartControl.UIInputProcess">
+      <LineId Id="95" Count="3" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="99" Count="7" />
+      <LineId Id="152" Count="0" />
+      <LineId Id="157" Count="2" />
+      <LineId Id="107" Count="39" />
+      <LineId Id="66" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
