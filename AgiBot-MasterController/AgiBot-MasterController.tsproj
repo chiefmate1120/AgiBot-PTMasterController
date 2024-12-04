@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.53" TcVersionFixed="true">
+<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.29" TcVersionFixed="true">
 	<DataTypes>
 		<DataType>
 			<Name GUID="{5C5B5A05-1109-4835-A488-5EC522387A1D}">MSCommu_InstruStatus</Name>
@@ -541,7 +541,7 @@
 			</SubItem>
 		</DataType>
 		<DataType>
-			<Name GUID="{9B134791-83A1-A3C3-43D3-88BBB1A26C9B}" AutoDeleteType="true">E_MasterArmState</Name>
+			<Name GUID="{5A4C01EA-2785-90BA-22F9-F7A8E3595674}" AutoDeleteType="true">E_MasterArmState</Name>
 			<Comment><![CDATA[ Notice: Each state has a corresponding controller, which has a fixed index.
  Add the new state at the end and update the total num]]></Comment>
 			<BitSize>16</BitSize>
@@ -611,8 +611,12 @@
 				<Enum>16</Enum>
 			</EnumInfo>
 			<EnumInfo>
+				<Text><![CDATA[MasterArmState_PrecisionTest]]></Text>
+				<Enum>17</Enum>
+			</EnumInfo>
+			<EnumInfo>
 				<Text><![CDATA[MasterArmState_totalNum]]></Text>
-				<Enum>16</Enum>
+				<Enum>17</Enum>
 			</EnumInfo>
 			<Properties>
 				<Property>
@@ -790,7 +794,7 @@
 			</SubItem>
 		</DataType>
 		<DataType>
-			<Name GUID="{4CA7831A-51B7-45EA-16E1-917F1E04FED9}" AutoDeleteType="true">ST_MasterStatus</Name>
+			<Name GUID="{B31A0384-525D-B4D2-5EC0-13E4B1C5207A}" AutoDeleteType="true">ST_MasterStatus</Name>
 			<Comment><![CDATA[ Output from master arm control task, including arm status and cartesian data
  Input to safety task and Slave controller]]></Comment>
 			<BitSize>5184</BitSize>
@@ -806,7 +810,7 @@
 			</SubItem>
 			<SubItem>
 				<Name>m_armState</Name>
-				<Type GUID="{9B134791-83A1-A3C3-43D3-88BBB1A26C9B}">E_MasterArmState</Type>
+				<Type GUID="{5A4C01EA-2785-90BA-22F9-F7A8E3595674}">E_MasterArmState</Type>
 				<ArrayInfo>
 					<LBound>1</LBound>
 					<Elements>2</Elements>
@@ -1697,7 +1701,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{0C182974-8910-4DEE-A0B7-B414028AF699}" Name="MasterController" PrjFilePath="MasterController\MasterController.plcproj" TmcFilePath="MasterController\MasterController.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="MasterController\MasterController.tmc" TmcHash="{FA3B0729-5DA2-B8C5-A5FE-F9BC64F2B30A}">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="MasterController\MasterController.tmc">
 					<Name>MasterController Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Vars VarGrpType="1">
@@ -1823,7 +1827,7 @@
 						<Var>
 							<Name>MasterArmControl.m_masterStatus</Name>
 							<Comment><![CDATA[ master robot information, including arm status and cartesian data, output to other tasks]]></Comment>
-							<Type GUID="{4CA7831A-51B7-45EA-16E1-917F1E04FED9}">ST_MasterStatus</Type>
+							<Type GUID="{B31A0384-525D-B4D2-5EC0-13E4B1C5207A}">ST_MasterStatus</Type>
 						</Var>
 						<Var>
 							<Name>MasterArmControl.m_masterJointsData</Name>
@@ -2029,7 +2033,7 @@
 						<Var>
 							<Name>SafetyCheck.m_masterStatus</Name>
 							<Comment><![CDATA[ master robot information, including arm status and cartesian data]]></Comment>
-							<Type GUID="{4CA7831A-51B7-45EA-16E1-917F1E04FED9}">ST_MasterStatus</Type>
+							<Type GUID="{B31A0384-525D-B4D2-5EC0-13E4B1C5207A}">ST_MasterStatus</Type>
 						</Var>
 						<Var>
 							<Name>SafetyCheck.m_masterJointData</Name>
@@ -2057,7 +2061,7 @@
 					</Vars>
 					<Contexts>
 						<Context>
-							<Id>0</Id>
+							<Id NeedCalleeCall="true">0</Id>
 							<Name>TaskArmControl</Name>
 							<ManualConfig>
 								<OTCID>#x02010030</OTCID>
@@ -2066,7 +2070,7 @@
 							<CycleTime>250000</CycleTime>
 						</Context>
 						<Context>
-							<Id>1</Id>
+							<Id NeedCalleeCall="true">1</Id>
 							<Name>TaskDynamic</Name>
 							<ManualConfig>
 								<OTCID>#x02010040</OTCID>
@@ -2075,7 +2079,7 @@
 							<CycleTime>1000000</CycleTime>
 						</Context>
 						<Context>
-							<Id>2</Id>
+							<Id NeedCalleeCall="true">2</Id>
 							<Name>TaskCartControl</Name>
 							<ManualConfig>
 								<OTCID>#x02010060</OTCID>
@@ -2084,7 +2088,7 @@
 							<CycleTime>1000000</CycleTime>
 						</Context>
 						<Context>
-							<Id>3</Id>
+							<Id NeedCalleeCall="true">3</Id>
 							<Name>TaskSafetyCheck</Name>
 							<ManualConfig>
 								<OTCID>#x02010050</OTCID>

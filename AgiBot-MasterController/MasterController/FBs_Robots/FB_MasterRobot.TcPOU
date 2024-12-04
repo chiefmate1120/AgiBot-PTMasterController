@@ -59,6 +59,7 @@ VAR
 	m_armPerformance :ARRAY[1..g_mArmNum] OF FB_StateCtrlPerformance;
 	m_armSelfcheck :ARRAY[1..g_mArmNum] OF FB_StateCtrlSelfcheck;
 	m_armPowerOff :ARRAY[1..g_mArmNum] OF FB_StateCtrlPowerOff;	
+	m_armPrecisionTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlPrecisionTest;
 	
 	// specialized endoscope controller
 	m_scopeCtrl :FB_EndoscopeController;
@@ -328,7 +329,8 @@ FOR i:=1 TO g_mArmNum DO
 	m_armCtrlFactory[i,MasterArmState_Performance] := m_armPerformance[i];
 	m_armCtrlFactory[i,MasterArmState_Selfcheck] := m_armSelfcheck[i];
 	m_armCtrlFactory[i,MasterArmState_PowerOff] := m_armPowerOff[i];
-
+	m_armCtrlFactory[i,MasterArmState_PrecisionTest] := m_armPrecisionTest[i];
+	
 	// assign controller
 	m_armCtrl[i]:=m_armCtrlFactory[i,m_masterArmState[i]];
 	m_armCtrl[i].Init(m_masterArms[i],m_armCtrlCmds[i]);
@@ -566,18 +568,24 @@ FOR i:=1 TO g_mArmNum DO
 		
 		//MasterSlave
 		MasterArmState_MasterSlave:
-			// to standdy
-			IF  (SlaveArmState_InstruReady <> m_instruArmState[i] AND SlaveArmState_MasterSlave <> m_instruArmState[i])
-				OR SlaveArmState_ScopeReady <> m_scopeArmState OR NOT(i_masterInputDataPool.m_cartStatus.m_surgonReady)
-				OR m_armSwitchFlag[i] THEN
-				m_nextMasterArmState[i]:=MasterArmState_Standby;
-			// to clutch
-			ELSIF enableClutch THEN
-				m_nextMasterArmState[i] := MasterArmState_Clutch; 
-			//to standby
-			ELSIF NOT m_slaveOnLine THEN
-				m_nextMasterArmState[i] := MasterArmState_Standby;
-			END_IF
+			IF (GVL_AccuracyTestVar.g_MSPrecisionTest[i]=FALSE) THEN							
+				// to standdy
+				IF  (SlaveArmState_InstruReady <> m_instruArmState[i] AND SlaveArmState_MasterSlave <> m_instruArmState[i])
+					OR SlaveArmState_ScopeReady <> m_scopeArmState OR NOT(i_masterInputDataPool.m_cartStatus.m_surgonReady)
+					OR m_armSwitchFlag[i] THEN
+					m_nextMasterArmState[i]:=MasterArmState_Standby;
+				// to clutch
+				ELSIF enableClutch THEN
+					m_nextMasterArmState[i] := MasterArmState_Clutch; 
+				//to standby
+				ELSIF NOT m_slaveOnLine THEN
+					m_nextMasterArmState[i] := MasterArmState_Standby;
+				END_IF
+		ELSE
+				IF enableClutch THEN
+					m_nextMasterArmState[i] := MasterArmState_Clutch; 
+				END_IF	
+		END_IF							
 			
 		//Clutch
 		MasterArmState_Clutch:
@@ -638,7 +646,23 @@ FOR i:=1 TO g_mArmNum DO
 				m_armSelfCheckFinshedFlag[i] := FALSE;
 				m_nextMasterArmState[i]:=MasterArmState_Init;
 			END_IF
+			
+		//MasterArmState_PrecisionTest
+		MasterArmState_PrecisionTest:
+			IF (GVL_AccuracyTestVar.g_enterPrecisionTestMode[i]=FALSE) THEN
+				m_nextMasterArmState[i]:=MasterArmState_Standby;
+			END_IF
 	END_CASE
+	
+	// to precision test
+	IF (GVL_AccuracyTestVar.g_enterPrecisionTestMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_PrecisionTest) THEN
+		m_nextMasterArmState[i] := MasterArmState_PrecisionTest;
+	END_IF
+	
+	// to MS precision test
+	IF (GVL_AccuracyTestVar.g_MSPrecisionTest[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_MasterSlave) THEN
+		m_nextMasterArmState[i] := MasterArmState_MasterSlave;
+	END_IF	
 	
 	// arm disable
 	IF i_masterInputDataPool.m_UIData.m_masterArmDisableFlag[i] THEN
@@ -749,6 +773,7 @@ END_FOR]]></ST>
       <LineId Id="73" Count="0" />
       <LineId Id="72" Count="0" />
       <LineId Id="12" Count="0" />
+      <LineId Id="159" Count="0" />
       <LineId Id="101" Count="0" />
       <LineId Id="125" Count="2" />
       <LineId Id="13" Count="0" />
@@ -806,7 +831,23 @@ END_FOR]]></ST>
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.stateMachine">
-      <LineId Id="845" Count="198" />
+      <LineId Id="845" Count="117" />
+      <LineId Id="1075" Count="0" />
+      <LineId Id="963" Count="11" />
+      <LineId Id="1077" Count="0" />
+      <LineId Id="1079" Count="1" />
+      <LineId Id="1078" Count="0" />
+      <LineId Id="975" Count="0" />
+      <LineId Id="1072" Count="0" />
+      <LineId Id="976" Count="58" />
+      <LineId Id="1064" Count="0" />
+      <LineId Id="1066" Count="3" />
+      <LineId Id="1065" Count="0" />
+      <LineId Id="1035" Count="1" />
+      <LineId Id="1056" Count="7" />
+      <LineId Id="1052" Count="0" />
+      <LineId Id="1055" Count="0" />
+      <LineId Id="1037" Count="6" />
       <LineId Id="225" Count="0" />
       <LineId Id="203" Count="12" />
       <LineId Id="2" Count="0" />

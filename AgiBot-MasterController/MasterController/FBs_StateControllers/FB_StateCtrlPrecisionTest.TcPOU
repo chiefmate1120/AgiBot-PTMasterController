@@ -1,0 +1,1092 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_StateCtrlPrecisionTest" Id="{70f647e6-7c05-4a0c-b17e-4c9a147b0142}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StateCtrlPrecisionTest EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	//arm id
+	m_armId:INT;	
+	
+	//Precision calculation pre matrix
+	m_frontPose:ST_Frame;
+	
+	//Precision calculation post matrix
+	m_endPose:ST_Frame;
+	
+	//single arm pose
+	m_masterArmPose:ST_Frame;
+	
+	//control mode:  1---Joint space single point motion   2---Continuous joint space motion   3---Single point motion in operating space
+	//4---Continuous motion in operating space   5---precision test   6---back to origin position   7---maxmum workspace test
+	m_controlMode:INT:=1;
+	
+	//test step
+	m_testStep:INT;
+	
+	//DH joint position
+	m_initDHPos,m_startDHPos,m_endDHPos :Vec7d;
+	//m_startDHPos:Vec7d;
+	
+	//startJntPos,endJntPos :Vec8d;
+	m_initJntPos,m_startJntPos,m_endJntPos :Vec7d;
+	
+	//Trajectory planner
+	m_Planner: FB_TrajMoveJ;
+	
+	//motion parameters
+	m_maxjntVel,m_maxjntAcc,m_maxjntJerk:Vec7d;
+	
+	//time
+	m_time:LREAL;
+	
+	//joint motion incresement
+	m_jntInc:Vec7d;
+	
+	//moiton parameters
+	m_jntMotionDir:Vec7i:=[0,0,0,0,0,0,0];
+	m_jntVel:Vec7d:=[0.1,0.1,0.01,0.2,0.2,0.2,0.2];
+	
+	//motion start
+	m_startMotion:BOOL;
+	m_startMotionLast:BOOL;
+	
+	//target spatial position
+	m_targetSpatialPos:ST_Frame;
+	
+	//spatial motion parameters
+	m_spatialMotionDir:Vec6i;
+	m_spatialVel:Vec6d;
+	
+	//spatial position incresement
+	m_spatialPosInc:Vec6d;
+	
+	//initial spatial position
+	m_initSpatialPos:ST_Frame;
+	
+	//target position variables
+	m_posInc:Vec3d;
+	m_axis:Vec3d;
+	m_angle:LREAL;
+	
+	//accuracy test variables
+	m_pointNum:INT;
+	m_pointSum:INT;
+	m_motionCycleNum:INT;
+	
+	//Precision testing target position
+	m_targetPosArr:ARRAY[1..GVL_AccuracyTest.g_testPointNum] OF ST_Frame;
+	m_targetPosVecArr:ARRAY[1..GVL_AccuracyTest.g_testPointNum,1..7] OF LREAL;
+	
+	//Maximum workspace testing target position
+	m_workspacePosArr:ARRAY[1..GVL_AccuracyTest.g_testPointNum] OF ST_Frame;
+	m_workspacePosVecArr:ARRAY[1..GVL_AccuracyTest.g_testPointNum,1..7] OF LREAL;
+	
+	//Has the inverse kinematics been successfully solved
+	m_IKSucceed:BOOL;	
+	
+	//original joint position
+	m_originJntPos:Vec7d;
+	
+	//inverse kinematic idx
+	m_IK:INT;
+	
+	//counter
+	m_counter:LREAL;
+	
+	//motion status
+	m_motionFinished:BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="accuracyTest" Id="{afebe618-51ed-4fba-83b4-0fb74d6b8114}">
+      <Declaration><![CDATA[METHOD accuracyTest : BOOL
+VAR_INPUT
+	i_masterArm :FB_MasterArm;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+CASE m_testStep OF
+	0: //data initial		
+		m_targetSpatialPos:=m_targetPosArr[m_pointNum];
+		activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);		
+		m_IKSucceed:=inverseKinematic(i_masterArm:= i_masterArm, i_q4:= m_startDHPos[4], i_targetFrame:= m_targetSpatialPos, o_targetJntPos=> m_endJntPos);
+		IF (m_IKSucceed=FALSE) THEN
+			m_testStep:=60;
+		END_IF
+		
+		m_startJntPos:=i_masterArm.curJntPos;	
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=60;
+		ELSE
+			m_time:=0; m_testStep:=10;
+		END_IF		
+		
+		
+	10: //start the motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=15;
+		END_IF
+		
+		
+	15: //Waiting for confirmation and measurement
+		IF (GVL_AccuracyTestVar.g_nextStep[m_armId]=TRUE) THEN
+			GVL_AccuracyTestVar.g_nextStep[m_armId]:=FALSE;
+			m_testStep:=30;
+		END_IF
+	
+		
+	30: //back to origin point
+		m_startJntPos:=i_masterArm.curJntPos;
+		m_endJntPos:=m_originJntPos;
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=60;
+		ELSE
+			m_time:=0; m_testStep:=40;
+		END_IF
+		
+		
+	40: //start motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=50;
+		END_IF
+				
+				
+	50: //Record the motion cycle
+		m_pointNum:=m_pointNum+1;
+		IF (m_pointNum>m_pointSum) THEN
+			m_pointNum:=1;
+			m_motionCycleNum:=m_motionCycleNum+1;
+			IF (m_motionCycleNum>GVL_AccuracyTest.g_testMotCycNum) THEN
+				m_testStep:=60;
+			ELSE
+				m_testStep:=0;
+			END_IF
+		ELSE
+			m_testStep:=0;
+		END_IF
+		
+	
+	60: //stop
+		m_testStep:=-1;	
+		m_motionFinished:=TRUE;
+END_CASE
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="activeJnt2DH" Id="{50536e1b-5ce0-4dc5-b11d-71548f6ebe77}">
+      <Declaration><![CDATA[METHOD activeJnt2DH : BOOL
+VAR_INPUT
+	i_activeJntPos:Vec7d;
+END_VAR
+
+VAR_OUTPUT
+	o_DHJntPos:Vec7d;
+END_VAR
+
+VAR
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+o_DHJntPos:=i_activeJntPos;
+o_DHJntPos[3]:=i_activeJntPos[3]-i_activeJntPos[2]; //q8 = q3+q2-----q3=q8-q2
+o_DHJntPos[4]:=i_activeJntPos[4]+i_activeJntPos[3]-i_activeJntPos[2]-pi/2; //q4DH=q4motor+q8-q2-90; ----q4motor=q4DH+q2-q8+90
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="back2origin" Id="{65a779a8-38b1-4897-9383-89c538a91bfc}">
+      <Declaration><![CDATA[METHOD back2origin : BOOL
+VAR_INPUT
+	i_masterArm :FB_MasterArm;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE m_testStep OF
+	0: //Trajectory parameter initialization
+		m_startJntPos:=i_masterArm.curJntPos;
+		m_endJntPos:=m_originJntPos;
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=20;
+		ELSE
+			m_time:=0; m_testStep:=10;
+		END_IF		
+		
+		
+	10: //start motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=20;
+		END_IF		
+		
+		
+	20: //end the motion
+		m_testStep:=-1;		
+		m_motionFinished:=TRUE;
+END_CASE
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos" Id="{0fa515f5-8ed2-411f-8a91-980e3960824a}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR
+	i:INT;
+	tmpFrame:ST_Frame;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//Basic information update---front pose frame and end pose frame
+m_frontPose:=i_shoulderPose;
+m_endPose.m_pos:=g_zeroVec3d;  m_endPose.m_rot:=g_eye3d;
+m_masterArmPose:=i_masterArm.curCartPose;
+
+
+//copy to global variables
+GVL_AccuracyTestVar.g_frontPose[m_armId]:=m_frontPose;
+GVL_AccuracyTestVar.g_endPose[m_armId]:=m_endPose;
+GVL_AccuracyTestVar.g_masterArmPose[m_armId]:=m_masterArmPose;
+
+
+//Initialization of motion parameters
+m_startMotion:=GVL_AccuracyTestVar.g_startMotion[m_armId];
+IF (m_startMotionLast=FALSE) AND (m_startMotion=TRUE) THEN
+	motionParamInit(i_masterArm);
+END_IF
+m_startMotionLast:=m_startMotion;
+
+
+//Select different programs based on different control modes
+IF (m_startMotion=TRUE) THEN
+	IF (m_controlMode=1) THEN
+		//jntSinglePoint(i_masterArm);	
+		
+	ELSIF (m_controlMode=2) THEN
+		jntContinuousPoint(i_masterArm);	
+		
+	ELSIF (m_controlMode=3) THEN
+		//spaceSinglePoint(i_masterArm);	
+		
+	ELSIF (m_controlMode=4) THEN
+		spaceContinuousPoint(i_masterArm);
+		
+	ELSIF (m_controlMode=5) THEN
+		accuracyTest(i_masterArm);
+		
+	ELSIF (m_controlMode=6) THEN
+		back2origin(i_masterArm);
+		
+	ELSIF (m_controlMode=7) THEN
+		maxSpaceTest(i_masterArm);
+	END_IF
+END_IF
+
+
+//show the motion step
+IF (m_controlMode=5) OR (m_controlMode=7) THEN
+	GVL_AccuracyTestVar.g_curStep[m_armId]:=m_testStep;
+	GVL_AccuracyTestVar.g_testPointId[m_armId]:=m_pointNum;
+	GVL_AccuracyTestVar.g_testCycleId[m_armId]:=m_motionCycleNum;
+ELSE
+	GVL_AccuracyTestVar.g_curStep[m_armId]:=-1;
+	GVL_AccuracyTestVar.g_testPointId[m_armId]:=0;
+	GVL_AccuracyTestVar.g_testCycleId[m_armId]:=0;
+END_IF
+
+
+
+// feedback the motion status
+IF (m_controlMode=1) OR (m_controlMode=3) OR (m_controlMode=5) OR (m_controlMode=6) OR (m_controlMode=7) THEN
+	IF (m_testStep=-1) AND (m_motionFinished=TRUE) THEN
+		m_controlMode:=0;
+		GVL_AccuracyTestVar.g_controlMode[m_armId]:=0;	
+	END_IF
+ELSIF (m_controlMode=2) OR (m_controlMode=4) THEN
+	IF (m_startMotion=FALSE) THEN
+		m_controlMode:=0;
+		GVL_AccuracyTestVar.g_controlMode[m_armId]:=0;
+	END_IF
+END_IF
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="DH2activeJnt" Id="{58552599-1e5c-4b5a-adea-35c811ab0e69}">
+      <Declaration><![CDATA[METHOD DH2activeJnt : BOOL
+VAR_INPUT
+	i_DHJntPos:Vec7d;
+END_VAR
+VAR_OUTPUT
+	o_activeJntPos:Vec7d;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+o_activeJntPos:=i_DHJntPos;
+o_activeJntPos[3]:=i_DHJntPos[3]+i_DHJntPos[2]; //  q8 = q3+q2
+o_activeJntPos[4]:=i_DHJntPos[4]+i_DHJntPos[2]-o_activeJntPos[3]+pi/2; //q4DH=q4motor+q8-q2-90; ----q4motor=q4DH+q2-q8+90
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{9671ba1f-3786-4353-99b0-532f4e991b3d}">
+      <Declaration><![CDATA[// override this function in each exact controller
+// NOTICE: set joint control mode here, and do some initialization if needed
+METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+
+//variable initialization
+m_armId:=i_masterArm.armIdx;
+
+//init IK idx
+IF (m_armId=1) THEN
+	m_IK:=4;
+ELSE
+	m_IK:=3;
+END_IF
+
+//motion parameters initial
+motionParamInit(i_masterArm);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="inverseKinematic" Id="{77e37168-bd57-4505-973d-e5e6112185cf}">
+      <Declaration><![CDATA[METHOD inverseKinematic : BOOL
+VAR_INPUT	
+	i_masterArm :FB_MasterArm;
+	i_q4:LREAL;
+	i_targetFrame:ST_Frame;
+END_VAR
+
+VAR_OUTPUT
+	o_targetJntPos:Vec7d;
+END_VAR
+
+VAR
+	i:INT;
+	IKSucceed:BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//Call inverse kinematics
+IKSucceed:=i_masterArm.inverseKinematic(q4:= i_q4, solution_ID:= m_IK, i_curCartPose:= i_targetFrame, r_jntPos:= o_targetJntPos);
+IF (IKSucceed=FALSE) THEN
+	inverseKinematic:=FALSE;
+	RETURN;
+END_IF
+
+
+//Constrained solution range
+//For joint 5, the initial position is at 180 degrees, and the range of motion is different from the output range of the atan2 function. Here, the solution results are standardized
+minimumDistMot(i_current:= pi, i_target:= o_targetJntPos[5], o_target=> o_targetJntPos[5]);
+
+
+//Determine whether the solution result is appropriate
+FOR i:=1 TO g_mJntNum BY 1 DO
+	IF (o_targetJntPos[i]>GVL_ArmJointParameters.g_maxJntPos[m_armId,i]) OR (o_targetJntPos[i]<GVL_ArmJointParameters.g_minJntPos[m_armId,i]) THEN
+		inverseKinematic:=FALSE;
+		RETURN;
+	END_IF
+END_FOR
+inverseKinematic:=TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="jntContinuousPoint" Id="{c90c65c0-8df3-44f1-bc0e-2550eda41a32}">
+      <Declaration><![CDATA[METHOD jntContinuousPoint : BOOL
+VAR_INPUT
+	i_masterArm :FB_MasterArm;
+END_VAR
+
+VAR
+	i:INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//joint motion incresement calculation
+FOR i:=1 TO g_mJntNum BY 1 DO
+	m_jntInc[i]:=m_jntInc[i]+m_jntMotionDir[i]*m_jntVel[i]*g_armCtrlCycleTime;
+END_FOR
+
+//determine DH joint position
+vecAdd(m_initDHPos,m_jntInc,m_endDHPos);
+DH2activeJnt(i_DHJntPos:= m_endDHPos, o_activeJntPos=> m_endJntPos);
+m_cmdJntPos:=m_endJntPos;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="jntSinglePoint" Id="{b52fbfef-81d7-4e11-ba89-b951ebd949dd}">
+      <Declaration><![CDATA[METHOD jntSinglePoint : BOOL
+VAR_INPUT
+	i_masterArm :FB_MasterArm;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE m_testStep OF
+	0: //Trajectory parameter initialization
+		m_startJntPos:=i_masterArm.curJntPos;
+		m_endJntPos:=GVL_AccuracyTestVar.g_targetJntPos[m_armId];		
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=20;
+		ELSE
+			m_time:=0; m_testStep:=10;
+		END_IF
+		
+		
+	10: //start motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=20;
+		END_IF		
+		
+		
+	20: //end the motion
+		m_testStep:=-1;
+		m_motionFinished:=TRUE;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="maxSpaceTest" Id="{b743c633-b946-4183-8086-7c964c58d1ae}">
+      <Declaration><![CDATA[METHOD maxSpaceTest : BOOL
+VAR_INPUT
+	i_masterArm :FB_MasterArm;
+END_VAR
+
+VAR
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE m_testStep OF
+	0: //data initial
+		m_targetSpatialPos:=m_workspacePosArr[m_pointNum];
+		activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);		
+		m_IKSucceed:=inverseKinematic(i_masterArm:= i_masterArm, i_q4:= m_startDHPos[4], i_targetFrame:= m_targetSpatialPos, o_targetJntPos=> m_endJntPos);
+		IF (m_IKSucceed=FALSE) THEN
+			m_testStep:=60;
+		END_IF
+		
+		m_startJntPos:=i_masterArm.curJntPos;	
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=60;
+		ELSE
+			m_time:=0; m_testStep:=10;
+		END_IF
+		
+		
+	10: //start the motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=15;
+		END_IF
+		
+		
+	15: //Waiting for confirmation and measurement
+		IF (GVL_AccuracyTestVar.g_nextStep[m_armId]=TRUE) THEN
+			GVL_AccuracyTestVar.g_nextStep[m_armId]:=FALSE;
+			m_testStep:=30;
+		END_IF
+		
+		
+	30: //back to origin point
+		m_startJntPos:=i_masterArm.curJntPos;
+		m_endJntPos:=m_originJntPos;
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=60;
+		ELSE
+			m_time:=0; m_testStep:=40;
+		END_IF
+		
+		
+	40: //start motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=50;
+		END_IF
+		
+		
+	50: //Record the motion cycle
+		m_pointNum:=m_pointNum+1;
+		IF (m_pointNum>m_pointSum) THEN
+			m_pointNum:=1;
+			m_motionCycleNum:=m_motionCycleNum+1;
+			IF (m_motionCycleNum>GVL_AccuracyTest.g_testMotCycNum) THEN
+				m_testStep:=60;
+			ELSE
+				m_testStep:=0;
+			END_IF
+		ELSE
+			m_testStep:=0;
+		END_IF
+				
+			
+	60: //stop
+		m_testStep:=-1;
+		m_motionFinished:=TRUE;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="minimumDistMot" Id="{5a0f1a70-9b08-4cd3-8346-069ed64a6a23}">
+      <Declaration><![CDATA[METHOD minimumDistMot : BOOL
+VAR_INPUT
+	i_current:LREAL;
+	i_target:LREAL;
+END_VAR
+VAR_OUTPUT
+	o_target:LREAL;
+END_VAR
+VAR
+	p1,p2,p3,p4:LREAL;
+	d1,d2,d3:LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+p1:=i_current;
+
+p2:=i_target;            d1:=ABS(p2-p1);
+p3:=i_target+2*pi;      d2:=ABS(p3-p1);
+p4:=i_target-2*pi;       d3:=ABS(p4-p1);
+
+IF (d1<d2 AND d1<d3) THEN
+	o_target:=p2;
+ELSIF (d2<d1 AND d2<d3) THEN
+	o_target:=p3;
+ELSE
+	o_target:=p4;
+END_IF
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="motionParamInit" Id="{307213d8-b11a-481a-bd29-12db6287c686}">
+      <Declaration><![CDATA[METHOD motionParamInit : BOOL
+VAR_INPUT
+	// arm data
+	i_masterArm:FB_MasterArm;
+END_VAR
+VAR
+	i,j:INT;
+	poseVec:Vec6d;
+	originPose:ST_Frame;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_testStep:=0;
+m_time:=0;
+m_controlMode:=GVL_AccuracyTestVar.g_controlMode[m_armId];
+m_counter:=0;
+m_motionFinished:=FALSE;
+
+
+//joint continuous motion parameters
+activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_initDHPos);
+m_jntInc:=g_zeroVec7d;
+m_jntMotionDir:=GVL_AccuracyTestVar.g_jntMotionDir[m_armId];
+m_jntVel:=GVL_AccuracyTestVar.g_jntVel[m_armId];
+FOR i:=1 TO 7 BY 1 DO
+	m_jntVel[i]:=LIMIT(-0.1,m_jntVel[i],0.1);
+END_FOR
+
+
+//spatial continuous motion parameters
+m_spatialMotionDir:=GVL_AccuracyTestVar.g_spatialMotionDir[m_armId];
+m_spatialVel:=GVL_AccuracyTestVar.g_spatialVel[m_armId];
+m_initSpatialPos:=i_masterArm.curCartPose;
+m_spatialPosInc:=g_zeroVec6d;
+FOR i:=1 TO 3 BY 1 DO
+	m_spatialVel[i]:=LIMIT(-0.01,m_spatialVel[i],0.01);
+END_FOR
+FOR i:=4 TO 6 BY 1 DO
+	m_spatialVel[i]:=LIMIT(-0.1,m_spatialVel[i],0.1);
+END_FOR
+
+
+//velocity---acceleration---jerk
+vecMultiNum(GVL_ArmJointParameters.g_maxJntVel,0.2,m_maxjntVel);
+vecMultiNum(m_maxjntVel,3,m_maxjntAcc);
+vecMultiNum(m_maxjntAcc,3,m_maxjntJerk);
+
+
+//accuracy test variables
+m_pointNum:=1;
+m_pointSum:=8;
+m_motionCycleNum:=1;
+
+
+//original joint position
+FOR i:=1 TO g_mJntNum BY 1 DO
+	m_originJntPos[i]:=GVL_ArmJointCaliData.g_linkEncCaliJntPos[m_armId,i];
+END_FOR
+
+
+//test point record
+IF (m_armId=1) THEN
+	m_targetPosVecArr:=GVL_AccuracyTest.g_armPoseA1;
+	m_workspacePosVecArr:=GVL_AccuracyTest.g_maxSpaceArm1;
+ELSE
+	m_targetPosVecArr:=GVL_AccuracyTest.g_armPoseA2;
+	m_workspacePosVecArr:=GVL_AccuracyTest.g_maxSpaceArm2;
+END_IF
+
+
+//Accuracy testing target position
+FOR i:=1 TO GVL_AccuracyTest.g_testPointNum BY 1 DO
+	FOR j:=1 TO 6 BY 1 DO
+		poseVec[j]:=m_targetPosVecArr[i,j];
+	END_FOR
+	xyzrpy2Frame(i_posVec:= poseVec, o_frame=> m_targetPosArr[i]);
+	i_masterArm.forwardKinematic(m_originJntPos,originPose);
+	m_targetPosArr[i].m_rot:=originPose.m_rot;
+END_FOR
+
+
+//Maximum workspace testing target position
+FOR i:=1 TO GVL_AccuracyTest.g_testPointNum BY 1 DO
+	FOR j:=1 TO 6 BY 1 DO
+		poseVec[j]:=m_workspacePosVecArr[i,j];
+	END_FOR
+	xyzrpy2Frame(i_posVec:= poseVec, o_frame=> m_workspacePosArr[i]);
+	i_masterArm.forwardKinematic(m_originJntPos,originPose);
+	m_workspacePosArr[i].m_rot:=originPose.m_rot;
+END_FOR
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="rpy2rot" Id="{2a77c0e7-fd72-47f1-a5e9-51bdfe702e1b}">
+      <Declaration><![CDATA[METHOD rpy2rot : BOOL
+VAR_INPUT
+	i_rpy:Vec3d;
+END_VAR
+
+VAR_OUTPUT
+	o_rot:Mat3d;
+END_VAR
+
+VAR
+	rot_x,rot_y,rot_z:LREAL;
+	alpha,beta,gama:LREAL;
+	matrix_out:ARRAY[1..3,1..3] OF LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+alpha:=rot_z;
+beta:=rot_y;
+gama:=rot_x;
+
+matrix_out[1,1]:=COS(alpha)*COS(beta);
+matrix_out[2,1]:=SIN(alpha)*COS(beta);
+matrix_out[3,1]:=-SIN(beta);
+
+matrix_out[1,2]:=COS(alpha)*SIN(beta)*SIN(gama)-SIN(alpha)*COS(gama);
+matrix_out[2,2]:=SIN(alpha)*SIN(beta)*SIN(gama)+COS(alpha)*COS(gama);
+matrix_out[3,2]:=COS(beta)*SIN(gama);
+
+matrix_out[1,3]:=COS(alpha)*SIN(beta)*COS(gama)+SIN(alpha)*SIN(gama);
+matrix_out[2,3]:=SIN(alpha)*SIN(beta)*COS(gama)-COS(alpha)*SIN(gama);
+matrix_out[3,3]:=COS(beta)*COS(gama);
+
+o_rot:=matrix_out;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="spaceContinuousPoint" Id="{6d82d01c-ca27-4e66-8af1-0fba9fec3714}">
+      <Declaration><![CDATA[METHOD spaceContinuousPoint : BOOL
+VAR_INPUT
+	i_masterArm :FB_MasterArm;
+END_VAR
+
+VAR
+	i:INT;
+	rotMatrix:Mat3d;
+	tmpFrame:ST_Frame;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+//spatial motion incresement calculation
+FOR i:=1 TO 6 BY 1 DO
+	m_spatialPosInc[i]:=m_spatialPosInc[i]+m_spatialMotionDir[i]*m_spatialVel[i]*g_armCtrlCycleTime;
+END_FOR
+
+
+//Calculate the target pose matrix
+FOR i:=1 TO 3 BY 1 DO
+	m_posInc[i]:=m_spatialPosInc[i];
+	m_axis[i]:=m_spatialMotionDir[i+3]; //modify1118
+END_FOR
+m_angle:=norm(m_spatialPosInc);
+tmpFrame.m_pos:=m_posInc;
+tmpFrame.m_rot:=angAxis2Rot(m_angle,m_axis);
+m_targetSpatialPos:=transform(m_initSpatialPos,tmpFrame);
+
+
+//Inverse kinematics solution of surgical arm
+activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);
+m_IKSucceed:=inverseKinematic(i_masterArm:= i_masterArm, i_q4:= m_startDHPos[4], i_targetFrame:= m_targetSpatialPos, o_targetJntPos=> m_endJntPos);
+IF (m_IKSucceed=FALSE) THEN
+	RETURN;
+END_IF
+m_cmdJntPos:=m_endJntPos;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="spaceSinglePoint" Id="{6f6e85b5-3e0b-492e-b9bb-00296dfc14b0}">
+      <Declaration><![CDATA[METHOD spaceSinglePoint : BOOL
+VAR_INPUT
+	i_masterArm :FB_MasterArm;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+CASE m_testStep OF
+	0: //Trajectory parameter initialization
+		m_targetSpatialPos:=GVL_AccuracyTestVar.g_targetSpatialPos[m_armId];
+		activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);		
+		m_IKSucceed:=inverseKinematic(i_masterArm:= i_masterArm, i_q4:= m_startDHPos[4], i_targetFrame:= m_targetSpatialPos, o_targetJntPos=> m_endJntPos);
+		IF (m_IKSucceed=FALSE) THEN
+			m_testStep:=20;
+		END_IF
+		
+		m_startJntPos:=i_masterArm.curJntPos;
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=20;
+		ELSE
+			m_time:=0; m_testStep:=10;
+		END_IF		
+		
+		
+	10: //start motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=20;
+		END_IF		
+		
+		
+	20: //end the motion
+		m_testStep:=-1;
+		m_motionFinished:=TRUE;
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="xyzrpy2Frame" Id="{386a3d45-d2c1-4c32-a59e-a596651a6100}">
+      <Declaration><![CDATA[METHOD xyzrpy2Frame : BOOL
+VAR_INPUT
+	i_posVec:Vec6d;
+END_VAR
+
+VAR_OUTPUT
+	o_frame:ST_Frame;
+END_VAR
+
+VAR
+	i:INT;
+	rpyVec:Vec3d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+FOR i:=1 TO 3 BY 1 DO
+	o_frame.m_pos[i]:=i_posVec[i];
+	rpyVec[i]:=i_posVec[i+3];
+END_FOR
+rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlPrecisionTest">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.accuracyTest">
+      <LineId Id="7" Count="0" />
+      <LineId Id="13" Count="3" />
+      <LineId Id="61" Count="1" />
+      <LineId Id="19" Count="4" />
+      <LineId Id="25" Count="14" />
+      <LineId Id="63" Count="1" />
+      <LineId Id="67" Count="1" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="81" Count="15" />
+      <LineId Id="77" Count="1" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="41" Count="9" />
+      <LineId Id="101" Count="1" />
+      <LineId Id="51" Count="4" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.activeJnt2DH">
+      <LineId Id="23" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="24" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.back2origin">
+      <LineId Id="7" Count="4" />
+      <LineId Id="14" Count="17" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="32" Count="2" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.calcCmdJntPos">
+      <LineId Id="12" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="32" Count="3" />
+      <LineId Id="22" Count="3" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="39" Count="4" />
+      <LineId Id="37" Count="1" />
+      <LineId Id="44" Count="19" />
+      <LineId Id="79" Count="2" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="83" Count="2" />
+      <LineId Id="88" Count="1" />
+      <LineId Id="107" Count="1" />
+      <LineId Id="91" Count="1" />
+      <LineId Id="109" Count="1" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="159" Count="1" />
+      <LineId Id="165" Count="1" />
+      <LineId Id="169" Count="1" />
+      <LineId Id="168" Count="0" />
+      <LineId Id="157" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="163" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.DH2activeJnt">
+      <LineId Id="26" Count="1" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.init">
+      <LineId Id="12" Count="4" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="19" Count="2" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="17" Count="1" />
+      <LineId Id="11" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.inverseKinematic">
+      <LineId Id="26" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="28" Count="1" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="34" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.jntContinuousPoint">
+      <LineId Id="7" Count="0" />
+      <LineId Id="10" Count="6" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.jntSinglePoint">
+      <LineId Id="7" Count="1" />
+      <LineId Id="19" Count="2" />
+      <LineId Id="24" Count="4" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="29" Count="8" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.maxSpaceTest">
+      <LineId Id="8" Count="0" />
+      <LineId Id="15" Count="2" />
+      <LineId Id="57" Count="1" />
+      <LineId Id="20" Count="19" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="63" Count="3" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="99" Count="15" />
+      <LineId Id="95" Count="1" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="41" Count="9" />
+      <LineId Id="125" Count="1" />
+      <LineId Id="51" Count="1" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="54" Count="1" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.minimumDistMot">
+      <LineId Id="6" Count="0" />
+      <LineId Id="17" Count="13" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.motionParamInit">
+      <LineId Id="10" Count="2" />
+      <LineId Id="122" Count="1" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="16" Count="2" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="19" Count="5" />
+      <LineId Id="140" Count="1" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="143" Count="1" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="25" Count="4" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="30" Count="4" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="67" Count="1" />
+      <LineId Id="70" Count="2" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="78" Count="1" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="36" Count="6" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="45" Count="1" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="97" Count="6" />
+      <LineId Id="94" Count="2" />
+      <LineId Id="93" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.rpy2rot">
+      <LineId Id="7" Count="0" />
+      <LineId Id="21" Count="7" />
+      <LineId Id="30" Count="2" />
+      <LineId Id="34" Count="3" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="8" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.spaceContinuousPoint">
+      <LineId Id="7" Count="0" />
+      <LineId Id="12" Count="4" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="18" Count="9" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="28" Count="1" />
+      <LineId Id="58" Count="1" />
+      <LineId Id="32" Count="2" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.spaceSinglePoint">
+      <LineId Id="7" Count="0" />
+      <LineId Id="10" Count="4" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="16" Count="4" />
+      <LineId Id="22" Count="17" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="40" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlPrecisionTest.xyzrpy2Frame">
+      <LineId Id="7" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="26" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

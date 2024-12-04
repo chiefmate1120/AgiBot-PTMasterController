@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="MasterArmControl" Id="{6192c11b-cd6e-4883-b627-958acfb9caf3}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MasterArmControl
 VAR
@@ -65,8 +65,53 @@ masterOutputDataCast(m_masterRobot.m_shoulderPoseInMonitor, m_masterStatus, m_ma
 // output to UI
 UIOutputProcess();
 
-m_codeTime(START:=FALSE);]]></ST>
+m_codeTime(START:=FALSE);
+
+HmiMid();]]></ST>
     </Implementation>
+    <Method Name="HmiMid" Id="{9a887a90-c99e-4390-abdb-ad0ecd202ca8}">
+      <Declaration><![CDATA[METHOD HmiMid : BOOL
+VAR_INPUT
+END_VAR
+VAR
+	I : INT;
+	iArm : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR I:=1 TO 2  DO
+	FOR iARM:=1 TO 8 DO 
+		A1_Arm1Mode_TRIG[i,iARM](CLK:=A1_Arm1Mode[I,iARM],Q=>);
+		IF A1_Arm1Mode_TRIG[i,iARM].Q THEN 
+			A1_Arm1Mode:=A1_Arm1Mode_Mid;
+			GVL_AccuracyTestVar.g_controlMode[i]:=iARM;
+			A1_Arm1Mode[i,iARM]:=TRUE;
+		END_IF
+		A1_Arm1Mode_F_TRIG[i,iARM](CLK:=A1_Arm1Mode[I,iARM]);
+	END_FOR
+	
+	IF A1_Arm1Mode_F_TRIG[i,2].Q OR A1_Arm1Mode_F_TRIG[i,4].Q THEN
+		GVL_AccuracyTestVar.g_controlMode[i]:=0;
+		A1_Arm1Mode:=A1_Arm1Mode_Mid;
+	END_IF
+END_FOR
+
+
+A1_Arm1ModeL:=A1_Arm1Mode_Mid;
+A1_Arm1ModeL[1,GVL_AccuracyTestVar.g_controlMode[1]]:=TRUE;
+A1_Arm1ModeL[2,GVL_AccuracyTestVar.g_controlMode[2]]:=TRUE;
+
+
+FOR i:=1 TO 2  DO
+	IF GVL_AccuracyTestVar.g_controlMode[i]<>0 THEN
+		GVL_AccuracyTestVar.g_startMotion[i]:=TRUE;
+	ELSE
+		GVL_AccuracyTestVar.g_startMotion[i]:=FALSE;
+	END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="masterOutputDataCast" Id="{688f8323-8b5a-4cc7-b4b2-cb5f74424c3f}">
       <Declaration><![CDATA[// convert from local ST_MasterStatus for control to MSCommu_MasterStatus for master-slave communication
 METHOD masterOutputDataCast : BOOL
@@ -254,6 +299,24 @@ END_IF]]></ST>
       <LineId Id="214" Count="0" />
       <LineId Id="177" Count="0" />
       <LineId Id="87" Count="0" />
+      <LineId Id="248" Count="0" />
+      <LineId Id="247" Count="0" />
+    </LineIds>
+    <LineIds Name="MasterArmControl.HmiMid">
+      <LineId Id="156" Count="7" />
+      <LineId Id="165" Count="0" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="189" Count="2" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="172" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="173" Count="2" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="176" Count="6" />
+      <LineId Id="103" Count="0" />
     </LineIds>
     <LineIds Name="MasterArmControl.masterOutputDataCast">
       <LineId Id="137" Count="36" />
