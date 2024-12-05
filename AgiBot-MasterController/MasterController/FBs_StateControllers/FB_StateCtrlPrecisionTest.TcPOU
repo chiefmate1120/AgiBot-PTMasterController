@@ -98,6 +98,9 @@ VAR
 	
 	//motion status
 	m_motionFinished:BOOL;
+	
+	//joint control error and current joint position
+	m_actualJntPos,m_JntErr:Vec7d;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -133,7 +136,9 @@ CASE m_testStep OF
 	10: //start the motion
 		m_time:=m_time+g_armCtrlCycleTime;
 		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
-		IF (m_time>m_Planner.duration) THEN
+		m_actualJntPos:=i_masterArm.curJntPos;
+		vecSub(m_cmdJntPos, m_actualJntPos, m_JntErr);
+		IF (m_time>m_Planner.duration) AND (norm(m_JntErr)<g_jntCtrlAngTolHigh)THEN
 			m_testStep:=15;
 		END_IF
 		
@@ -518,7 +523,9 @@ CASE m_testStep OF
 	10: //start the motion
 		m_time:=m_time+g_armCtrlCycleTime;
 		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
-		IF (m_time>m_Planner.duration) THEN
+		m_actualJntPos:=i_masterArm.curJntPos;
+		vecSub(m_cmdJntPos, m_actualJntPos, m_JntErr);
+		IF (m_time>m_Planner.duration) AND (norm(m_JntErr)<g_jntCtrlAngTolHigh)THEN
 			m_testStep:=15;
 		END_IF
 		
@@ -856,7 +863,9 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
       <LineId Id="13" Count="3" />
       <LineId Id="61" Count="1" />
       <LineId Id="19" Count="4" />
-      <LineId Id="25" Count="14" />
+      <LineId Id="25" Count="10" />
+      <LineId Id="112" Count="3" />
+      <LineId Id="38" Count="1" />
       <LineId Id="63" Count="1" />
       <LineId Id="67" Count="1" />
       <LineId Id="70" Count="0" />
@@ -983,7 +992,9 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
       <LineId Id="8" Count="0" />
       <LineId Id="15" Count="2" />
       <LineId Id="57" Count="1" />
-      <LineId Id="20" Count="19" />
+      <LineId Id="20" Count="15" />
+      <LineId Id="142" Count="3" />
+      <LineId Id="38" Count="1" />
       <LineId Id="79" Count="0" />
       <LineId Id="63" Count="3" />
       <LineId Id="62" Count="0" />

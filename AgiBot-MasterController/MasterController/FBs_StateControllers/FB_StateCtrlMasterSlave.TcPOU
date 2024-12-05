@@ -71,6 +71,9 @@ VAR
 	
 	//motion parameters
 	m_maxjntVel,m_maxjntAcc,m_maxjntJerk:Vec7d;
+	
+	//joint control error and current joint position
+	m_actualJntPos,m_JntErr:Vec7d;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -193,7 +196,9 @@ CASE m_testStep OF
 	10: //start the motion
 		m_time:=m_time+g_armCtrlCycleTime;
 		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
-		IF (m_time>m_Planner.duration) THEN
+		m_actualJntPos:=i_masterArm.curJntPos;
+		vecSub(m_cmdJntPos, m_actualJntPos, m_JntErr);
+		IF (m_time>m_Planner.duration) AND (norm(m_JntErr)<g_jntCtrlAngTolHigh)THEN
 			m_testStep:=15;
 		END_IF
 		
@@ -794,7 +799,8 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
       <LineId Id="322" Count="1" />
       <LineId Id="321" Count="0" />
       <LineId Id="316" Count="1" />
-      <LineId Id="311" Count="4" />
+      <LineId Id="311" Count="2" />
+      <LineId Id="337" Count="3" />
       <LineId Id="160" Count="8" />
       <LineId Id="213" Count="0" />
       <LineId Id="219" Count="15" />
