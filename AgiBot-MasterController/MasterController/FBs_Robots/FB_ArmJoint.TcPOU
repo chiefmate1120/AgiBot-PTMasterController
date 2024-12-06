@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_ArmJoint" Id="{2bf6c397-b3ad-4acf-a3e6-dde31e8b83c4}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_ArmJoint EXTENDS FB_JointBase
 VAR_INPUT
@@ -39,7 +39,10 @@ m_maxJntPos	:=GVL_ArmJointParameters.g_maxJntPos[i_armIdx,i_jntIdx];
 m_minLinkEncoder :=GVL_ArmJointCaliData.g_minLinkEncoder[i_armIdx, i_jntIdx] - m_linkEncoderDir*GVL_ArmJointCaliData.g_linkEncLimitBuffer; // expand limit
 m_maxLinkEncoder :=GVL_ArmJointCaliData.g_maxLinkEncoder[i_armIdx, i_jntIdx] + m_linkEncoderDir*GVL_ArmJointCaliData.g_linkEncLimitBuffer; // expand limit
 m_caliLinkEncoder :=GVL_ArmJointCaliData.g_caliLinkEncoder[i_armIdx, i_jntIdx];
-m_linkEncCaliJntPos :=GVL_ArmJointCaliData.g_linkEncCaliJntPos[i_armIdx, i_jntIdx];
+
+//m_linkEncCaliJntPos :=GVL_ArmJointCaliData.g_linkEncCaliJntPos[i_armIdx, i_jntIdx];
+m_linkEncCaliJntPos :=GVL_ArmJointCaliData.g_linkEncCaliJntPos[i_armIdx, i_jntIdx]+GVL_ArmJointCaliData.g_jntAngCalErr[i_armIdx, i_jntIdx];
+
 m_linkEncZeroCross :=GVL_ArmJointCaliData.g_linkEncZeroCross[i_armIdx, i_jntIdx];
 m_multiCycles :=GVL_ArmJointCaliData.g_multipleCyclesJoint[i_armIdx,i_jntIdx];
 
@@ -88,7 +91,12 @@ m_motorOutputs.m_cmdMotorEncoder:=m_motorInputs.m_motorEncoder;]]></ST>
     <LineIds Name="FB_ArmJoint.init">
       <LineId Id="160" Count="0" />
       <LineId Id="159" Count="0" />
-      <LineId Id="89" Count="28" />
+      <LineId Id="89" Count="15" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="106" Count="11" />
       <LineId Id="122" Count="6" />
       <LineId Id="130" Count="1" />
       <LineId Id="152" Count="0" />
