@@ -184,6 +184,7 @@ CASE m_testStep OF
 		
 		
 	5: //pause and confirm
+		(*
 		IF (m_motionCycleNum=1) AND (m_pointNum=1) THEN
 			IF (GVL_AccuracyTestVar.g_startMotion[m_armId]=TRUE) THEN
 				m_testStep:=10;
@@ -191,6 +192,8 @@ CASE m_testStep OF
 		ELSE
 			m_testStep:=10;
 		END_IF
+		*)
+		m_testStep:=10;
 		
 		
 	10: //start the motion
@@ -794,10 +797,13 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_BasicInstru_Test">
       <LineId Id="134" Count="1" />
       <LineId Id="137" Count="17" />
-      <LineId Id="318" Count="2" />
+      <LineId Id="318" Count="0" />
+      <LineId Id="352" Count="0" />
+      <LineId Id="319" Count="1" />
       <LineId Id="324" Count="1" />
       <LineId Id="322" Count="1" />
       <LineId Id="321" Count="0" />
+      <LineId Id="353" Count="1" />
       <LineId Id="316" Count="1" />
       <LineId Id="311" Count="2" />
       <LineId Id="337" Count="3" />
