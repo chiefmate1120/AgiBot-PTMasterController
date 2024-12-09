@@ -43,8 +43,9 @@ g_shoulderRotInMonitor : Mat3d :=[0.0,	-1.0,	0.0,
 %q10 = q8-q2
 
 *)
-//g_d1:LREAL:=0.255;
-g_d1:LREAL:=0.26085;
+
+//g_d1:LREAL:=0.26085;
+g_d1:LREAL:=0.255;
 g_d4:LREAL:=0.156;
 g_a3:LREAL:=0.278;
 g_a4:LREAL:=0.365;

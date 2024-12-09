@@ -397,8 +397,8 @@ END_VAR
     </Method>
     <Method Name="forwardKinematic" Id="{182b544f-f7c4-475e-8af7-8c07aa230234}">
       <Declaration><![CDATA[// from active joint position to cartesian pose in arm origin
-//METHOD PROTECTED forwardKinematic : BOOL
-METHOD PUBLIC forwardKinematic : BOOL
+METHOD PROTECTED forwardKinematic : BOOL
+//METHOD PUBLIC forwardKinematic : BOOL
 VAR_IN_OUT CONSTANT
 	i_jntPos :ARRAY[1..g_mJntNum] OF LREAL;
 END_VAR
@@ -419,9 +419,9 @@ q1:=i_jntPos[1];
 q2:=i_jntPos[2];  
 q3:=i_jntPos[3]-i_jntPos[2];  //q3=q8-q2
 q4:=jnt4MotorToLink(i_jntPos[2],i_jntPos[3], i_jntPos[4]);//q4DH=q4motor+q8-q2-90;  
-q5:=i_jntPos[5];  
-q6:=i_jntPos[6];  
-q7:=i_jntPos[7];  
+q5:=i_jntPos[5];
+q6:=i_jntPos[6];
+q7:=i_jntPos[7];
 
 // master roll flip handle
 IF m_gripperRollFlip THEN
@@ -554,8 +554,8 @@ updateStatus();
     </Method>
     <Method Name="inverseKinematic" Id="{a2d4ef4e-dcb4-4918-aceb-3d3fb8d74093}">
       <Declaration><![CDATA[// from cartesian pose in arm origin to active joint position
-//METHOD PROTECTED inverseKinematic : BOOL
-METHOD PUBLIC inverseKinematic : BOOL
+METHOD PROTECTED inverseKinematic : BOOL
+//METHOD PUBLIC inverseKinematic : BOOL
 VAR_INPUT
 	q4:LREAL;
 	solution_ID:INT;

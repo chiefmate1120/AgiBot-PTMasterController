@@ -25,9 +25,7 @@ VAR
 	
 	// friction compensation scale
 	m_frictionCompScale :LREAL :=1.0;
-
-	
-	
+		
 	//*****************Variables related to accuracy testing*******************//
 	//test step
 	m_testStep:INT;
@@ -73,7 +71,7 @@ VAR
 	m_maxjntVel,m_maxjntAcc,m_maxjntJerk:Vec7d;
 	
 	//joint control error and current joint position
-	m_actualJntPos,m_JntErr:Vec7d;
+	m_actualJntPos,m_JntErr:Vec7d;		
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -100,6 +98,283 @@ o_DHJntPos[4]:=i_activeJntPos[4]+i_activeJntPos[3]-i_activeJntPos[2]-pi/2; //q4D
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="armFK" Id="{46a2b595-db65-4abe-9f18-93c8f7e5d002}">
+      <Declaration><![CDATA[// from active joint position to cartesian pose in arm origin
+//METHOD PROTECTED forwardKinematic : BOOL
+METHOD PUBLIC armFK : BOOL
+VAR_IN_OUT CONSTANT
+	i_jntPos :ARRAY[1..g_mJntNum] OF LREAL;
+	i_gripperRollFlip:BOOL;
+END_VAR
+VAR_IN_OUT
+	r_cartPose :ST_Frame;
+END_VAR
+VAR
+	q1,q2, q3, q4, q5, q6, q7 :LREAL;
+	d1,d4,a3,a4 :LREAL;
+	c1,c2,c3,c4,c5,c6,c7 :LREAL;
+	s1,s2,s3,s4,s5,s6,s7 :LREAL;
+	c23, s23 :LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// !Convert active joint position to DH model for kinematic calculation
+q1:=i_jntPos[1];  
+q2:=i_jntPos[2];  
+q3:=i_jntPos[3]-i_jntPos[2];  //q3=q8-q2
+q4:=jnt4MotorToLink(i_jntPos[2],i_jntPos[3], i_jntPos[4]);//q4DH=q4motor+q8-q2-90;  
+q5:=i_jntPos[5];
+q6:=i_jntPos[6];
+q7:=i_jntPos[7];
+
+// master roll flip handle
+IF i_gripperRollFlip THEN
+	q7 := q7+PI;
+END_IF
+
+d1:=g_d1;
+d4:=g_d4;
+a3:=g_a3;
+a4:=g_a4;
+c1:=COS(q1);
+c2:=COS(q2);
+c3:=COS(q3);
+c4:=COS(q4);
+c5:=COS(q5);
+c6:=COS(q6);
+c7:=COS(q7);
+s1:=SIN(q1);
+s2:=SIN(q2);
+s3:=SIN(q3);
+s4:=SIN(q4);
+s5:=SIN(q5);
+s6:=SIN(q6);
+s7:=SIN(q7);
+c23:=COS(q2+q3);
+s23:=SIN(q2+q3);
+
+// cartesian pose frame
+r_cartPose.m_pos[1]:=c1*(a4*c23 - d4*s23 + a3*c2); 
+r_cartPose.m_pos[2]:=s1*(a4*c23 - d4*s23 + a3*c2);
+r_cartPose.m_pos[3]:=d1 - d4*c23 - a4*s23 - a3*s2;  
+r_cartPose.m_rot[1,1]:=c7*(s6*(c4*s1 - s4*(c1*c2*c3 - c1*s2*s3)) + c6*(c5*(s1*s4 + c4*(c1*c2*c3 - c1*s2*s3)) - s5*(c1*c2*s3 + c1*c3*s2))) - s7*(s5*(s1*s4 + c4*(c1*c2*c3 - c1*s2*s3)) + c5*(c1*c2*s3 + c1*c3*s2));
+r_cartPose.m_rot[2,1]:=s7*(s5*(c1*s4 + c4*(s1*s2*s3 - c2*c3*s1)) - c5*(c2*s1*s3 + c3*s1*s2)) - c7*(s6*(c1*c4 - s4*(s1*s2*s3 - c2*c3*s1)) + c6*(c5*(c1*s4 + c4*(s1*s2*s3 - c2*c3*s1)) + s5*(c2*s1*s3 + c3*s1*s2)));
+r_cartPose.m_rot[3,1]:=- s7*(c23*c5 - s23*c4*s5) - c7*(c23*c6*s5 - s23*s4*s6 + s23*c4*c5*c6); 
+r_cartPose.m_rot[1,2]:=- s7*(s6*(c4*s1 - s4*(c1*c2*c3 - c1*s2*s3)) + c6*(c5*(s1*s4 + c4*(c1*c2*c3 - c1*s2*s3)) - s5*(c1*c2*s3 + c1*c3*s2))) - c7*(s5*(s1*s4 + c4*(c1*c2*c3 - c1*s2*s3)) + c5*(c1*c2*s3 + c1*c3*s2)); 
+r_cartPose.m_rot[2,2]:=s7*(s6*(c1*c4 - s4*(s1*s2*s3 - c2*c3*s1)) + c6*(c5*(c1*s4 + c4*(s1*s2*s3 - c2*c3*s1)) + s5*(c2*s1*s3 + c3*s1*s2))) + c7*(s5*(c1*s4 + c4*(s1*s2*s3 - c2*c3*s1)) - c5*(c2*s1*s3 + c3*s1*s2)); 
+r_cartPose.m_rot[3,2]:=s7*(c23*c6*s5 - s23*s4*s6 + s23*c4*c5*c6) - c7*(c23*c5 - s23*c4*s5); 
+r_cartPose.m_rot[1,3]:=s6*(c5*(s1*s4 + c4*(c1*c2*c3 - c1*s2*s3)) - s5*(c1*c2*s3 + c1*c3*s2)) - c6*(c4*s1 - s4*(c1*c2*c3 - c1*s2*s3)); 
+r_cartPose.m_rot[2,3]:=c6*(c1*c4 - s4*(s1*s2*s3 - c2*c3*s1)) - s6*(c5*(c1*s4 + c4*(s1*s2*s3 - c2*c3*s1)) + s5*(c2*s1*s3 + c3*s1*s2));
+r_cartPose.m_rot[3,3]:=- s6*(c23*s5 + s23*c4*c5) - s23*c6*s4;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="armIK" Id="{d8200cf1-d422-4f0a-a239-be3de247da12}">
+      <Declaration><![CDATA[// from cartesian pose in arm origin to active joint position
+//METHOD PROTECTED inverseKinematic : BOOL
+METHOD armIK : BOOL
+VAR_INPUT
+	q4:LREAL; //q4DH
+	solution_ID:INT; //solution ID
+END_VAR
+VAR_IN_OUT CONSTANT
+	i_curCartPose :ST_Frame;
+END_VAR
+VAR_IN_OUT
+	r_jntPos :ARRAY[1..g_mJntNum] OF LREAL;
+END_VAR
+VAR
+	a3,a4,d1,d4:LREAL;
+	px,py,pz:lreal;
+	nx,ny,nz:lreal;
+	ox,oy,oz:lreal;
+	ax,ay,az:lreal;
+
+	q1,q2,q3,q5,q6,q7:LREAL;
+	
+	q11,q12:LREAL;
+	k1,A,B,C,fi,R0,q21,q22:lreal;
+	ins1,ins2:lreal;
+	
+	A11,A12,A21,A22,C1,C2:lreal;
+	SIN23,COS23,q23:LREAL;
+	
+	T_74_left_23,q61,q62:lreal;
+	T_74_left_13,T_74_left_33:lreal;
+	T_74_left_21,T_74_left_22:LREAL;	
+	succeed_1,succeed_2,succeed:BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+//***********************单臂逆向运动学**************************//
+d1:=g_d1;
+d4:=g_d4;
+a3:=g_a3;
+a4:=g_a4;
+
+nx:=i_curCartPose.m_rot[1,1];  ny:=i_curCartPose.m_rot[2,1];  nz:=i_curCartPose.m_rot[3,1];
+ox:=i_curCartPose.m_rot[1,2]; oy:=i_curCartPose.m_rot[2,2];  oz:=i_curCartPose.m_rot[3,2];
+ax:=i_curCartPose.m_rot[1,3];  ay:=i_curCartPose.m_rot[2,3];  az:=i_curCartPose.m_rot[3,3];
+px:=i_curCartPose.m_pos[1]; py:=i_curCartPose.m_pos[2]; pz:=i_curCartPose.m_pos[3];
+
+
+//求解q1
+q11:=atan2(y:= py, x:= px);
+q12:=atan2(y:= -py, x:= -px);
+IF (Solution_ID<=4) THEN
+	q1:=q11;
+ELSE
+	q1:=q12;
+END_IF
+
+
+
+//求解q2
+k1:=px*COS(q1) + py*SIN(q1);
+A:=2*a3*pz - 2*a3*d1;
+B:=2*a3*k1;
+C:=a3*a3 - a4*a4 + d1*d1 - 2*d1*pz - d4*d4 + k1*k1 + pz*pz;
+fi:=atan2(y:= B, x:= A);
+R0:=SQRT(A*A+B*B);
+
+
+//*************程序保护性处理，避免软件崩溃***************//
+IF ABS(C/R0)>1 THEN
+	succeed_1:=FALSE;
+	succeed:=FALSE;
+	armIK:=FALSE;
+	RETURN;
+ELSE
+	succeed_1:=TRUE;
+END_IF
+
+ins1:=atan2(y:= C/R0, x:= SQRT(1-(C/R0)*(C/R0)));
+q21:=fi-ins1;
+ins2:=atan2(y:= C/R0, x:= -SQRT(1-(C/R0)*(C/R0)));
+q22:=fi-ins2;
+
+IF (Solution_ID=1) OR (Solution_ID=2) OR (Solution_ID=5) OR (Solution_ID=6) THEN
+	q2:=q21;
+ELSE
+	q2:=q22;
+END_IF
+
+
+
+
+//求解q3
+A11:=- d4;
+A12:=a4;
+A21:=- a4;
+A22:=-d4;
+C1:=k1- a3*COS(q2);
+C2:=pz - d1 + a3*SIN(q2);
+sin23:=(C1*A22-C2*A12)/(A11*A22-A21*A12);
+cos23:=(C2*A11-C1*A21)/(A11*A22-A21*A12);
+q23:=atan2(y:= sin23, x:= cos23);
+q3:=q23-q2;
+
+
+
+
+//求解q6
+T_74_left_23:=ax*(COS(q4)*SIN(q1) - COS(q1)*COS(q2)*COS(q3)*SIN(q4) + COS(q1)*SIN(q2)*SIN(q3)*SIN(q4)) - ay*(COS(q1)*COS(q4) + COS(q2)*COS(q3)*SIN(q1)*SIN(q4) - SIN(q1)*SIN(q2)*SIN(q3)*SIN(q4)) + az*SIN(q2 + q3)*SIN(q4);
+
+//*************程序保护性处理，避免软件崩溃***************//
+IF ABS(T_74_left_23>1) THEN
+	succeed_2:=FALSE;
+	succeed:=FALSE;
+	armIK:=FALSE;
+	RETURN;
+ELSE
+	succeed_2:=TRUE;
+END_IF
+
+q61:=ACOS(-T_74_left_23);
+q62:=-ACOS(-T_74_left_23);
+IF (Solution_ID=1) OR (Solution_ID=3) OR (Solution_ID=5) OR (Solution_ID=7) THEN
+	q6:=q61;
+ELSE
+	q6:=q62;
+END_IF
+
+
+
+//求解q5
+T_74_left_13:=ax*(SIN(q1)*SIN(q4) + COS(q1)*COS(q2)*COS(q3)*COS(q4) - COS(q1)*COS(q4)*SIN(q2)*SIN(q3)) - ay*(COS(q1)*SIN(q4) - COS(q2)*COS(q3)*COS(q4)*SIN(q1) + COS(q4)*SIN(q1)*SIN(q2)*SIN(q3)) - az*SIN(q2 + q3)*COS(q4);
+T_74_left_33:=- az*COS(q2 + q3) - ax*SIN(q2 + q3)*COS(q1) - ay*SIN(q2 + q3)*SIN(q1);
+q5:=atan2(y:= T_74_left_33*SIN(q6), x:= T_74_left_13*SIN(q6));
+
+
+
+//求解q7
+T_74_left_21:=nx*(COS(q4)*SIN(q1) - COS(q1)*COS(q2)*COS(q3)*SIN(q4) + COS(q1)*SIN(q2)*SIN(q3)*SIN(q4)) - ny*(COS(q1)*COS(q4) + COS(q2)*COS(q3)*SIN(q1)*SIN(q4) - SIN(q1)*SIN(q2)*SIN(q3)*SIN(q4)) + nz*SIN(q2 + q3)*SIN(q4);
+T_74_left_22:=ox*(COS(q4)*SIN(q1) - COS(q1)*COS(q2)*COS(q3)*SIN(q4) + COS(q1)*SIN(q2)*SIN(q3)*SIN(q4)) - oy*(COS(q1)*COS(q4) + COS(q2)*COS(q3)*SIN(q1)*SIN(q4) - SIN(q1)*SIN(q2)*SIN(q3)*SIN(q4)) + oz*SIN(q2 + q3)*SIN(q4);
+q7:=atan2(y:= -T_74_left_22*SIN(q6), x:= T_74_left_21*SIN(q6));
+
+
+
+//output DH joint position
+r_jntPos[1]:=q1;
+r_jntPos[2]:=q2;
+r_jntPos[3]:=q3;
+r_jntPos[4]:=q4;
+r_jntPos[5]:=q5;
+r_jntPos[6]:=q6;
+r_jntPos[7]:=q7;
+
+succeed:=TRUE;
+armIK:=succeed;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="armIKSlove" Id="{8a953a43-0562-478f-8280-983663fd4584}">
+      <Declaration><![CDATA[METHOD armIKSlove : BOOL
+VAR_INPUT	
+	i_masterArm :FB_MasterArm;
+	i_q4:LREAL;
+	i_targetFrame:ST_Frame;
+END_VAR
+
+VAR_OUTPUT
+	o_targetJntPos:Vec7d;
+END_VAR
+
+VAR
+	i:INT;
+	IKSucceed:BOOL;
+	targetJntPos:Vec7d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//Call inverse kinematics
+IKSucceed:=armIK(q4:= i_q4, solution_ID:= m_IK, i_curCartPose:= i_targetFrame, r_jntPos:= targetJntPos);
+IF (IKSucceed=FALSE) THEN
+	armIKSlove:=FALSE;
+	RETURN;
+END_IF
+
+
+//Constrained solution range and transform to active joint position
+FOR i:=1 TO 7 BY 1 DO
+	minimumDistMot(i_current:= GVL_AccuracyTest.g_jntDHInitPos[m_armId,i], i_target:= targetJntPos[i], o_target=> targetJntPos[i]);
+END_FOR
+DH2activeJnt(i_DHJntPos:= targetJntPos, o_activeJntPos=> o_targetJntPos);
+
+
+//Determine whether the solution result is appropriate
+FOR i:=1 TO g_mJntNum BY 1 DO
+	IF (o_targetJntPos[i]>GVL_ArmJointParameters.g_maxJntPos[m_armId,i]) OR (o_targetJntPos[i]<GVL_ArmJointParameters.g_minJntPos[m_armId,i]) THEN
+		armIKSlove:=FALSE;
+		RETURN;
+	END_IF
+END_FOR
+armIKSlove:=TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="calcCmdJntPos" Id="{b549ed00-ec1a-412a-94d0-63a741bf9608}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntPos : BOOL
@@ -115,6 +390,7 @@ VAR
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+
 IF (GVL_AccuracyTestVar.g_MSPrecisionTest[i_masterArm.armIdx]=FALSE) THEN
 	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
 		i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
@@ -163,13 +439,11 @@ VAR
 
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-
-CASE m_testStep OF
+        <ST><![CDATA[CASE m_testStep OF
 	0: //data initial		
 		m_targetSpatialPos:=m_targetPosArr[m_pointNum];
 		activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);		
-		m_IKSucceed:=inverseKinematic(i_masterArm:= i_masterArm, i_q4:= m_startDHPos[4], i_targetFrame:= m_targetSpatialPos, o_targetJntPos=> m_endJntPos);
+		m_IKSucceed:=armIKSlove(i_masterArm:= i_masterArm, i_q4:= m_startDHPos[4], i_targetFrame:= m_targetSpatialPos, o_targetJntPos=> m_endJntPos);
 		IF (m_IKSucceed=FALSE) THEN
 			m_testStep:=60;
 		END_IF
@@ -380,11 +654,17 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
-	i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
-	calcCmdJntTrq_USKnife(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+        <ST><![CDATA[
+
+IF (GVL_AccuracyTestVar.g_MSPrecisionTest[i_masterArm.armIdx]=FALSE) THEN
+	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
+		i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
+		calcCmdJntTrq_USKnife(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	ELSE
+		calcCmdJntTrq_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	END_IF
 ELSE
-	calcCmdJntTrq_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	//All joints are in position mode
 END_IF
 
 ]]></ST>
@@ -559,6 +839,7 @@ m_jnt6LimitCtrl.init(i_masterArm);
 // update commands to arm
 copyCmds(r_masterArmCtrlCmd);
 
+
 //variable initialization
 m_armId:=i_masterArm.armIdx;
 
@@ -570,50 +851,20 @@ ELSE
 END_IF
 
 //motion parameters initial
-motionParamInit(i_masterArm);
-]]></ST>
+motionParamInit(i_masterArm);]]></ST>
       </Implementation>
     </Method>
-    <Method Name="inverseKinematic" Id="{0a4b73dc-2d9a-4c99-8d88-a71a543f8719}">
-      <Declaration><![CDATA[METHOD inverseKinematic : BOOL
-VAR_INPUT	
-	i_masterArm :FB_MasterArm;
-	i_q4:LREAL;
-	i_targetFrame:ST_Frame;
+    <Method Name="jnt4MotorToLink" Id="{032349e9-3782-4b9a-b3b6-5f27de862082}">
+      <Declaration><![CDATA[//convert joint4 position from motor side to link side
+METHOD public jnt4MotorToLink : LREAL
+VAR_INPUT
+	i_q2 :LREAL;
+	i_q3:LREAL;
+	i_q4Motor :LREAL;
 END_VAR
-
-VAR_OUTPUT
-	o_targetJntPos:Vec7d;
-END_VAR
-
-VAR
-	i:INT;
-	IKSucceed:BOOL;
-END_VAR]]></Declaration>
+]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-//Call inverse kinematics
-IKSucceed:=i_masterArm.inverseKinematic(q4:= i_q4, solution_ID:= m_IK, i_curCartPose:= i_targetFrame, r_jntPos:= o_targetJntPos);
-IF (IKSucceed=FALSE) THEN
-	inverseKinematic:=FALSE;
-	RETURN;
-END_IF
-
-
-//Constrained solution range
-//For joint 5, the initial position is at 180 degrees, and the range of motion is different from the output range of the atan2 function. Here, the solution results are standardized
-minimumDistMot(i_current:= pi, i_target:= o_targetJntPos[5], o_target=> o_targetJntPos[5]);
-
-
-//Determine whether the solution result is appropriate
-FOR i:=1 TO g_mJntNum BY 1 DO
-	IF (o_targetJntPos[i]>GVL_ArmJointParameters.g_maxJntPos[m_armId,i]) OR (o_targetJntPos[i]<GVL_ArmJointParameters.g_minJntPos[m_armId,i]) THEN
-		inverseKinematic:=FALSE;
-		RETURN;
-	END_IF
-END_FOR
-inverseKinematic:=TRUE;
-]]></ST>
+        <ST><![CDATA[jnt4MotorToLink:=i_q4Motor+i_q3-i_q2-pi/2;//q4DH=q4motor+q8-q2-90;  ]]></ST>
       </Implementation>
     </Method>
     <Method Name="minimumDistMot" Id="{3b012980-c19b-4345-a805-1924c0d66789}">
@@ -660,6 +911,7 @@ VAR
 	i,j:INT;
 	poseVec:Vec6d;
 	originPose:ST_Frame;
+	gripperRollFlip:BOOL;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -699,7 +951,8 @@ FOR i:=1 TO GVL_AccuracyTest.g_testPointNum BY 1 DO
 		poseVec[j]:=m_targetPosVecArr[i,j];
 	END_FOR
 	xyzrpy2Frame(i_posVec:= poseVec, o_frame=> m_targetPosArr[i]);
-	i_masterArm.forwardKinematic(m_originJntPos,originPose);
+	gripperRollFlip:= i_masterArm.gripperRollFlip;
+	armFK(i_jntPos:= m_originJntPos, i_gripperRollFlip:= gripperRollFlip, r_cartPose:= originPose);
 	m_targetPosArr[i].m_rot:=originPose.m_rot;
 END_FOR
 
@@ -779,14 +1032,69 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
       <LineId Id="5" Count="0" />
       <LineId Id="24" Count="0" />
     </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.armFK">
+      <LineId Id="84" Count="3" />
+      <LineId Id="163" Count="0" />
+      <LineId Id="89" Count="2" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="181" Count="3" />
+      <LineId Id="92" Count="24" />
+      <LineId Id="140" Count="7" />
+      <LineId Id="29" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.armIK">
+      <LineId Id="13" Count="2" />
+      <LineId Id="131" Count="2" />
+      <LineId Id="19" Count="5" />
+      <LineId Id="27" Count="18" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="238" Count="0" />
+      <LineId Id="48" Count="4" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="53" Count="40" />
+      <LineId Id="240" Count="0" />
+      <LineId Id="94" Count="11" />
+      <LineId Id="199" Count="0" />
+      <LineId Id="106" Count="5" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="112" Count="6" />
+      <LineId Id="202" Count="0" />
+      <LineId Id="163" Count="0" />
+      <LineId Id="119" Count="11" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.armIKSlove">
+      <LineId Id="26" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="28" Count="1" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="68" Count="1" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="34" Count="0" />
+    </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos">
-      <LineId Id="141" Count="1" />
-      <LineId Id="149" Count="4" />
-      <LineId Id="143" Count="0" />
-      <LineId Id="145" Count="0" />
-      <LineId Id="147" Count="0" />
-      <LineId Id="154" Count="0" />
+      <LineId Id="141" Count="2" />
+      <LineId Id="150" Count="4" />
       <LineId Id="144" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="148" Count="0" />
+      <LineId Id="145" Count="0" />
       <LineId Id="124" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_BasicInstru">
@@ -795,31 +1103,7 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
       <LineId Id="111" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_BasicInstru_Test">
-      <LineId Id="134" Count="1" />
-      <LineId Id="137" Count="17" />
-      <LineId Id="318" Count="0" />
-      <LineId Id="352" Count="0" />
-      <LineId Id="319" Count="1" />
-      <LineId Id="324" Count="1" />
-      <LineId Id="322" Count="1" />
-      <LineId Id="321" Count="0" />
-      <LineId Id="353" Count="1" />
-      <LineId Id="316" Count="1" />
-      <LineId Id="311" Count="2" />
-      <LineId Id="337" Count="3" />
-      <LineId Id="160" Count="8" />
-      <LineId Id="213" Count="0" />
-      <LineId Id="219" Count="15" />
-      <LineId Id="214" Count="2" />
-      <LineId Id="170" Count="9" />
-      <LineId Id="246" Count="1" />
-      <LineId Id="180" Count="5" />
-      <LineId Id="277" Count="1" />
-      <LineId Id="197" Count="0" />
-      <LineId Id="251" Count="0" />
-      <LineId Id="201" Count="0" />
-      <LineId Id="199" Count="0" />
-      <LineId Id="264" Count="0" />
+      <LineId Id="366" Count="91" />
       <LineId Id="111" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_USKnife">
@@ -827,9 +1111,13 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
       <LineId Id="131" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntTrq">
-      <LineId Id="223" Count="4" />
-      <LineId Id="13" Count="0" />
-      <LineId Id="246" Count="0" />
+      <LineId Id="269" Count="0" />
+      <LineId Id="260" Count="1" />
+      <LineId Id="270" Count="4" />
+      <LineId Id="263" Count="0" />
+      <LineId Id="265" Count="1" />
+      <LineId Id="264" Count="0" />
+      <LineId Id="262" Count="0" />
       <LineId Id="245" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntTrq_BasicInstru">
@@ -880,40 +1168,25 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.init">
       <LineId Id="13" Count="0" />
+      <LineId Id="153" Count="0" />
       <LineId Id="36" Count="0" />
-      <LineId Id="153" Count="4" />
-      <LineId Id="115" Count="0" />
-      <LineId Id="16" Count="1" />
+      <LineId Id="154" Count="0" />
+      <LineId Id="156" Count="1" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="17" Count="0" />
       <LineId Id="59" Count="0" />
       <LineId Id="141" Count="0" />
       <LineId Id="128" Count="1" />
       <LineId Id="127" Count="0" />
       <LineId Id="89" Count="0" />
-      <LineId Id="158" Count="10" />
       <LineId Id="91" Count="0" />
+      <LineId Id="158" Count="10" />
       <LineId Id="74" Count="0" />
     </LineIds>
-    <LineIds Name="FB_StateCtrlMasterSlave.inverseKinematic">
-      <LineId Id="26" Count="0" />
-      <LineId Id="7" Count="1" />
-      <LineId Id="27" Count="0" />
-      <LineId Id="30" Count="0" />
-      <LineId Id="28" Count="1" />
-      <LineId Id="31" Count="0" />
-      <LineId Id="41" Count="0" />
-      <LineId Id="38" Count="0" />
-      <LineId Id="43" Count="0" />
-      <LineId Id="42" Count="0" />
-      <LineId Id="39" Count="0" />
-      <LineId Id="22" Count="1" />
-      <LineId Id="32" Count="0" />
-      <LineId Id="45" Count="0" />
-      <LineId Id="47" Count="0" />
-      <LineId Id="50" Count="0" />
-      <LineId Id="48" Count="0" />
-      <LineId Id="46" Count="0" />
+    <LineIds Name="FB_StateCtrlMasterSlave.jnt4MotorToLink">
       <LineId Id="5" Count="0" />
-      <LineId Id="34" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.minimumDistMot">
       <LineId Id="6" Count="0" />
@@ -939,7 +1212,8 @@ rpy2rot(i_rpy:= rpyVec, o_rot=> o_frame.m_rot) ;
       <LineId Id="77" Count="0" />
       <LineId Id="110" Count="0" />
       <LineId Id="36" Count="6" />
-      <LineId Id="66" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="133" Count="0" />
       <LineId Id="45" Count="1" />
       <LineId Id="111" Count="0" />
       <LineId Id="93" Count="0" />
