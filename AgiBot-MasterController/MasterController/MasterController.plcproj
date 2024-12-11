@@ -319,6 +319,27 @@
     <Compile Include="FBs_BasicControllers\FB_RedunJntControl.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FBs_Basic_Accuracy\FB_BasicFun.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_Basic_Accuracy\FB_StateCtrlMasterSlave.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_Basic_Accuracy\FB_StateCtrlPrecisionTest.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_Basic_Accuracy\GVL_AccuracyTest.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_Basic_Accuracy\GVL_AccuracyTestVar.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_Basic_Accuracy\GVL_HmiMid.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
     <Compile Include="FBs_Observer\FB_JntInertia.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -361,9 +382,6 @@
     <Compile Include="FBs_StateControllers\FB_StateCtrlGraCali.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="FBs_StateControllers\FB_StateCtrlMasterSlave.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="FBs_StateControllers\FB_StateCtrlMatching.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -377,9 +395,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_StateControllers\FB_StateCtrlPowerOff.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="FBs_StateControllers\FB_StateCtrlPrecisionTest.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_StateControllers\FB_StateCtrlReady.TcPOU">
@@ -429,18 +444,6 @@
     </Compile>
     <Compile Include="GlobalTextList.TcGTLO">
       <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="GVLs\Accuracy\GVL_AccuracyTest.TcGVL">
-      <SubType>Code</SubType>
-      <LinkAlways>true</LinkAlways>
-    </Compile>
-    <Compile Include="GVLs\Accuracy\GVL_AccuracyTestVar.TcGVL">
-      <SubType>Code</SubType>
-      <LinkAlways>true</LinkAlways>
-    </Compile>
-    <Compile Include="GVLs\Accuracy\GVL_HmiMid.TcGVL">
-      <SubType>Code</SubType>
-      <LinkAlways>true</LinkAlways>
     </Compile>
     <Compile Include="GVLs\Arms\GVL_ArmDynamics.TcGVL">
       <SubType>Code</SubType>
@@ -648,6 +651,7 @@
     <Folder Include="DUTs\Structure\MasterSlaveCommunication" />
     <Folder Include="DUTs\Type" />
     <Folder Include="DUTs\Structure" />
+    <Folder Include="FBs_Basic_Accuracy" />
     <Folder Include="FBs_TrajectoryPlanning" />
     <Folder Include="FBs_RobotDynamics" />
     <Folder Include="FBs_Filters" />
@@ -666,7 +670,6 @@
     <Folder Include="GVLs\Configs\Robot3" />
     <Folder Include="GVLs\Configs\Robot4" />
     <Folder Include="GVLs\Configs\Robot5" />
-    <Folder Include="GVLs\Accuracy" />
     <Folder Include="SafetyCheck\safetyCheckDUT" />
     <Folder Include="Sandbox" />
     <Folder Include="SafetyCheck" />
