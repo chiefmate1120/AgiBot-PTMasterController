@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <GVL Name="GVL_TestCycle" Id="{47cb94a4-528b-4079-8821-cbd80eb64f35}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	//enter cycle test mode
+	g_enterCycleTestMode:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//start motion flag
+	g_startMotion:ARRAY[1..g_mArmNum] OF BOOL;
+
+	//motor encoder and joint encoder
+	g_motorEncoder:ARRAY[1..g_mArmNum] OF Vec7di;
+	g_jntEncoder:ARRAY[1..g_mArmNum] OF Vec7di;
+	
+	//communication status
+	g_comStatus:ARRAY[1..g_mArmNum] OF Vec7b;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -48,6 +48,9 @@ VAR_GLOBAL
 	//target space velocity for control mode 4---Continuous motion in operating space
 	g_spatialVel:ARRAY[1..g_mArmNum] OF Vec6d;
 	
+	//write data
+	g_writeData:ARRAY[1..g_mArmNum] OF BOOL;
+	
 	//master arm spatial pose frame
 	g_frontPose:ARRAY[1..4] OF ST_Frame;
 	g_endPose:ARRAY[1..4] OF ST_Frame;

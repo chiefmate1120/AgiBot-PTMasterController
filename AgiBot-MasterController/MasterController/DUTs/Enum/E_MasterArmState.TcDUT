@@ -23,7 +23,8 @@ TYPE E_MasterArmState :
 	MasterArmState_PowerOff := 16,
 	MasterArmState_PrecisionTest :=17,
 	
-	MasterArmState_totalNum :=MasterArmState_PrecisionTest
+	MasterArmState_TestCycle :=50,
+	MasterArmState_totalNum :=MasterArmState_TestCycle
 );
 END_TYPE
 ]]></Declaration>

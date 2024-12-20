@@ -15,7 +15,7 @@ END_VAR
 
 ]]></ST>
     </Implementation>
-    <Method Name="activeJnt2DH" Id="{53a7ffec-7bf8-4885-84f4-66655cb53cf3}">
+    <Method Name="activeJnt2DH" Id="{0fdb3d65-fc06-41e4-8dca-68c34215bd8a}">
       <Declaration><![CDATA[METHOD activeJnt2DH : BOOL
 VAR_INPUT
 	i_activeJntPos:Vec7d;
@@ -36,7 +36,7 @@ o_DHJntPos[4]:=i_activeJntPos[4]+i_activeJntPos[3]-i_activeJntPos[2]-pi/2; //q4D
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="armFK" Id="{faa97af6-39bd-448a-a198-0cb841c788e2}">
+    <Method Name="armFK" Id="{eb34cec9-c1b5-4340-b7a7-1a5b5e58eab3}">
       <Declaration><![CDATA[// from active joint position to cartesian pose in arm origin
 //METHOD PROTECTED forwardKinematic : BOOL
 METHOD PUBLIC armFK : BOOL
@@ -106,7 +106,7 @@ r_cartPose.m_rot[2,3]:=c6*(c1*c4 - s4*(s1*s2*s3 - c2*c3*s1)) - s6*(c5*(c1*s4 + c
 r_cartPose.m_rot[3,3]:=- s6*(c23*s5 + s23*c4*c5) - s23*c6*s4;]]></ST>
       </Implementation>
     </Method>
-    <Method Name="armIK" Id="{b9c79995-beed-4dff-8a60-b58e6566cdc8}">
+    <Method Name="armIK" Id="{00b556e8-e3a2-43da-a868-52dd6a2caab9}">
       <Declaration><![CDATA[// from cartesian pose in arm origin to active joint position
 //METHOD PROTECTED inverseKinematic : BOOL
 METHOD armIK : BOOL
@@ -268,7 +268,7 @@ armIK:=succeed;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="DH2activeJnt" Id="{3c351c51-470f-4c75-a2b0-9ff41dc265ad}">
+    <Method Name="DH2activeJnt" Id="{90fd963f-be87-422e-9d10-98c0e51d56e0}">
       <Declaration><![CDATA[METHOD DH2activeJnt : BOOL
 VAR_INPUT
 	i_DHJntPos:Vec7d;
@@ -285,7 +285,7 @@ o_activeJntPos[4]:=i_DHJntPos[4]+i_DHJntPos[2]-o_activeJntPos[3]+pi/2; //q4DH=q4
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="jnt4MotorToLink" Id="{63dbfc38-39a9-4a9f-aa02-aa368f0d633f}">
+    <Method Name="jnt4MotorToLink" Id="{03eebf10-39ef-4fb2-951f-cd0c78680d11}">
       <Declaration><![CDATA[//convert joint4 position from motor side to link side
 METHOD public jnt4MotorToLink : LREAL
 VAR_INPUT
@@ -298,7 +298,7 @@ END_VAR
         <ST><![CDATA[jnt4MotorToLink:=i_q4Motor+i_q3-i_q2-pi/2;//q4DH=q4motor+q8-q2-90;  ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="minimumDistMot" Id="{abb2bc68-97f8-4f8c-9989-bec12ea49764}">
+    <Method Name="minimumDistMot" Id="{a8268b9c-8369-41e2-bbe1-f4d2bbffd9d8}">
       <Declaration><![CDATA[METHOD minimumDistMot : BOOL
 VAR_INPUT
 	i_current:LREAL;
@@ -332,7 +332,7 @@ END_IF
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="rpy2rot" Id="{fc68da1e-1402-4945-8b3a-05b60bb97307}">
+    <Method Name="rpy2rot" Id="{a6454ffb-7afd-49d1-9756-4c7f8a020ac8}">
       <Declaration><![CDATA[METHOD rpy2rot : BOOL
 VAR_INPUT
 	i_rpy:Vec3d;
@@ -370,7 +370,7 @@ o_rot:=matrix_out;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="xyzrpy2Frame" Id="{d21f9108-16b8-4f03-8090-22988ed8adbd}">
+    <Method Name="xyzrpy2Frame" Id="{d7e7ee54-5c02-43c5-a887-650d94647db7}">
       <Declaration><![CDATA[METHOD xyzrpy2Frame : BOOL
 VAR_INPUT
 	i_posVec:Vec6d;

@@ -189,7 +189,8 @@ VAR
 
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[CASE m_testStep OF
+        <ST><![CDATA[
+CASE m_testStep OF
 	0: //data initial		
 		m_targetSpatialPos:=m_targetPosArr[m_pointNum];
 		m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);		
@@ -441,9 +442,18 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[// boundary force feedback
-m_boundaryTrq :=m_boundaryForce.run(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
-withinBoundary := (norm(m_boundaryTrq)<g_smallNum);
+        <ST><![CDATA[
+
+//*****************add code---for operation force test*****************//
+// boundary force feedback
+IF (GVL_operationTest.g_operationTestStart[m_armId]=TRUE) THEN
+	m_boundaryTrq :=m_boundaryForce.run(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+	withinBoundary := (norm(m_boundaryTrq)<g_smallNum);
+ELSE
+	m_boundaryTrq:=g_zeroVec7d;
+END_IF
+
+
 
 // redundant joint4 controller
 ctrlTrq := g_zeroVec7d;
@@ -573,6 +583,8 @@ m_jnt6LimitCtrl.init(i_masterArm);
 copyCmds(r_masterArmCtrlCmd);
 
 
+
+//*****************add code---init for precision test*****************//
 //variable initialization
 m_armId:=i_masterArm.armIdx;
 
@@ -687,6 +699,7 @@ END_FOR
       <LineId Id="111" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_BasicInstru_Test">
+      <LineId Id="469" Count="0" />
       <LineId Id="366" Count="91" />
       <LineId Id="111" Count="0" />
     </LineIds>
@@ -705,8 +718,13 @@ END_FOR
       <LineId Id="245" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntTrq_BasicInstru">
-      <LineId Id="204" Count="1" />
-      <LineId Id="202" Count="1" />
+      <LineId Id="255" Count="2" />
+      <LineId Id="204" Count="0" />
+      <LineId Id="249" Count="1" />
+      <LineId Id="252" Count="2" />
+      <LineId Id="251" Count="0" />
+      <LineId Id="258" Count="1" />
+      <LineId Id="203" Count="0" />
       <LineId Id="32" Count="0" />
       <LineId Id="48" Count="0" />
       <LineId Id="33" Count="0" />
@@ -759,6 +777,8 @@ END_FOR
       <LineId Id="128" Count="1" />
       <LineId Id="127" Count="0" />
       <LineId Id="89" Count="0" />
+      <LineId Id="193" Count="0" />
+      <LineId Id="192" Count="0" />
       <LineId Id="91" Count="0" />
       <LineId Id="158" Count="10" />
       <LineId Id="74" Count="0" />

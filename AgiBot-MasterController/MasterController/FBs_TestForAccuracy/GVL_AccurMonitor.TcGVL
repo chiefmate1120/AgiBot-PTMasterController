@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <GVL Name="GVL_AccurMonitor" Id="{ab0f5606-0e98-44c8-8761-7d14d6dbc19c}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	g_stateMachine:ARRAY[1..g_mArmNum] OF E_masterArmState;
+	g_step:ARRAY[1..g_mArmNum] OF INT;
+	g_time:ARRAY[1..g_mArmNum] OF LREAL;
+	g_jntPos:ARRAY[1..g_mArmNum] OF Vec7d;
+	g_targetPos:ARRAY[1..g_mArmNum] OF Vec7d;
+	g_pointNum:ARRAY[1..g_mArmNum] OF INT;
+	g_startMot:ARRAY[1..g_mArmNum] OF BOOL;
+	g_motMode:ARRAY[1..g_mArmNum] OF INT;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -96,6 +96,56 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"330"</v>
+              <v n="TextDefault">"位置2处不平衡力"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"126"</v>
+              <v n="TextDefault">"位置3处不平衡力"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"699"</v>
+              <v n="TextDefault">"关节1"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"285"</v>
+              <v n="TextDefault">"关节2"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"995"</v>
+              <v n="TextDefault">"关节3"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"391"</v>
+              <v n="TextDefault">"关节4"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"596"</v>
+              <v n="TextDefault">"关节5"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"357"</v>
+              <v n="TextDefault">"关节6"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"185"</v>
+              <v n="TextDefault">"关节7"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"960"</v>
+              <v n="TextDefault">"关节位置"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"223"</v>
               <v n="TextDefault">"关节空间单点运动1"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -121,6 +171,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"351"</v>
+              <v n="TextDefault">"关节间隙"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"538"</v>
               <v n="TextDefault">"前置矩阵"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -141,8 +196,18 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"22"</v>
+              <v n="TextDefault">"导出前置矩阵"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"655"</v>
               <v n="TextDefault">"左主控制臂"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"798"</v>
+              <v n="TextDefault">"开始运动"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -191,6 +256,21 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"203"</v>
+              <v n="TextDefault">"数据正在导出"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"443"</v>
+              <v n="TextDefault">"最大不平衡力"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"653"</v>
+              <v n="TextDefault">"离合拖动模式"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"301"</v>
               <v n="TextDefault">"进入主从精度测试"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -206,8 +286,18 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"689"</v>
+              <v n="TextDefault">"进入测试模式"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"96"</v>
               <v n="TextDefault">"进入精度测试模式"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"60"</v>
+              <v n="TextDefault">"零点位置不平衡力"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
           </l>

@@ -319,27 +319,6 @@
     <Compile Include="FBs_BasicControllers\FB_RedunJntControl.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="FBs_Basic_Accuracy\FB_BasicFun.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="FBs_Basic_Accuracy\FB_StateCtrlMasterSlave.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="FBs_Basic_Accuracy\FB_StateCtrlPrecisionTest.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="FBs_Basic_Accuracy\GVL_AccuracyTest.TcGVL">
-      <SubType>Code</SubType>
-      <LinkAlways>true</LinkAlways>
-    </Compile>
-    <Compile Include="FBs_Basic_Accuracy\GVL_AccuracyTestVar.TcGVL">
-      <SubType>Code</SubType>
-      <LinkAlways>true</LinkAlways>
-    </Compile>
-    <Compile Include="FBs_Basic_Accuracy\GVL_HmiMid.TcGVL">
-      <SubType>Code</SubType>
-      <LinkAlways>true</LinkAlways>
-    </Compile>
     <Compile Include="FBs_Observer\FB_JntInertia.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -362,6 +341,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_Robots\FB_MasterCart.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_Robots\FB_MasterRobot.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_StateControllers\FB_EndoscopeController.TcPOU">
@@ -391,9 +373,6 @@
     <Compile Include="FBs_StateControllers\FB_StateCtrlError.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="FBs_StateControllers\FB_StateCtrlPerformance.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="FBs_StateControllers\FB_StateCtrlPowerOff.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -403,8 +382,79 @@
     <Compile Include="FBs_StateControllers\FB_StateCtrlSelfcheck.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="FBs_StateControllers\FB_StateCtrlTest.TcPOU">
+    <Compile Include="FBs_TestForAccuracy\FB_BasicFun.TcPOU">
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForAccuracy\FB_StateCtrlMasterSlave.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForAccuracy\FB_StateCtrlPrecisionTest.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForAccuracy\GVL_AccuracyTest.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_TestForAccuracy\GVL_AccuracyTestVar.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_TestForAccuracy\GVL_AccurMonitor.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_TestForAccuracy\GVL_HmiMid.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_TestForAccuracy\Robot_Jog_Arm1_1.TcVIS">
+      <SubType>Code</SubType>
+      <DependentUpon>视图管理器.TcVMO</DependentUpon>
+    </Compile>
+    <Compile Include="FBs_TestForAccuracy\Robot_Jog_Arm2_1.TcVIS">
+      <SubType>Code</SubType>
+      <DependentUpon>视图管理器.TcVMO</DependentUpon>
+    </Compile>
+    <Compile Include="FBs_TestForCycle\FB_StateCtrlCycleTest.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForCycle\GVL_TestCycle.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_TestForManiForce\fb_socket_FR.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForManiForce\FRRecData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForManiForce\GVL_operationTest.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_TestForManiForce\Socket.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForSingleArm\armTest.TcVIS">
+      <SubType>Code</SubType>
+      <DependentUpon>视图管理器.TcVMO</DependentUpon>
+    </Compile>
+    <Compile Include="FBs_TestForSingleArm\FB_CSV_TextMode_ReadWrite.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForSingleArm\FB_StateCtrlPerformance.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForSingleArm\FB_StateCtrlTest.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_TestForSingleArm\GVL_armTest.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="FBs_TestForSingleArm\GVL_Const.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
     </Compile>
     <Compile Include="FBs_TrajectoryPlanning\FB_BasicDoubleS.TcPOU">
       <SubType>Code</SubType>
@@ -542,9 +592,6 @@
     <Compile Include="FBs_Robots\FB_MasterArm.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="FBs_Robots\FB_MasterRobot.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="FBs_StateControllers\FB_StateCtrlInit.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -558,6 +605,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Mains\CartControl.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Mains\MainTestPart.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Mains\SafetyCheck.TcPOU">
@@ -629,14 +679,6 @@
     <Compile Include="TaskSafetyCheck.TcTTO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="VISUs\Robot_Jog_Arm1_1.TcVIS">
-      <SubType>Code</SubType>
-      <DependentUpon>视图管理器.TcVMO</DependentUpon>
-    </Compile>
-    <Compile Include="VISUs\Robot_Jog_Arm2_1.TcVIS">
-      <SubType>Code</SubType>
-      <DependentUpon>视图管理器.TcVMO</DependentUpon>
-    </Compile>
     <Compile Include="视图管理器.TcVMO">
       <SubType>Code</SubType>
     </Compile>
@@ -651,7 +693,10 @@
     <Folder Include="DUTs\Structure\MasterSlaveCommunication" />
     <Folder Include="DUTs\Type" />
     <Folder Include="DUTs\Structure" />
-    <Folder Include="FBs_Basic_Accuracy" />
+    <Folder Include="FBs_TestForAccuracy" />
+    <Folder Include="FBs_TestForCycle" />
+    <Folder Include="FBs_TestForManiForce" />
+    <Folder Include="FBs_TestForSingleArm" />
     <Folder Include="FBs_TrajectoryPlanning" />
     <Folder Include="FBs_RobotDynamics" />
     <Folder Include="FBs_Filters" />
