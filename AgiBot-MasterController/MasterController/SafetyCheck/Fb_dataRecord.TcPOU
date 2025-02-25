@@ -51,8 +51,7 @@ VAR_IN_OUT CONSTANT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-FOR i:= 1 TO 2 BY 1 DO
+        <ST><![CDATA[FOR i:= 1 TO 2 BY 1 DO
 	IF ErrWritingFalg[i] = FALSE THEN
 	j:=1;
 	//状态机
@@ -275,12 +274,12 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-FOR i:=1 TO g_maxNum BY 1 DO
+        <ST><![CDATA[FOR i:=1 TO g_maxNum BY 1 DO
 	IF g_ArrayErrCodeArm[i][0]<>0 AND ArrayErrCodeTypeLast[i]<> g_ArrayErrCodeArm[i][0]  THEN
-		Arm:=SHR(g_ArrayErrCodeArm[i][0],24);
-		IF Arm>g_maxNum THEN
-			Arm:=g_maxNum;	
+		IF SHR(g_ArrayErrCodeArm[i][0],24) = 16#0B THEN
+			Arm:=i;
+		ELSE
+			Arm:=LIMIT(0,SHR(g_ArrayErrCodeArm[i][0],24),3);
 		END_IF
 		Joint:=SHR(g_ArrayErrCodeArm[i][0],16) AND 16#FF;
 		errID:=g_ArrayErrCodeArm[i][0];
@@ -395,24 +394,21 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
+        <ST><![CDATA[IF gCSV_Buffer[_iBuffer].bFull THEN
 
-	
-	IF gCSV_Buffer[_iBuffer].bFull THEN
-
-		gCSV_Buffer[_iBuffer].fbWriter(bWrite:= gCSV_Buffer[_iBuffer].bFull,sFileName:=gCSV_Buffer[_iBuffer].sPath, pBuffer :=ADR(gCSV_Buffer[_iBuffer].aBuffer),Index:=m_Index[_iBuffer]);
-		gCSV_Buffer[_iBuffer].bFull := gCSV_Buffer[_iBuffer].fbWriter.bBusy;
-	END_IF
+	gCSV_Buffer[_iBuffer].fbWriter(bWrite:= gCSV_Buffer[_iBuffer].bFull,sFileName:=gCSV_Buffer[_iBuffer].sPath, pBuffer :=ADR(gCSV_Buffer[_iBuffer].aBuffer),Index:=m_Index[_iBuffer]);
+	gCSV_Buffer[_iBuffer].bFull := gCSV_Buffer[_iBuffer].fbWriter.bBusy;
+END_IF
 
 
-	RecordCompletion[_iBuffer](CLK:= gCSV_Buffer[_iBuffer].bFull, Q=> );
-	IF RecordCompletion[_iBuffer].Q THEN
-		errWritingAllowed[_iBuffer]:=FALSE;
-		Index[_iBuffer]:=2;
-		gCSV_Buffer[_iBuffer].aBuffer:=iZeroRowsData;
-		g_ArrayErrCodeArm[_iBuffer]:=iZeroErrCode[_iBuffer];
-		//gCSV_Buffer[_iBuffer].fbWriter.arrDataForward(array_in:=Robot_Status.ArrayErrCodeType[_iBuffer]  , array_out=> Robot_Status.ArrayErrCodeType[_iBuffer]);
-	END_IF
+RecordCompletion[_iBuffer](CLK:= gCSV_Buffer[_iBuffer].bFull, Q=> );
+IF RecordCompletion[_iBuffer].Q THEN
+	errWritingAllowed[_iBuffer]:=FALSE;
+	Index[_iBuffer]:=2;
+	gCSV_Buffer[_iBuffer].aBuffer:=iZeroRowsData;
+	g_ArrayErrCodeArm[_iBuffer]:=iZeroErrCode[_iBuffer];
+	//gCSV_Buffer[_iBuffer].fbWriter.arrDataForward(array_in:=Robot_Status.ArrayErrCodeType[_iBuffer]  , array_out=> Robot_Status.ArrayErrCodeType[_iBuffer]);
+END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -420,52 +416,7 @@ END_VAR
       <LineId Id="93" Count="0" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.armDataCast">
-      <LineId Id="19" Count="8" />
-      <LineId Id="32" Count="0" />
-      <LineId Id="271" Count="4" />
-      <LineId Id="33" Count="7" />
-      <LineId Id="276" Count="0" />
-      <LineId Id="41" Count="0" />
-      <LineId Id="207" Count="0" />
-      <LineId Id="209" Count="5" />
-      <LineId Id="208" Count="0" />
-      <LineId Id="277" Count="0" />
-      <LineId Id="49" Count="0" />
-      <LineId Id="224" Count="0" />
-      <LineId Id="218" Count="5" />
-      <LineId Id="215" Count="0" />
-      <LineId Id="278" Count="0" />
-      <LineId Id="217" Count="0" />
-      <LineId Id="255" Count="0" />
-      <LineId Id="249" Count="5" />
-      <LineId Id="248" Count="0" />
-      <LineId Id="256" Count="3" />
-      <LineId Id="279" Count="1" />
-      <LineId Id="247" Count="0" />
-      <LineId Id="216" Count="0" />
-      <LineId Id="50" Count="6" />
-      <LineId Id="281" Count="0" />
-      <LineId Id="57" Count="0" />
-      <LineId Id="73" Count="7" />
-      <LineId Id="225" Count="0" />
-      <LineId Id="282" Count="0" />
-      <LineId Id="227" Count="5" />
-      <LineId Id="226" Count="0" />
-      <LineId Id="81" Count="0" />
-      <LineId Id="283" Count="0" />
-      <LineId Id="82" Count="6" />
-      <LineId Id="284" Count="0" />
-      <LineId Id="97" Count="8" />
-      <LineId Id="285" Count="0" />
-      <LineId Id="106" Count="7" />
-      <LineId Id="286" Count="0" />
-      <LineId Id="233" Count="5" />
-      <LineId Id="120" Count="0" />
-      <LineId Id="288" Count="0" />
-      <LineId Id="121" Count="0" />
-      <LineId Id="239" Count="7" />
-      <LineId Id="287" Count="0" />
-      <LineId Id="192" Count="4" />
+      <LineId Id="295" Count="137" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.cartDataCast">
@@ -498,13 +449,7 @@ END_VAR
       <LineId Id="36" Count="1" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.errCodeAnalysis">
-      <LineId Id="6" Count="3" />
-      <LineId Id="23" Count="0" />
-      <LineId Id="26" Count="0" />
-      <LineId Id="25" Count="0" />
-      <LineId Id="10" Count="8" />
-      <LineId Id="30" Count="0" />
-      <LineId Id="19" Count="0" />
+      <LineId Id="34" Count="17" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.run">
@@ -528,8 +473,7 @@ END_VAR
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.writerCSV">
-      <LineId Id="6" Count="3" />
-      <LineId Id="17" Count="13" />
+      <LineId Id="34" Count="14" />
       <LineId Id="5" Count="0" />
     </LineIds>
   </POU>

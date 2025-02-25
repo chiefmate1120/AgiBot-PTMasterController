@@ -27,9 +27,9 @@ VAR
 	
 	// joint4 dynamic limit and limit buffer
 	m_jntPosUb, m_jntPosLb:LREAL;
+	m_jntUpLimit,m_jntLowLimit:LREAL;
 	m_targetVelUb, m_targetVelLb:LREAL;
-	m_jntLimitBufferUb : LREAL :=20*g_deg2Rad;
-	m_jntLimitBufferLb : LREAL :=2*g_deg2Rad;
+	m_jntLimitBuffer : LREAL :=2*g_deg2Rad;
 	
 	// scale near singularity
 	m_singScale:LREAL;
@@ -43,13 +43,14 @@ VAR
 	m_redunJntKd:LREAL:=2;
 	m_redunJntKi:LREAL:=0;
 	m_redunJntKiLimit: LREAL:=200;
-	m_redunJntCtrlLimit:LREAL:=1000;
+	m_redunJntCtrlLimit:LREAL:=500;
 
 	// redundant track parameters
 	m_redunKp:LREAL:=6;
 	m_deadband :LREAL := 2*g_deg2rad;
 	m_minDeadband:LREAL:=2*g_deg2rad;
-	m_maxDeadband:LREAL:=30*g_deg2rad;
+	m_maxDeadband:LREAL:=20*g_deg2rad;
+	m_maxCmdPosErr:LREAL:=5*g_deg2rad;
 	m_maxCmdVel :LREAL := 15;
 	m_maxJntAcc :LREAL := 30;
 	m_targetJntVel:LREAL;
@@ -79,23 +80,19 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[// position limit check
+        <ST><![CDATA[// structure position limit check
 m_jntPosUb:=i_masterArm.jnt4LinkToMotor(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],
-						 GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-m_jntLimitBufferLb);
+						 m_jntUpLimit-m_jntLimitBuffer);
 m_jntPosLb:=i_masterArm.jnt4LinkToMotor(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],
-						 GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]+m_jntLimitBufferLb);
+						 m_jntLowLimit+m_jntLimitBuffer);
+						 
+// position limit in case joint4 is blocked
+m_jntPosUb := MIN(m_jntPosUb, i_masterArm.curJntPos[4]+MIN(m_maxCmdPosErr,ABS(m_jnt6Bias))); 
+m_jntPosLb := MAX(m_jntPosLb, i_masterArm.curJntPos[4]-MIN(m_maxCmdPosErr,ABS(m_jnt6Bias))); 
 
 // velocity limit 
-m_targetVelUb := m_maxCmdVel;
-m_targetVelLb:= -m_maxCmdVel;
-curLinkPos := i_masterArm.jnt4MotorToLink(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],i_masterArm.curJntPos[4]);
-IF (curLinkPos > GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-m_jntLimitBufferUb ) THEN
-	scale:=(GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-m_jntLimitBufferLb-curLinkPos)/(m_jntLimitBufferUb-m_jntLimitBufferLb);
-	m_targetVelUb:=m_maxCmdVel*LIMIT(0,scale,1);
-ELSIF (curLinkPos < GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]+m_jntLimitBufferUb)  THEN
-		scale:=(curLinkPos-GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]-m_jntLimitBufferLb)/(m_jntLimitBufferUb-m_jntLimitBufferLb);
-	m_targetVelLb:=-m_maxCmdVel*LIMIT(0,scale,1);
-END_IF
+m_targetVelUb:= MIN(m_maxCmdVel, SQRT(2*m_maxJntAcc* ABS(m_jntPosUb-m_cmdJntPos)));
+m_targetVelLb:= MAX(-m_maxCmdVel, -SQRT(2*m_maxJntAcc* ABS(m_jntPosLb-m_cmdJntPos)));
 ]]></ST>
       </Implementation>
     </Method>
@@ -179,17 +176,14 @@ VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
 END_VAR
 VAR
-	twist:Vec6d;
+	biasVel:LREAL;
+	ffVel:LREAL;
 
-	cmdJntVel:Vec6d;
-	i,j:INT;
-
-
-	jnt4CurLinkPos: LREAL;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF ABS(m_oriNullJaco[1,1])<g_smallNum THEN
+        <ST><![CDATA[// velocity from joint6 bias
+IF ABS(m_oriNullJaco[1,1])<g_smallNum THEN
 	m_singScale :=0;
 ELSE
 	m_singScale := MIN(1.0, ABS(m_oriNullJaco[3,1]/m_oriNullJaco[1,1]));
@@ -197,7 +191,6 @@ END_IF
 
 m_deadband:=abs(COS(i_masterArm.curJntPos[5]-pi));
 m_deadband := m_maxDeadband-(m_maxDeadband-m_minDeadband)*m_deadband;
-//m_deadband:=m_minDeadband;
 
 IF ABS(m_jnt6Bias)>m_deadband THEN
 	cmdReduntJntVel:=-1*(m_jnt6Bias-sign(m_jnt6Bias)*m_deadband)*m_redunKp*ABS(m_singScale);
@@ -222,7 +215,17 @@ m_cmdJntVel:=0;
 // init controller
 currentRatioMotor2Jnt:=GVL_ArmJointParameters.g_motorTrqConst[4]*GVL_ArmJointParameters.g_motorReduction[4]/1000;
 m_jntPIDCtrl.init(g_armCtrlCycleTime,m_redunJntKp,m_redunJntKd,m_redunJntKi,
-		m_redunJntKiLimit* currentRatioMotor2Jnt,	m_redunJntCtrlLimit*currentRatioMotor2Jnt);]]></ST>
+		m_redunJntKiLimit* currentRatioMotor2Jnt,	m_redunJntCtrlLimit*currentRatioMotor2Jnt);
+
+// determin joint limit
+IF i_masterArm.armIdx=1 THEN
+	m_jntUpLimit := -pi + 15*g_deg2rad;
+	m_jntLowLimit := GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4];
+ELSE
+	m_jntUpLimit := GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4];
+	m_jntLowLimit :=0 - 15 *g_deg2rad;
+END_IF
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="run" Id="{d8042a90-18c2-4767-bdb7-fbc7b91a9fb4}">
@@ -251,7 +254,7 @@ m_oriNullJaco := calcNullJaco(i_masterArm);
  calcManipVel(i_masterArm);
 
 // check if arm is static
-m_trackFlag:=startTrackCheck();
+m_trackFlag:=startTrackCheck(i_masterArm);
 
 // redundant tracking velocity
 IF m_trackFlag THEN
@@ -268,6 +271,17 @@ m_targetJntVel := LIMIT(m_targetVelLb, m_targetJntVel, m_targetVelUb);
 m_cmdJntAcc := LIMIT(-m_maxJntAcc, (m_targetJntVel - m_cmdJntVel)*g_armCtrlFreq, m_maxJntAcc);
 m_cmdJntPos:= m_cmdJntPos + m_cmdJntVel * g_armCtrlCycleTime + 0.5*m_cmdJntAcc*g_armCtrlCycleTime*g_armCtrlCycleTime;
 m_cmdJntVel := m_cmdJntVel + m_cmdJntAcc *g_armCtrlCycleTime;
+m_cmdJntVel:=LIMIT(m_targetVelLb, m_cmdJntVel, m_targetVelUb);
+
+IF m_cmdJntPos >m_jntPosUb AND m_cmdJntVel>0  THEN
+	m_cmdJntPos:=m_jntPosUb;
+	m_cmdJntVel:=0;
+	m_cmdJntAcc:=0;
+ELSIF m_cmdJntPos <m_jntPosLb AND m_cmdJntVel<0 THEN
+	m_cmdJntPos:=m_jntPosLb;
+	m_cmdJntVel:=0;
+	m_cmdJntAcc:=0;
+END_IF
 m_cmdJntPos:=LIMIT(m_jntPosLb, m_cmdJntPos, m_jntPosUb);
 
 // joint position control torque control
@@ -282,9 +296,19 @@ run:=m_jntCtrlTrq;
     </Method>
     <Method Name="startTrackCheck" Id="{a1bf9092-beb2-41f4-a07f-012eb1275972}">
       <Declaration><![CDATA[METHOD startTrackCheck : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR
+	jntVelCheck:Vec3d;
+END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF m_curManipWVel<m_staticWVelThres and m_curManipVel<m_staticVelThres THEN
+        <ST><![CDATA[jntVelCheck[1] := i_masterArm.curJntVel[5];
+jntVelCheck[2] := i_masterArm.curJntVel[6];
+jntVelCheck[3] := i_masterArm.curJntVel[7];
+
+IF (m_curManipWVel<m_staticWVelThres and m_curManipVel<m_staticVelThres) OR norm(jntVelCheck)< m_staticWVelThres THEN
 	m_staticTime:=m_staticTime+g_armCtrlCycleTime;
 ELSE
 	m_staticTime:=0;
@@ -296,19 +320,11 @@ startTrackCheck:=m_staticTime<m_staticTimeThres;]]></ST>
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_RedunJntControl.calcDynaLimit">
-      <LineId Id="20" Count="4" />
-      <LineId Id="28" Count="1" />
-      <LineId Id="40" Count="1" />
-      <LineId Id="30" Count="1" />
-      <LineId Id="42" Count="0" />
-      <LineId Id="44" Count="0" />
-      <LineId Id="32" Count="1" />
-      <LineId Id="45" Count="0" />
-      <LineId Id="34" Count="0" />
+      <LineId Id="54" Count="12" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_RedunJntControl.calcJnt6Bias">
-      <LineId Id="6" Count="3" />
+      <LineId Id="13" Count="3" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_RedunJntControl.calcManipVel">
@@ -324,56 +340,21 @@ startTrackCheck:=m_staticTime<m_staticTimeThres;]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_RedunJntControl.cmdReduntJntVel">
-      <LineId Id="61" Count="4" />
-      <LineId Id="134" Count="0" />
-      <LineId Id="133" Count="0" />
-      <LineId Id="135" Count="0" />
-      <LineId Id="151" Count="0" />
-      <LineId Id="136" Count="0" />
-      <LineId Id="69" Count="0" />
-      <LineId Id="94" Count="0" />
-      <LineId Id="96" Count="1" />
-      <LineId Id="95" Count="0" />
+      <LineId Id="198" Count="14" />
       <LineId Id="14" Count="0" />
     </LineIds>
     <LineIds Name="FB_RedunJntControl.init">
-      <LineId Id="51" Count="0" />
-      <LineId Id="22" Count="0" />
-      <LineId Id="83" Count="0" />
-      <LineId Id="65" Count="0" />
-      <LineId Id="86" Count="0" />
-      <LineId Id="84" Count="1" />
+      <LineId Id="93" Count="15" />
+      <LineId Id="85" Count="0" />
     </LineIds>
     <LineIds Name="FB_RedunJntControl.run">
-      <LineId Id="566" Count="7" />
-      <LineId Id="739" Count="0" />
-      <LineId Id="716" Count="0" />
-      <LineId Id="740" Count="1" />
-      <LineId Id="574" Count="0" />
-      <LineId Id="632" Count="0" />
-      <LineId Id="649" Count="0" />
-      <LineId Id="651" Count="1" />
-      <LineId Id="650" Count="0" />
-      <LineId Id="767" Count="0" />
-      <LineId Id="682" Count="0" />
-      <LineId Id="687" Count="0" />
-      <LineId Id="769" Count="0" />
-      <LineId Id="742" Count="0" />
-      <LineId Id="712" Count="0" />
-      <LineId Id="708" Count="0" />
-      <LineId Id="692" Count="0" />
-      <LineId Id="690" Count="0" />
-      <LineId Id="743" Count="0" />
-      <LineId Id="764" Count="0" />
-      <LineId Id="613" Count="1" />
-      <LineId Id="713" Count="0" />
-      <LineId Id="724" Count="0" />
-      <LineId Id="721" Count="0" />
-      <LineId Id="634" Count="0" />
-      <LineId Id="617" Count="0" />
+      <LineId Id="783" Count="46" />
       <LineId Id="125" Count="0" />
     </LineIds>
     <LineIds Name="FB_RedunJntControl.startTrackCheck">
+      <LineId Id="132" Count="0" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="131" Count="0" />
       <LineId Id="122" Count="4" />
       <LineId Id="115" Count="0" />
     </LineIds>

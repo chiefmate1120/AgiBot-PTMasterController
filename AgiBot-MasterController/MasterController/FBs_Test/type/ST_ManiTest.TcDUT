@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <DUT Name="ST_ManiTest" Id="{792a8a95-b430-4ecf-b9da-a95d3c8c0f31}">
+    <Declaration><![CDATA[TYPE ST_ManiTest :
+STRUCT
+	//operation test start flag
+	m_testStart:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//joint position
+	m_armJntPos:ARRAY[1..7] OF LREAL;
+	
+	//joint torque
+	m_armJntTrq:ARRAY[1..7] OF LREAL;
+	
+	//fa ao robot joint position
+	m_robotJntPos:ARRAY[1..6] OF LREAL;
+	
+	//fa ao robot start signal
+	m_motStart:BOOL;
+	
+	//torque sensor data
+	m_sensorData:ARRAY[1..6] OF LREAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_StateCtrlSelfcheck" Id="{fd7811e9-2663-48f4-b572-c3f170d74307}" SpecialFunc="None">
     <Declaration><![CDATA[// Brief: Master Arm Home Posture
 FUNCTION_BLOCK PUBLIC FB_StateCtrlSelfcheck EXTENDS FB_MasterArmCtrlBase

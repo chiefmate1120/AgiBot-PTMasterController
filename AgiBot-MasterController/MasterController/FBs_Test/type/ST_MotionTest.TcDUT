@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <DUT Name="ST_MotionTest" Id="{e76d8cfa-d388-4895-9fb2-b8944759ebdc}">
+    <Declaration><![CDATA[TYPE ST_MotionTest :
+STRUCT
+	//enter precision test mode
+	m_enterPrecisionTestMode:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//start motion flag
+	m_startMotion:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//control Mode
+	m_controlMode:ARRAY[1..g_mArmNum] OF INT;
+	
+	//next step button
+	m_nextStep:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//master slave precision test
+	m_MSPrecisionTest:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//esd test
+	m_esdTest:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//current step
+	m_curStep:ARRAY[1..g_mArmNum] OF INT;
+	
+	//current test point id
+	m_testPointId:ARRAY[1..g_mArmNum] OF INT;
+	
+	//current cycle id
+	m_testCycleId:ARRAY[1..g_mArmNum] OF INT;
+	
+	//origin joint position
+	m_originJntPos:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//Target joint position for control mode 1---Joint space single point motion
+	m_targetJntPos:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//joint motion direction for control mode 2---Continuous joint space motion
+	m_jntMotionDir:ARRAY[1..g_mArmNum] OF Vec7i;
+	
+	//joint motion velocity for control mode 2---Continuous joint space motion
+	m_jntVel:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//target space position for control mode 3---Single point motion in operating space
+	m_targetSpatialPos:ARRAY[1..g_mArmNum] OF ST_Frame;
+	
+	//target space motion direction for control mode 4---Continuous motion in operating space
+	m_spatialMotionDir:ARRAY[1..g_mArmNum] OF Vec6i;
+	
+	//target space velocity for control mode 4---Continuous motion in operating space
+	m_spatialVel:ARRAY[1..g_mArmNum] OF Vec6d;
+	
+	//write data
+	m_writeData:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//master arm spatial pose frame
+	m_frontPose:ARRAY[1..4] OF ST_Frame;
+	m_endPose:ARRAY[1..4] OF ST_Frame;
+	m_masterArmPose:ARRAY[1..4] OF ST_Frame;
+	
+	//output the arm joint position
+	m_armDHJntPos:ARRAY[1..g_mArmNum] OF Vec7d;
+	m_armActJntPos:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//ui signal
+	m_uiArmMode:ARRAY[1..g_mArmNum,0..GVL_Const.g_controlModeNum] OF BOOL;
+	
+	//cover command position
+	m_coverCmdPos:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	
+	
+	
+	
+	//*********************code for ui interface**************************//
+	//position incresement mode select
+	m_jntPosIncMode:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//target joint position
+	m_targetJntPosTest:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//target joint velocity
+	m_targetJntVel:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//target joint position incresement
+	m_targetJntPosInc:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//target joint current
+	m_targetJntCurrent:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//target joint current
+	m_curJntCurrent:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//joint enable
+	m_jntEnable:ARRAY[1..g_mArmNum] OF Vec7i;	
+	
+	
+	
+	//*********************car**************************//
+	//enter joint test mode
+	m_enterJntTestCar:BOOL;
+	
+	//start motion flag
+	m_startMotionCar:BOOL;
+	
+	//position incresement mode
+	m_jntPosIncModeCar:BOOL;
+	
+	//car target joint position
+	m_targetJntPosCar:Vec4d;
+	
+	//car target joint velocity
+	m_targetJntVelCar:Vec4d;
+	
+	//target joint position incresement
+	m_targetJntPosIncCar:Vec4d;
+	
+	//target joint current
+	m_targetJntCurrentCar:Vec4d;
+	
+	//enter car joint current test
+	m_carJntCurTest:BOOL;
+	
+	//output the car joint position
+	m_carJntPos:Vec4d;
+	
+	//output the car joint position
+	m_carJntCurrent:Vec4d;
+	
+	//cover command position-car
+	m_coverCmdPosCar:BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

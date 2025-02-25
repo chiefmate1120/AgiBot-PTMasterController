@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_MasterGravity" Id="{ced9fef1-3691-440d-9914-43fe53d631cd}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MasterGravity
 VAR_INPUT

@@ -247,8 +247,6 @@ ELSE
 	m_cmdJntPos[7] := m_initJntPos[7];
 	m_cmdJntVel[7] := 0;
 END_IF
-
-
 ]]></ST>
       </Implementation>
     </Method>
@@ -351,7 +349,8 @@ copyCmds(r_masterArmCtrlCmd);
       <LineId Id="131" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlClutch.calcCmdJntPos_USKnife">
-      <LineId Id="527" Count="64" />
+      <LineId Id="527" Count="61" />
+      <LineId Id="622" Count="0" />
       <LineId Id="131" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlClutch.calcRedunVel">

@@ -31,7 +31,6 @@ VAR
 	m_curCartLinkPose :ST_Frame;
 	m_curCartLinkTwist :Vec6d;
 	
-	
 	// arm joint data
 	m_curMotorPos :Vec7d;
 	m_curLinkPos :Vec7d;
@@ -47,7 +46,8 @@ VAR
 	m_cmdJntTrq :Vec7d;
 	m_cmdJntPos :Vec7d;
 	m_cmdJntVel :Vec7d;
-
+	m_motorEncSalta:Vec7di;
+	m_lastMotorEnc:Vec7di;
 	
 	// arm dynamic data
 	m_jntGravity : Vec7d;
@@ -56,6 +56,7 @@ VAR
 	m_dynaNullspace :Mat7d;
 	m_jntFriction :Vec7d;
 	m_jntExtTrq :Vec7d;
+	m_jntGravityBias :Vec7d;
 	
 	// arm jacobian 
 	m_jaco : Mat67;
@@ -334,6 +335,17 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <Property Name="curLinkVel" Id="{e9fa17f9-9bc4-4851-b838-51c31f12ceb1}" FolderPath="property\">
+      <Declaration><![CDATA[PROPERTY curLinkVel :REFERENCE TO  Vec7d]]></Declaration>
+      <Get Name="Get" Id="{fe31435c-96de-4172-843f-90fd2f538d80}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[curLinkVel REF=m_curLinkVel;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <Property Name="curMotorPos" Id="{ad9d9e24-10f4-4dc4-b0d2-86517dead53b}" FolderPath="property\">
       <Declaration><![CDATA[PROPERTY curMotorPos :REFERENCE TO Vec7d]]></Declaration>
       <Get Name="Get" Id="{bc557e46-3cdd-47ba-9e7f-cf7525f3969d}">
@@ -398,7 +410,6 @@ END_VAR
     <Method Name="forwardKinematic" Id="{182b544f-f7c4-475e-8af7-8c07aa230234}">
       <Declaration><![CDATA[// from active joint position to cartesian pose in arm origin
 METHOD PROTECTED forwardKinematic : BOOL
-//METHOD PUBLIC forwardKinematic : BOOL
 VAR_IN_OUT CONSTANT
 	i_jntPos :ARRAY[1..g_mJntNum] OF LREAL;
 END_VAR
@@ -419,9 +430,9 @@ q1:=i_jntPos[1];
 q2:=i_jntPos[2];  
 q3:=i_jntPos[3]-i_jntPos[2];  //q3=q8-q2
 q4:=jnt4MotorToLink(i_jntPos[2],i_jntPos[3], i_jntPos[4]);//q4DH=q4motor+q8-q2-90;  
-q5:=i_jntPos[5];
-q6:=i_jntPos[6];
-q7:=i_jntPos[7];
+q5:=i_jntPos[5];  
+q6:=i_jntPos[6];  
+q7:=i_jntPos[7];  
 
 // master roll flip handle
 IF m_gripperRollFlip THEN
@@ -555,7 +566,6 @@ updateStatus();
     <Method Name="inverseKinematic" Id="{a2d4ef4e-dcb4-4918-aceb-3d3fb8d74093}">
       <Declaration><![CDATA[// from cartesian pose in arm origin to active joint position
 METHOD PROTECTED inverseKinematic : BOOL
-//METHOD PUBLIC inverseKinematic : BOOL
 VAR_INPUT
 	q4:LREAL;
 	solution_ID:INT;
@@ -797,6 +807,26 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <Property Name="jntGravityBias" Id="{98e9447b-dbcb-43f9-9939-c5f9658d66f6}" FolderPath="property\">
+      <Declaration><![CDATA[PROPERTY jntGravityBias :REFERENCE to Vec7d]]></Declaration>
+      <Get Name="Get" Id="{45c5ec0b-01e0-48e0-8f64-7a1d89f2d1fe}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[jntGravityBias ref=m_jntGravityBias;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{4abadf39-71db-4fe9-89b5-4fa9c3a50b80}">
+        <Declaration><![CDATA[PUBLIC 
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[m_jntGravityBias := jntGravityBias;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
     <Property Name="massMat" Id="{c4fbf6a1-1d71-4f80-9bfa-395c19261a6f}" FolderPath="property\">
       <Declaration><![CDATA[PROPERTY PUBLIC massMat :REFERENCE to Mat7d]]></Declaration>
       <Get Name="Get" Id="{b8079ba8-3835-474b-9d8e-6afd86dc6a9b}">
@@ -805,6 +835,17 @@ END_VAR
 ]]></Declaration>
         <Implementation>
           <ST><![CDATA[massMat ref=m_jntMassMat;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="motorEncSalta" Id="{fa01c7e3-43cd-4300-b65e-50a1ad38dc6d}" FolderPath="property\">
+      <Declaration><![CDATA[PROPERTY motorEncSalta :REFERENCE TO  Vec7di]]></Declaration>
+      <Get Name="Get" Id="{ccc624d3-701c-45c9-ac56-3c3d7c71af96}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[motorEncSalta ref= m_motorEncSalta;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -875,7 +916,7 @@ FOR i:=1 TO g_mJntNum DO
 	ELSIF i_armCtrlCmd.m_jntOPMode[i]=DriverOPMode_Trq THEN
 		// gravity feedforward
 		m_jntPIDCtrl[i].reset();
-		m_cmdJntTrq[i]:=m_cmdJntTrq[i]+m_jntGravity[i];
+		m_cmdJntTrq[i]:=m_cmdJntTrq[i]+m_jntGravity[i] + m_jntGravityBias[i];
 		m_joints[i].updateCmds(DriverOPMode_Trq,i_armCtrlCmd.m_cmdJntPos[i],m_cmdJntTrq[i]);
 	ELSE
 		m_jntPIDCtrl[i].reset();
@@ -948,6 +989,8 @@ FOR i:=1 TO g_mJntNum DO
 	m_rawJntCurrent[i]:=m_joints[i].rawCurrent;
 	m_filtJntCurrent[i]:=m_joints[i].filtCurrent;
 	m_cmdJntCurrent[i]:=m_joints[i].cmdCurrent;
+	m_motorEncSalta[i]:=ABS(m_joints[i].m_motorInputs.m_motorEncoder-m_lastMotorEnc[i]);
+	m_lastMotorEnc[i]:=m_joints[i].m_motorInputs.m_motorEncoder;
 END_FOR 
 m_curLinkPos[4]:=jnt4LinkToMotor(m_curLinkPos[2],m_curLinkPos[3], m_curLinkPos[4]);// q4motor=q4DH-q8+q2+90; 
 m_curLinkVel[4]:= m_curLinkVel[4] - m_curLinkVel[3] + m_curLinkVel[2]; 
@@ -1014,6 +1057,9 @@ matMultiVec(m_linkJaco,m_curLinkVel,m_curCartLinkTwist);
     <LineIds Name="FB_MasterArm.curLinkPos.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
+    <LineIds Name="FB_MasterArm.curLinkVel.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
     <LineIds Name="FB_MasterArm.curMotorPos.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
@@ -1052,22 +1098,8 @@ matMultiVec(m_linkJaco,m_curLinkVel,m_curCartLinkTwist);
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterArm.init">
-      <LineId Id="71" Count="0" />
-      <LineId Id="54" Count="0" />
-      <LineId Id="35" Count="0" />
-      <LineId Id="101" Count="0" />
-      <LineId Id="72" Count="0" />
-      <LineId Id="68" Count="0" />
-      <LineId Id="5" Count="0" />
-      <LineId Id="11" Count="1" />
-      <LineId Id="92" Count="0" />
-      <LineId Id="90" Count="0" />
-      <LineId Id="93" Count="0" />
-      <LineId Id="69" Count="0" />
-      <LineId Id="37" Count="0" />
-      <LineId Id="40" Count="1" />
-      <LineId Id="43" Count="1" />
-      <LineId Id="39" Count="0" />
+      <LineId Id="109" Count="4" />
+      <LineId Id="123" Count="13" />
       <LineId Id="80" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterArm.initJntPos">
@@ -1111,7 +1143,16 @@ matMultiVec(m_linkJaco,m_curLinkVel,m_curCartLinkTwist);
     <LineIds Name="FB_MasterArm.jntGravity.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
+    <LineIds Name="FB_MasterArm.jntGravityBias.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterArm.jntGravityBias.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
     <LineIds Name="FB_MasterArm.massMat.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterArm.motorEncSalta.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterArm.rawJntCurrent.Get">
@@ -1139,37 +1180,9 @@ matMultiVec(m_linkJaco,m_curLinkVel,m_curCartLinkTwist);
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterArm.updateStatus">
-      <LineId Id="30" Count="1" />
-      <LineId Id="119" Count="0" />
-      <LineId Id="117" Count="0" />
-      <LineId Id="32" Count="0" />
-      <LineId Id="118" Count="0" />
-      <LineId Id="14" Count="0" />
-      <LineId Id="26" Count="3" />
-      <LineId Id="5" Count="0" />
-      <LineId Id="11" Count="0" />
-      <LineId Id="63" Count="1" />
-      <LineId Id="13" Count="0" />
-      <LineId Id="17" Count="0" />
-      <LineId Id="126" Count="0" />
-      <LineId Id="138" Count="1" />
-      <LineId Id="18" Count="0" />
-      <LineId Id="80" Count="1" />
-      <LineId Id="88" Count="0" />
-      <LineId Id="12" Count="0" />
-      <LineId Id="103" Count="0" />
-      <LineId Id="128" Count="0" />
-      <LineId Id="140" Count="0" />
-      <LineId Id="34" Count="0" />
-      <LineId Id="36" Count="1" />
-      <LineId Id="129" Count="0" />
-      <LineId Id="43" Count="1" />
-      <LineId Id="35" Count="0" />
-      <LineId Id="131" Count="0" />
-      <LineId Id="46" Count="0" />
-      <LineId Id="45" Count="0" />
-      <LineId Id="47" Count="0" />
-      <LineId Id="130" Count="0" />
+      <LineId Id="158" Count="23" />
+      <LineId Id="204" Count="1" />
+      <LineId Id="182" Count="15" />
       <LineId Id="110" Count="0" />
     </LineIds>
   </POU>

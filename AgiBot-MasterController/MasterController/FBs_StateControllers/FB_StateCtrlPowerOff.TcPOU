@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_StateCtrlPowerOff" Id="{7988e477-8dca-44f9-aa08-df96f391d1da}" SpecialFunc="None">
     <Declaration><![CDATA[// Brief: Master Arm Home Posture
 FUNCTION_BLOCK PUBLIC FB_StateCtrlPowerOff EXTENDS FB_MasterArmCtrlBase

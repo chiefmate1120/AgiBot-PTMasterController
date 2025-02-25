@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_MasterCart" Id="{05baaa0e-c853-48bc-a37c-d593cfa5bf2b}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MasterCart
 VAR
@@ -78,12 +78,366 @@ VAR
 	m_filtJntCurrent :Vec4d;
 	m_cmdJntCurrent : Vec4d;
 
+	
+	
+	
+	
+	//**************************add code for test****************************//
+	//test step
+	m_testStep:INT:=-1;
+	
+	//motion start
+	m_startMotion:BOOL;
+	m_startMotionLast:BOOL;
+	
+	//time
+	m_time:LREAL;
+	
+	//test point
+	m_pointNum:INT;
+	
+	//DH joint position	
+	m_homeDHJntPos,m_startDHJntPos,m_endDHJntPos:Vec4d;
+	
+	//startJntPos,endJntPos
+	m_initJntPos,m_startJntPos,m_endJntPos :Vec7d;
+	
+	//joint position gap---监视器升降  监视器旋转  扶手升降  脚踏伸缩
+	m_jntDist:Vec4d:=[0,0,0,0];	
+	
+	//planner
+	m_Planner: FB_TrajMoveJ;
+	
+	//trajectory velocity/acceleration/jerk
+	m_maxjntVel:Vec7d;
+	m_maxjntAcc:Vec7d;
+	m_maxjntJerk:Vec7d;
+	m_jntCtrlMotionVel :ARRAY[1..7] OF LREAL :=[0.015,2*g_deg2Rad,0.01,0.0075,0.1,0.1,0.1];
+	
+	//arm id
+	m_armId:INT:=1;	
+	
+	//target joint position
+	m_targetJntPos:ARRAY[1..10] OF Vec4d;
+	
+	//point sum
+	m_pointSum:INT;
+	
+	//target cycle number
+	m_motionCycleNum:INT;
+	m_targetCycleNum:INT;
+	
+	
+	
+	
+	//*********************add code for joint position test**************************//
+	//test step
+	m_testStepJntPos:INT:=-1;
+	
+	//motion start
+	m_jntTestStartMotion:BOOL;
+	m_jntTestStartMotionLast:BOOL;
+	
+	
+	//*********************add code for joint current test**************************//
+	//test step
+	m_jntCurTestStep:INT:=-1;
+	
+	//motion start
+	m_jntCurTestStart:BOOL;
+	m_jntCurTestStartLast:BOOL;
+	
+	//motor parameters
+	m_motorReduction :LREAL;
+	m_trqConst :LREAL;
+	m_motorDir :INT;
+	m_trq2CurrentRatio:LREAL;
+	m_current2TrqRatio:LREAL;
+	m_armCurrent2TrqRatio:Vec4d;	
+	
+	//unit function
+	m_unitFun:FB_UnitTransform;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
     <Folder Name="property" Id="{37b9f91a-fbe1-4cae-807d-574d49e247d7}" />
+    <Method Name="cartTestCycle" Id="{ebc1a974-4490-4236-8e5f-48d6f3582755}">
+      <Declaration><![CDATA[METHOD cartTestCycle : BOOL
+VAR_INPUT
+	
+END_VAR
+
+VAR
+	i:INT;
+	homeDHPos,startDHPos,endDHPos :Vec4d;
+	cmdJntPos,cmdJntVel,cmdJntAcc:Vec7d;	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//init parameters flag
+IF (g_cycleTest.m_carEnterESDTest=TRUE) THEN
+	m_startMotion:=TRUE;
+ELSE
+	m_startMotion:=g_cycleTest.m_startMotionCar AND g_cycleTest.m_carEnterCycleTest;
+END_IF
+
+//monitoring signal rising edge
+IF (m_startMotionLast=FALSE) AND (m_startMotion=TRUE)THEN
+	m_testStep:=0;
+END_IF
+m_startMotionLast:=m_startMotion;
+
+
+
+CASE m_testStep OF
+	0: //init
+		m_pointNum:=1;
+		m_testStep:=10;
+		
+		//target DH joint position
+		FOR i:=1 TO 4 BY 1 DO
+			m_homeDHJntPos[i]:=(GVL_CartJointParameters.g_minJntPos[i]+GVL_CartJointParameters.g_maxJntPos[i])/2;
+			m_jntDist[i]:=(GVL_CartJointParameters.g_maxJntPos[i]-GVL_CartJointParameters.g_minJntPos[i])*0.1;
+			m_startDHJntPos[i]:=m_homeDHJntPos[i]-m_jntDist[i];
+			m_endDHJntPos[i]:=m_homeDHJntPos[i]+m_jntDist[i];
+		END_FOR
+		
+		//velocity and acceleration
+		vecMultiNum(m_jntCtrlMotionVel,0.3,m_maxjntVel);
+		vecMultiNum(m_maxjntVel,5,m_maxjntAcc);
+		vecMultiNum(m_maxjntAcc,5,m_maxjntJerk);
+		
+		IF (g_cycleTest.m_carEnterESDTest=FALSE) THEN
+			m_pointSum:=g_cycleTest.m_pointSumCar;
+			m_targetCycleNum:=g_cycleTest.m_targetCycleNumCar;
+			FOR i:=1 TO 10 BY 1 DO
+				m_targetJntPos[i]:=m_unitFun.carUnit2System(i_dataTest:= g_cycleTest.m_targetJntPosCar[i]);
+			END_FOR			
+		ELSE
+			m_pointSum:=3;
+			m_targetCycleNum:=30000;
+			m_targetJntPos[1]:=m_startDHJntPos; 	m_targetJntPos[2]:=m_homeDHJntPos;	m_targetJntPos[3]:=m_endDHJntPos;			
+		END_IF
+								
+		
+	10: //Trajectory parameter initialization
+		startDHPos:=m_curJntPos;
+		endDHPos:=m_targetJntPos[m_pointNum];				
+		
+		FOR i:=4 TO 7 BY 1 DO
+			m_startJntPos[i]:=startDHPos[i-3];
+			m_endJntPos[i]:=endDHPos[i-3];
+		END_FOR		
+		
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=30;
+		ELSE
+			m_time:=0; m_testStep:=20;
+		END_IF
+	
+		
+	20: //start motion
+		IF (g_cycleTest.m_pauseCar=TRUE) THEN
+			g_cycleTest.m_pauseCar:=FALSE;
+			RETURN;
+		END_IF
+		
+		IF (g_cycleTest.m_finishCar=TRUE) THEN
+			g_cycleTest.m_finishCar:=FALSE;
+			m_testStep:=30;
+			RETURN;
+		END_IF	
+		
+		m_time:=m_time+g_cartCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> cmdJntPos, jntVel=> cmdJntVel, jntAcc=> cmdJntAcc);
+		FOR i:=1 TO 4 BY 1 DO
+			m_cmdJntPos[i]:=cmdJntPos[i+3];
+			m_cmdJntVel[i]:=cmdJntVel[i+3];
+		END_FOR
+		
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=25;			
+		END_IF		
+		
+		//end the motion
+		IF (m_startMotion=FALSE) THEN
+			m_testStep:=30;
+		END_IF
+		
+		
+	25: //Record the motion cycle
+		m_pointNum:=m_pointNum+1;
+		IF (m_pointNum>m_pointSum) THEN
+			m_pointNum:=1;
+			m_motionCycleNum:=m_motionCycleNum+1;
+			IF (m_motionCycleNum>m_targetCycleNum) THEN
+				m_testStep:=30;
+			ELSE
+				m_testStep:=10;
+			END_IF
+		ELSE
+			m_testStep:=10;
+		END_IF		
+		
+	
+	30: //end the motion
+		m_testStep:=-1;	
+	
+	
+	-1: //
+END_CASE
+
+
+
+//update the encoder information
+FOR i:=1 TO 4 BY 1 DO
+	g_cycleTest.m_cartMotorEncoder[i]:=m_cartJoints[i].m_motorInputs.m_motorEncoder;
+	g_cycleTest.m_cartJntEncoder[i]:=m_cartJoints[i].m_motorInputs.m_linkEncoder;
+END_FOR
+
+//update the joint position
+//g_cycleTest.m_carJntPos:=m_curJntPos;
+g_cycleTest.m_carJntPos:=m_unitFun.carArmUnit2User(i_dataSystem:= m_curJntPos);
+
+GVL_Monitor.carTestStep:=m_testStep;
+GVL_Monitor.carTestPoint:=m_pointNum;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="cartTestJnt" Id="{4b30d635-bf84-46c0-bab5-01b89400ffe1}">
+      <Declaration><![CDATA[METHOD cartTestJnt : BOOL
+VAR_INPUT
+	
+END_VAR
+
+VAR
+	i:INT;
+	homeDHPos,startDHPos,endDHPos :Vec4d;
+	cmdJntPos,cmdJntVel,cmdJntAcc:Vec7d;	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//init parameters flag
+m_jntTestStartMotion:=g_motionTest.m_startMotionCar;
+IF (m_jntTestStartMotionLast=FALSE) AND (m_jntTestStartMotion=TRUE)THEN
+	m_testStepJntPos:=0;
+END_IF
+m_jntTestStartMotionLast:=m_jntTestStartMotion;
+
+
+CASE m_testStepJntPos OF 
+	0: //Trajectory parameter initialization		 
+		startDHPos:=m_curJntPos;				
+		IF (g_motionTest.m_jntPosIncModeCar=FALSE) THEN
+			FOR i:=4 TO 7 BY 1 DO
+				m_maxjntVel[i]:=g_motionTest.m_targetJntVelCar[i-3];
+			END_FOR
+			endDHPos:=g_motionTest.m_targetJntPosCar;
+		ELSE
+			vecMultiNum(m_jntCtrlMotionVel,0.3,m_maxjntVel);
+			vecAdd(startDHPos,g_motionTest.m_targetJntPosIncCar,endDHPos);
+		END_IF
+		
+		//velocity and acceleration
+		vecMultiNum(m_maxjntVel,5,m_maxjntAcc);
+		vecMultiNum(m_maxjntAcc,5,m_maxjntJerk);				
+		m_testStepJntPos:=10;	
+		
+		
+	10: //init trajectory
+		FOR i:=4 TO 7 BY 1 DO
+			m_startJntPos[i]:=startDHPos[i-3];
+			m_endJntPos[i]:=endDHPos[i-3];
+		END_FOR		
+		
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStepJntPos:=30;
+		ELSE
+			m_time:=0; m_testStepJntPos:=20;
+		END_IF
+		
+		
+	20: //start motion
+		m_time:=m_time+g_cartCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> cmdJntPos, jntVel=> cmdJntVel, jntAcc=> cmdJntAcc);
+		FOR i:=1 TO 4 BY 1 DO
+			m_cmdJntPos[i]:=cmdJntPos[i+3];
+			m_cmdJntVel[i]:=cmdJntVel[i+3];
+		END_FOR
+		
+		IF (m_time>m_Planner.duration) THEN
+			m_testStepJntPos:=30;			
+		END_IF
+		
+		
+	30: //end the motion
+		m_testStepJntPos:=-1;	
+		//g_motionTest.m_enterJntTestCar:=FALSE;
+		
+		
+	-1: //
+END_CASE
+
+//update the joint position
+g_motionTest.m_carJntPos:=m_curJntPos;
+g_motionTest.m_carJntCurrent:=m_filtJntCurrent;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="cartTestJntCurrent" Id="{bb8f7dbd-4d8b-4b2a-a3d9-0f8fe1c4a5e6}">
+      <Declaration><![CDATA[METHOD cartTestJntCurrent : BOOL
+VAR_INPUT
+	
+END_VAR
+
+VAR
+	i:INT;
+	i_jntIdx:INT;
+	targetTrq:ARRAY[1..4] OF LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//init parameters flag
+m_jntCurTestStart:=g_motionTest.m_carJntCurTest;
+IF (m_jntCurTestStartLast=FALSE) AND (m_jntCurTestStart=TRUE)THEN
+	m_jntCurTestStep:=0;
+END_IF
+m_jntCurTestStartLast:=m_jntCurTestStart;
+
+
+CASE m_jntCurTestStep OF 
+	0: //init
+		FOR i_jntIdx:=1 TO 4 BY 1 DO
+			m_motorReduction :=GVL_ArmJointParameters.g_motorReduction[i_jntIdx];
+			m_trqConst :=GVL_ArmJointParameters.g_motorTrqConst[i_jntIdx];
+			m_motorDir :=GVL_ArmJointParameters.g_motorDir[m_armId,i_jntIdx];
+			m_trq2CurrentRatio:=m_motorDir * 1000.0/(m_trqConst*m_motorReduction);
+			m_current2TrqRatio:=m_motorDir * (m_trqConst*m_motorReduction)/1000.0;
+			m_armCurrent2TrqRatio[i_jntIdx]:=m_current2TrqRatio;
+		END_FOR
+		m_jntCurTestStep:=10;
+		
+		
+	10: //update the current
+		FOR i:=1 TO 4 BY 1 DO			
+			targetTrq[i]:=g_motionTest.m_targetJntCurrentCar[i]*m_armCurrent2TrqRatio[i];			
+		END_FOR
+		m_cmdJntTrq:=targetTrq;		
+		IF (g_motionTest.m_carJntCurTest=FALSE) THEN
+			m_jntCurTestStep:=20;
+		END_IF
+		
+		
+	20: //finish
+		m_jntCurTestStep:=-1;
+	
+	
+	-1: //
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="eleKnifeCtrl" Id="{802e30d4-05e6-4f42-9cf9-00572025b770}">
       <Declaration><![CDATA[METHOD eleKnifeCtrl : DINT
 VAR_IN_OUT CONSTANT
@@ -193,6 +547,31 @@ r_cartJointData.m_cmdJntCurrent:=m_cmdJntCurrent;
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="infoUpdate" Id="{184d313d-8cfa-436a-b9c0-a828c18f1825}">
+      <Declaration><![CDATA[METHOD infoUpdate : BOOL
+VAR_INPUT
+END_VAR
+
+VAR
+	i: INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//update system information
+FOR i:=1 TO 4 BY 1 DO
+	//motor input and output information
+	g_systemInfo.m_cartJntInfo[i].m_motorInput:=m_cartJoints[i].m_motorInputs;
+	g_systemInfo.m_cartJntInfo[i].m_motorOutput:=m_cartJoints[i].m_motorOutputs;
+	
+	//joint position and max/min
+	g_systemInfo.m_cartJntInfo[i].m_actJntPos:=m_curJntPos[i];
+	g_systemInfo.m_cartJntInfo[i].m_jntMax:=GVL_CartJointParameters.g_maxJntPos[i];
+	g_systemInfo.m_cartJntInfo[i].m_jntMin:=GVL_CartJointParameters.g_minJntPos[i];
+END_FOR
+
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="init" Id="{a9830b95-e937-4a29-b70e-785e20452d37}">
       <Declaration><![CDATA[METHOD PUBLIC init : BOOL
 VAR_INPUT
@@ -273,10 +652,9 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-X0:=i_linkPos;  //监视器旋转
+        <ST><![CDATA[X0:=i_linkPos;  //监视器旋转
 
-A:=222; B:=191.5; C:=232.7073; D:=135.5031; E:=186; F:=164; G:=178; H:=45; I:=160;
+A:=222; B:=177; C:=291.7852; D:=286.0173; E:=170.5; F:=131.5; G:=366; H:=-30; I:=280;
 X4:=ATAN(H/I); X5:=ATAN(F/G);
 X8:=SQRT(F*F+G*G);
 X12:=sqrt(H*H+I*I);
@@ -305,10 +683,9 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-X0:=i_linkPos;  //监视器旋转
+        <ST><![CDATA[X0:=i_linkPos;  //监视器旋转
 
-A:=222; B:=191.5; C:=232.7073; D:=135.5031; E:=186; F:=164; G:=178; H:=45; I:=160;
+A:=222; B:=177; C:=291.7852; D:=286.0173; E:=170.5; F:=131.5; G:=366; H:=-30; I:=280;
 X4:=ATAN(H/I); X5:=ATAN(F/G);
 X8:=SQRT(F*F+G*G);
 X12:=sqrt(H*H+I*I);
@@ -338,7 +715,7 @@ END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[X2:=i_motorPos;
 
-A:=222; B:=191.5; C:=232.7073; D:=135.5031; E:=186; F:=164; G:=178; H:=45; I:=160;
+A:=222; B:=177; C:=291.7852; D:=286.0173; E:=170.5; F:=131.5; G:=366; H:=-30; I:=280;
 X5:=atan(F/G);
 X6:=X5-X2;
 X8:=sqrt(F*F+G*G);
@@ -384,19 +761,43 @@ updateStatus();
 // update controller and command
 updateCmds();
 
+//cycle test
+cartTestCycle();
+
+//joint test
+cartTestJnt();
+
+//current test
+cartTestJntCurrent();
+
 // send command to joint driver
 FOR i:=1 TO 4 DO
 	// joint enable
-	IF m_jntEnableFlag[i] AND NOT(SafetyCheck.m_safetyCheckData.m_cartErrFlag[i]) AND MasterArmControl.m_masterStatus.m_armState[1] <> MasterArmState_MasterSlave 
-								AND MasterArmControl.m_masterStatus.m_armState[2] <> MasterArmState_MasterSlave THEN
+	IF (m_startMotion=FALSE) AND (g_motionTest.m_enterJntTestCar=FALSE) AND (g_motionTest.m_carJntCurTest=FALSE) THEN		
+		IF m_jntEnableFlag[i] AND NOT(SafetyCheck.m_safetyCheckData.m_cartErrFlag[i]) AND MasterArmControl.m_masterStatus.m_armState[1] <> MasterArmState_MasterSlave 
+									AND MasterArmControl.m_masterStatus.m_armState[2] <> MasterArmState_MasterSlave THEN
+			m_cartJoints[i].enable();
+		ELSE
+			m_cartJoints[i].disable();
+		END_IF
+	END_IF
+	
+	//car joint cycle test-----add code for test
+	IF (m_startMotion=TRUE) OR (g_motionTest.m_enterJntTestCar=TRUE) OR (g_motionTest.m_carJntCurTest=TRUE) THEN
 		m_cartJoints[i].enable();
-	ELSE
-		m_cartJoints[i].disable();
 	END_IF
 	
 	// set command position
-	m_cartJoints[i].updateCmds(DriverOPMode_Pos,m_cmdJntPos[i],m_cmdJntTrq[i]);
-END_FOR]]></ST>
+	IF (g_motionTest.m_carJntCurTest=TRUE) THEN
+		m_cartJoints[i].updateCmds(DriverOPMode_Trq,m_cmdJntPos[i],m_cmdJntTrq[i]);
+	ELSE
+		m_cartJoints[i].updateCmds(DriverOPMode_Pos,m_cmdJntPos[i],m_cmdJntTrq[i]);
+	END_IF	
+END_FOR
+
+//information update
+//infoUpdate();
+]]></ST>
       </Implementation>
     </Method>
     <Property Name="status" Id="{cd2a750f-147a-42a5-85cd-a7d5a815c963}" FolderPath="property\">
@@ -583,6 +984,52 @@ END_FOR]]></ST>
     <LineIds Name="FB_MasterCart">
       <LineId Id="9" Count="0" />
     </LineIds>
+    <LineIds Name="FB_MasterCart.cartTestCycle">
+      <LineId Id="318" Count="0" />
+      <LineId Id="453" Count="0" />
+      <LineId Id="455" Count="0" />
+      <LineId Id="457" Count="1" />
+      <LineId Id="456" Count="0" />
+      <LineId Id="459" Count="0" />
+      <LineId Id="450" Count="0" />
+      <LineId Id="321" Count="27" />
+      <LineId Id="470" Count="2" />
+      <LineId Id="350" Count="81" />
+      <LineId Id="448" Count="0" />
+      <LineId Id="447" Count="0" />
+      <LineId Id="444" Count="0" />
+      <LineId Id="469" Count="0" />
+      <LineId Id="445" Count="0" />
+      <LineId Id="433" Count="1" />
+      <LineId Id="49" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.cartTestJnt">
+      <LineId Id="127" Count="60" />
+      <LineId Id="197" Count="3" />
+      <LineId Id="27" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.cartTestJntCurrent">
+      <LineId Id="14" Count="0" />
+      <LineId Id="17" Count="3" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="46" Count="6" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="33" Count="1" />
+      <LineId Id="61" Count="2" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="68" Count="1" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="36" Count="2" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="39" Count="1" />
+      <LineId Id="25" Count="0" />
+    </LineIds>
     <LineIds Name="FB_MasterCart.eleKnifeCtrl">
       <LineId Id="131" Count="31" />
       <LineId Id="18" Count="0" />
@@ -605,25 +1052,22 @@ END_FOR]]></ST>
       <LineId Id="110" Count="0" />
       <LineId Id="21" Count="0" />
     </LineIds>
-    <LineIds Name="FB_MasterCart.init">
-      <LineId Id="9" Count="2" />
-      <LineId Id="18" Count="0" />
-      <LineId Id="12" Count="0" />
+    <LineIds Name="FB_MasterCart.infoUpdate">
+      <LineId Id="8" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="36" Count="0" />
       <LineId Id="48" Count="0" />
       <LineId Id="47" Count="0" />
-      <LineId Id="50" Count="0" />
-      <LineId Id="54" Count="1" />
-      <LineId Id="33" Count="0" />
-      <LineId Id="26" Count="0" />
-      <LineId Id="34" Count="0" />
-      <LineId Id="72" Count="1" />
-      <LineId Id="40" Count="0" />
-      <LineId Id="35" Count="0" />
-      <LineId Id="37" Count="2" />
-      <LineId Id="36" Count="0" />
-      <LineId Id="64" Count="0" />
-      <LineId Id="63" Count="0" />
-      <LineId Id="32" Count="0" />
+      <LineId Id="38" Count="2" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.init">
+      <LineId Id="90" Count="23" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.manualAdjust">
@@ -633,17 +1077,15 @@ END_FOR]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.monitorAngLink2Image">
-      <LineId Id="6" Count="17" />
+      <LineId Id="32" Count="16" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.monitorAngLink2Motor">
-      <LineId Id="6" Count="17" />
+      <LineId Id="32" Count="16" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.monitorAngMotor2Link">
-      <LineId Id="6" Count="7" />
-      <LineId Id="5" Count="0" />
-      <LineId Id="19" Count="0" />
+      <LineId Id="27" Count="9" />
       <LineId Id="18" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.reachUITargetCheck">
@@ -654,10 +1096,29 @@ END_FOR]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.run">
-      <LineId Id="42" Count="12" />
+      <LineId Id="42" Count="7" />
+      <LineId Id="88" Count="2" />
+      <LineId Id="110" Count="1" />
+      <LineId Id="113" Count="1" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="50" Count="2" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="54" Count="0" />
       <LineId Id="68" Count="0" />
-      <LineId Id="55" Count="6" />
+      <LineId Id="55" Count="4" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="78" Count="2" />
+      <LineId Id="76" Count="1" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="119" Count="1" />
+      <LineId Id="122" Count="1" />
+      <LineId Id="121" Count="0" />
       <LineId Id="19" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="132" Count="1" />
+      <LineId Id="130" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.status.Get">
       <LineId Id="2" Count="0" />
@@ -678,11 +1139,7 @@ END_FOR]]></ST>
       <LineId Id="91" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.updateStatus">
-      <LineId Id="69" Count="30" />
-      <LineId Id="113" Count="0" />
-      <LineId Id="112" Count="0" />
-      <LineId Id="114" Count="1" />
-      <LineId Id="100" Count="6" />
+      <LineId Id="131" Count="41" />
       <LineId Id="59" Count="0" />
     </LineIds>
   </POU>

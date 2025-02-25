@@ -3,10 +3,6 @@
   <POU Name="FB_StateCtrlGraCali" Id="{531d8d14-1bd3-4a7e-a3de-2b1adfd1c86b}" SpecialFunc="None">
     <Declaration><![CDATA[// Brief: Master Arm Home Posture
 FUNCTION_BLOCK PUBLIC FB_StateCtrlGraCali EXTENDS FB_MasterArmCtrlBase
-VAR_INPUT
-END_VAR
-VAR_OUTPUT
-END_VAR
 VAR CONSTANT
 	m_caliMotionSegs :INT :=18;	
 END_VAR

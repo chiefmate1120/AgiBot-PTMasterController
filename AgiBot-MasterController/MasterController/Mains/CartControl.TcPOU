@@ -17,6 +17,7 @@ VAR
 	
 	// wait time before cart init for ethercat to be statble 
 	m_cartInitWaitTime : LREAL:=0;
+	m_cartEtherCATOPTime : LREAL:=0;
 	
 	// cart init flag
 	m_cartInit :BOOL :=FALSE;
@@ -26,10 +27,24 @@ VAR
 	m_ergonInfoHeightF : F_TRIG;
 	m_userLoggedR : R_TRIG;
 	m_ergonInfoHeight : BOOL;
+	
+	//recipe read-write commands
+	RecipeManCommands:  RecipeManCommands;	
+	m_bReadRecipe:   BOOL := TRUE;
+	m_bWriteRecipe:   BOOL := FALSE;
+	
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// wait communication to be stable
+      <ST><![CDATA[// load config file
+loadConfigFile();
+
+IF NOT SafetyCheck.m_safetyCheckData.m_cartEtherCATAllOP THEN
+	m_cartEtherCATOPTime := m_cartEtherCATOPTime + g_cartCtrlCycleTime;
+	RETURN;
+END_IF
+
+// wait communication to be stable
 IF(m_cartInitWaitTime<g_robotInitWaitTime) THEN
 	m_cartInitWaitTime := m_cartInitWaitTime+g_armCtrlCycleTime;
 	RETURN;
@@ -51,6 +66,33 @@ m_masterCart.run(m_cartUIData);
 m_masterCart.getStatus(m_cartStatus, m_cartJointData);
 ]]></ST>
     </Implementation>
+    <Method Name="loadConfigFile" Id="{efa2271f-c139-48aa-87af-6b47e5c8fcbe}">
+      <Declaration><![CDATA[METHOD loadConfigFile : BOOL
+VAR
+	ReturnDwordRead:DWORD;
+	ReturnDwordWrite:DWORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// read Recipe 
+IF (m_bReadRecipe) THEN
+	//The method loads a recipe from the specified recipe file.  It subsequently writes the recipe into the PLC variables.
+     ReturnDwordRead:=RecipeManCommands.LoadAndWriteRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord');	 
+     m_bReadRecipe:=FALSE; 
+END_IF 
+
+//write recipe
+IF (m_bWriteRecipe) THEN
+	//创建一个Recipe(命名为Initialization_Parameter)，用于存储变量Absolute_encoder_Parameters
+	//This method creates a new recipe in the specified recipe definition. It subsequently reads the current PLC values into the new recipe and saves it as a recipe file with a standard name.
+	 RecipeManCommands.CreateRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord' );
+	 ReturnDwordWrite:=RecipeManCommands.ReadAndSaveRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord' );
+	 m_bWriteRecipe:=FALSE;
+END_IF
+
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="UIInputProcess" Id="{572b15b0-e408-437d-abc5-fa6c233e3112}">
       <Declaration><![CDATA[// tranform data from UI(global variable write by ADS) to ST_UIData
 METHOD UIInputProcess : BOOL
@@ -119,15 +161,21 @@ END_IF
       </Implementation>
     </Method>
     <LineIds Name="CartControl">
-      <LineId Id="16" Count="10" />
-      <LineId Id="95" Count="1" />
-      <LineId Id="94" Count="0" />
-      <LineId Id="27" Count="0" />
-      <LineId Id="31" Count="1" />
-      <LineId Id="72" Count="0" />
-      <LineId Id="71" Count="0" />
-      <LineId Id="50" Count="0" />
+      <LineId Id="228" Count="2" />
+      <LineId Id="150" Count="5" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="157" Count="17" />
       <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="CartControl.loadConfigFile">
+      <LineId Id="82" Count="0" />
+      <LineId Id="84" Count="2" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="89" Count="6" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="14" Count="0" />
     </LineIds>
     <LineIds Name="CartControl.UIInputProcess">
       <LineId Id="95" Count="3" />

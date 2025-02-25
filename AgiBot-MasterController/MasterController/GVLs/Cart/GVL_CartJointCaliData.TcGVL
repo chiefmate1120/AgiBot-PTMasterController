@@ -8,13 +8,13 @@ VAR_GLOBAL CONSTANT
 	[monitor lift, monitor rotate, armset, pedal] *)
 
 	// absolute encoder value at minimal joint positon
-	g_minLinkEncoder :ARRAY[1..4] OF DINT :=[29427524, 65607, 27934678,31341296];
+	g_minLinkEncoder :ARRAY[1..4] OF DINT :=[29427524, 75164, 27934678,31341296];
 		 
 	// absolute encoder value at maximum joint positon
-	g_maxLinkEncoder :ARRAY[1..4] OF DINT :=[31095717, 90043  , 29198683,32184317];
+	g_maxLinkEncoder :ARRAY[1..4] OF DINT :=[31095717, 99030  , 29198683,32184317];
 	
 	// absolute encoder value at calibrated positon
-	g_caliLinkEncoder :ARRAY[1..4] OF DINT :=[31095717, 65607  , 29198683,31341296];
+	g_caliLinkEncoder :ARRAY[1..4] OF DINT :=[31095717, 75164  , 29198683,31341296];
 	
 	// if absolute encoder value cross zeros within joint motion range
 	g_linkEncZeroCross :ARRAY[1..4] OF INT :=[0, 0, 0, 0];
@@ -28,7 +28,7 @@ VAR_GLOBAL CONSTANT
 		 
 	// joint position at link encoder calibrated point
 	//TODO: joint2 calibration position need to be checked
-	g_linkEncCaliJntPos :ARRAY[1..4] OF LREAL :=[0, 107.3311835*g_deg2Rad,0,0];
+	g_linkEncCaliJntPos :ARRAY[1..4] OF LREAL :=[0, 119.92525482*pi/180.0,0,0];
 
 END_VAR]]></Declaration>
   </GVL>

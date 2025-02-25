@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_MSCtrlTriggerCheck" Id="{636c1ff6-aa47-444d-ac82-ac1207a0e0c5}" SpecialFunc="None">
     <Declaration><![CDATA[//NOTE：this block would stop checking once a trigger is detected. 
 //	re-init this block if want to start another check

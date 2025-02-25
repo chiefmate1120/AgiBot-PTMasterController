@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_RiseEdgeCheck" Id="{54f969e7-bfb8-4c92-8c48-75d0e1f9ed72}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_RiseEdgeCheck
 VAR

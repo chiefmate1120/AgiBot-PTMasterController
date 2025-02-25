@@ -1,0 +1,508 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_StateCtrlManiTest" Id="{5463f49f-ebfb-44ca-bf95-4bfb53065f82}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Master Arm Standby
+FUNCTION_BLOCK PUBLIC FB_StateCtrlManiTest EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR	
+	// joint4 controller
+	//m_redunJntCtrl : FB_RedunJntControlNew_1;
+	m_redunJntCtrl : FB_RedunJntControl_Mani;	
+	
+	// flag if project joint4 torque to nullspace
+	m_nullspaceCtrl : BOOL :=FALSE;
+	
+	// boundary limit force feedback
+	m_boundaryForce : FB_boundaryForceFeedback;
+	
+	// joint torque for master-slave error
+	m_boundaryTrq :Vec7d;
+	
+	// friction compensation scale
+	m_frictionCompScale :LREAL :=0.8;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{a7a98bd3-e6dc-4b8a-a3b0-afe1b2e8575e}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(*
+IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
+	i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
+	calcCmdJntPos_USKnife(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+ELSE
+	calcCmdJntPos_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+END_IF
+*)
+
+calcCmdJntPos_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_BasicInstru" Id="{0b102ad8-53f7-407f-bae1-08a5fc9990a7}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_BasicInstru : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_cmdJntPos:=i_masterArm.curJntPos;
+m_cmdJntVel:=i_masterArm.curJntVel;
+m_cmdCartPose:=i_masterArm.curCartPose;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_USKnife" Id="{829477f5-4121-40ec-bdaa-78d866f08f93}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_USKnife : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR CONSTANT
+	// orientation tracking parameters
+	m_rotTrackKp : LREAL := 200;
+	m_maxTrackVel :LREAL := PI;
+	m_trackAngThres :LREAL := 2* g_deg2rad;
+END_VAR
+VAR 
+	cartTrackVel :Vec3d;
+	i,j : INT;
+	invRot :Mat3d;
+	cmdRotInView:Mat3d;
+	rotT,rotErr :Mat3d;
+	errAngle:LREAL;
+	localAxis,errAxis:Vec3d;
+	
+	oriJaco:Mat34;
+	oriJt:Mat43;
+	oriJJt:Mat3d;
+	oriJJtInv:Mat3d;
+	oriJPinv:Mat43;
+	jntTrackVel:Vec4d;
+	JpinvJ, nullJ:Mat4d;
+	eye4d :Mat4d := g_eye4d;
+	redunCtrlVel :Vec4d;
+	jnt4TrackVel :LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_jntOPMode[1] := DriverOPMode_Trq;
+m_jntOPMode[2] := DriverOPMode_Trq;
+m_jntOPMode[3] := DriverOPMode_Trq;
+m_jntOPMode[4] := DriverOPMode_PosTrq;
+m_jntOPMode[5] := DriverOPMode_PosTrq;
+m_jntOPMode[6] := DriverOPMode_PosTrq;
+m_jntOPMode[7] := DriverOPMode_Trq;
+
+// use matched slave arm orientation as target, 
+//	and transform from view coordinate to arm coordinate 
+cmdRotInView := i_slaveStatus.m_curArmPose[i_slaveIdx].m_rot;
+matTranspose(i_shoulderPose.m_rot, invRot);
+matMultiply(invRot, cmdRotInView, m_cmdCartPose.m_rot);
+m_cmdCartPose.m_pos:= i_masterArm.curCartPose.m_pos;
+
+// first three joints and joint7 is passive control
+FOR i:=1 TO 3 DO 
+	m_cmdJntPos[i]:=i_masterArm.curJntPos[i];
+	m_cmdJntVel[i]:=i_masterArm.curJntVel[i];
+END_FOR
+m_cmdJntPos[7]:=i_masterArm.curJntPos[7];
+m_cmdJntVel[7]:=i_masterArm.curJntVel[7];
+
+// compute cartesian tracking velocity
+matTranspose(i_masterArm.simCartPose.m_rot, rotT);
+matMultiply(rotT, m_cmdCartPose.m_rot, rotErr);
+rot2AngAxis(rotErr, angle=>errAngle,axis=>localAxis);
+localAxis[3] := 0;
+matMultiVec(i_masterArm.simCartPose.m_rot, localAxis, errAxis);
+IF ABS(errAngle)< m_trackAngThres THEN
+	errAngle := 0.0;
+ELSE
+	errAngle:= errAngle - sign(errAngle)*m_trackAngThres;
+END_IF
+vecMultiNum(errAxis, LIMIT(-m_maxTrackVel, errAngle*m_rotTrackKp, m_maxTrackVel), cartTrackVel);
+
+// compute pinv of orientation jacobian
+FOR i:=1 TO 3 DO
+	FOR j:=1 TO 4 DO
+		oriJaco[i,j]:=i_masterArm.simJaco[i+3,j+3];
+	END_FOR
+END_FOR
+matTranspose(oriJaco, oriJt);
+matMultiply(oriJaco ,oriJt , oriJJt);
+invMat3(oriJJt, oriJJtInv);
+matMultiply(oriJt, oriJJtInv, oriJPinv);
+matMultiVec(oriJpinv, cartTrackVel, jntTrackVel);
+
+// calculate nullspace
+matMultiply(oriJPinv, oriJaco, JpinvJ);
+matSub(eye4d , JpinvJ, nullJ);
+
+// redundant velocity
+jnt4TrackVel:=calcRedunVel(i_masterArm);
+redunCtrlVel[1]:=nullJ[1,1]*jnt4TrackVel;
+redunCtrlVel[2]:=nullJ[2,1]*jnt4TrackVel;
+redunCtrlVel[3]:=nullJ[3,1]*jnt4TrackVel;
+redunCtrlVel[4]:=nullJ[4,1]*jnt4TrackVel;
+
+// update final command joint position and velocity
+FOR i :=1 TO 3 DO 
+	m_cmdJntVel[i+3]:=jntTrackVel[i]+redunCtrlVel[i];
+	m_cmdJntPos[i+3]:=m_cmdJntPos[i+3]+m_cmdJntVel[i+3]*g_armCtrlCycleTime;
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq" Id="{fd184584-2c7f-4657-a026-f977990fbfbe}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	nullspaceMat :Mat7d;
+	ctrlTrq : Vec7d;
+	boundaryTrq :Vec7d;
+	withinBoundary :BOOL;
+	i :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(*
+IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
+	i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
+	calcCmdJntTrq_USKnife(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+ELSE
+	calcCmdJntTrq_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+END_IF
+*)
+
+calcCmdJntTrq_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq_BasicInstru" Id="{a010b345-654d-4a68-b569-1042dbbde41b}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq_BasicInstru : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	nullspaceMat :Mat7d;
+	ctrlTrq : Vec7d;
+	boundaryTrq :Vec7d;
+	withinBoundary :BOOL;
+	i :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(*
+// boundary force feedback
+m_boundaryTrq :=m_boundaryForce.run(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+withinBoundary := (norm(m_boundaryTrq)<g_smallNum);
+*)
+m_boundaryTrq:=g_zeroVec7d;
+
+// redundant joint4 controller
+ctrlTrq := g_zeroVec7d;
+//ctrlTrq[4] := m_redunJntCtrl.run(i_masterArm, i_followEnable:=withinBoundary);
+
+withinBoundary:=FALSE;
+ctrlTrq[4] := m_redunJntCtrl.run(i_masterArm, i_followEnable:=withinBoundary);
+
+// project to nullspace
+IF m_nullspaceCtrl THEN
+	nullspaceMat:=i_masterArm.dynaNullspace;
+	matMultiVec(nullspaceMat,ctrlTrq, m_cmdJntTrq);
+	vecSelfMultiNum(m_cmdJntTrq, ctrlTrq[4] / m_cmdJntTrq[4]);
+ELSE
+	m_cmdJntTrq := ctrlTrq;
+END_IF
+
+// add friction compensation
+FOR i:=1 TO g_mJntNum DO 
+	m_cmdJntTrq[i] := m_cmdJntTrq[i] +m_frictionCompScale * i_masterArm.jntFriction[i] + m_boundaryTrq[i];
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq_USKnife" Id="{14cce38e-00a2-4aee-882b-02745a91ba0e}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq_USKnife : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	i :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_cmdJntTrq :=g_zeroVec7d;
+// boundary force feedback
+m_boundaryTrq :=m_boundaryForce.run(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+m_cmdJntTrq[7] := m_boundaryTrq[7];
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcRedunVel" Id="{eddff0d5-a358-4b83-a0de-e2c9e9a0728e}">
+      <Declaration><![CDATA[METHOD PROTECTED calcRedunVel : LREAL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+
+VAR 
+	// redundant control parameters
+	m_jnt4AdjustKp : LREAL :=10;
+	m_jnt4MaxVel :LREAL :=pi/3 ;
+	m_linearVelLb :LREAL := 0.02;
+	m_linearVelUb :LREAL :=0.1;	
+	
+	j6Bias,j5Bias :LREAL;
+	velScale :LREAL;
+	linearVel :Vec3d;
+	curJntPos : Vec7d;
+	jnt4LinkPos :LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// compute desired joint4 link position
+curJntPos :=  i_masterArm.cmdJntPos;
+jnt4LinkPos:=i_masterArm.jnt4MotorToLink(curJntPos[2],curJntPos[3],curJntPos[4]);
+IF 1= i_masterArm.armIdx THEN
+	j6Bias :=curJntPos[6]+PI/2;
+ELSE 
+	j6Bias := curJntPos[6]-PI/2;
+END_IF
+
+// scale based on joint5 position
+j5Bias :=  LIMIT (0, ABS(curJntPos[5] -pi), pi/2);
+j6Bias := j6Bias * ABS(COS(j5Bias));
+
+// scale based on linear velocity
+linearVel[1]:=i_masterArm.curCartTwist[1];
+linearVel[2]:=i_masterArm.curCartTwist[2];
+linearVel[3]:=i_masterArm.curCartTwist[3];
+velScale :=LIMIT(0, (norm(linearVel)-m_linearVelLb)/(m_linearVelUb-m_linearVelLb),1.0);
+
+
+calcRedunVel := LIMIT(-m_jnt4MaxVel, -j6Bias * m_jnt4AdjustKp * velScale ,m_jnt4MaxVel);
+
+// joint limit
+IF (calcRedunVel > 0 AND jnt4LinkPos+calcRedunVel * g_armCtrlCycleTime > GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4])
+	 OR ( calcRedunVel <0 AND  jnt4LinkPos +calcRedunVel * g_armCtrlCycleTime< GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]) THEN
+	 calcRedunVel :=0;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{37b11c4f-ab0b-49a3-ada7-85ea3d3e557b}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(*
+// check if to hold the command joint position unchanged
+m_holdLastCmds := checkToHoldLastCmds(i_masterArm);
+
+m_jntOPMode := g_allTrqMode;
+//m_jntOPMode := g_allPosMode;
+
+// init controller
+m_redunJntCtrl.init(i_masterArm);
+
+// init
+SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+*)
+
+SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+
+m_jntOPMode := g_allTrqMode;
+//m_jntOPMode := g_allPosMode;
+
+// init controller
+m_redunJntCtrl.init(i_masterArm);
+
+// update commands to arm
+copyCmds(r_masterArmCtrlCmd);
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlManiTest">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlManiTest.calcCmdJntPos">
+      <LineId Id="142" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="125" Count="2" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="144" Count="1" />
+      <LineId Id="143" Count="0" />
+      <LineId Id="146" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlManiTest.calcCmdJntPos_BasicInstru">
+      <LineId Id="14" Count="0" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="111" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlManiTest.calcCmdJntPos_USKnife">
+      <LineId Id="246" Count="5" />
+      <LineId Id="244" Count="1" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="220" Count="1" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="103" Count="1" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="253" Count="0" />
+      <LineId Id="252" Count="0" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="115" Count="1" />
+      <LineId Id="302" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="297" Count="1" />
+      <LineId Id="300" Count="1" />
+      <LineId Id="299" Count="0" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="126" Count="1" />
+      <LineId Id="129" Count="1" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="145" Count="0" />
+      <LineId Id="150" Count="1" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="156" Count="3" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="199" Count="0" />
+      <LineId Id="165" Count="0" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="131" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlManiTest.calcCmdJntTrq">
+      <LineId Id="249" Count="0" />
+      <LineId Id="223" Count="4" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="246" Count="2" />
+      <LineId Id="245" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlManiTest.calcCmdJntTrq_BasicInstru">
+      <LineId Id="227" Count="0" />
+      <LineId Id="204" Count="1" />
+      <LineId Id="202" Count="0" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="225" Count="0" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="264" Count="0" />
+      <LineId Id="263" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="55" Count="2" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="182" Count="3" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlManiTest.calcCmdJntTrq_USKnife">
+      <LineId Id="243" Count="0" />
+      <LineId Id="204" Count="1" />
+      <LineId Id="244" Count="0" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlManiTest.calcRedunVel">
+      <LineId Id="77" Count="1" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="79" Count="4" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="85" Count="1" />
+      <LineId Id="134" Count="6" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="99" Count="3" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlManiTest.init">
+      <LineId Id="117" Count="0" />
+      <LineId Id="67" Count="1" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="82" Count="3" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="69" Count="2" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="107" Count="8" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="12" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

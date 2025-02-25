@@ -19,6 +19,9 @@ VAR
 	// error check result
 	m_safetyCheckData AT %Q* :ST_SafetyData;
 	
+	//motor data
+	m_armMotorData AT %I* : ST_armMotorData;
+	
 	//stop botton
 	m_stopButton AT %I*: BOOL;
 	
@@ -31,7 +34,6 @@ VAR
 	m_checkVariable : ARRAY[1..g_maxNum] OF checkInputVariable;
 	m_EtherCATCheck :ARRAY [1..g_maxNum,1..g_maxArmJoint] OF Fb_EtherCATCheck;
 	m_errCode :ARRAY [1..3] OF UDINT;
-	m_motorEncoderLast : ARRAY[1..g_maxNum,1..g_maxArmJoint] OF DINT;
 	
 	
 	m_armsRS:ARRAY [1..g_maxArmNum,1..10] OF RS;//复位优先双稳态器
@@ -41,6 +43,9 @@ VAR
 	m_safetyCheckInitWaitTime : LREAL:=0;
 	//error robot data record
 	m_dataRecord : Fb_dataRecord;
+	
+	m_EtherCATAllOP : BOOL:=FALSE;
+	
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -55,12 +60,17 @@ IF FALSE = m_initFlag  THEN
 	m_initFlag:=TRUE;
 END_IF
 
-
 armSafetyCheckInputCast();
 
 armSafetyCheckAllowed();
 
 robotPromptMassageCast();
+
+//check EtherCAT status of arm and cart , if All EtherCAT is OP then start system safty check
+IF m_safetyCheckData.m_armEtherCATAllOP AND m_safetyCheckData.m_cartEtherCATAllOP AND NOT m_EtherCATAllOP THEN
+	m_EtherCATAllOP := TRUE;
+	m_safetyCheckInitWaitTime := 28.0;
+END_IF
 
 // wait communication to be stable
 IF(m_safetyCheckInitWaitTime<g_robotSafetyCheckWaitTime) THEN
@@ -101,8 +111,7 @@ VAR
 	i , j : INT; 
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-FOR i := 1 TO g_maxArmNum DO
+        <ST><![CDATA[FOR i := 1 TO g_maxArmNum DO
 	FOR j := 1 TO g_maxArmJoint DO
 		//fault code 16#3003 
 		m_SafetyCheck.checkPermit[i].m_linkEncErr[j] := m_checkVariable[i].m_masterDriverInput[j].m_statusWord<>0;
@@ -136,19 +145,17 @@ VAR
 	i , j: INT; 
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-FOR i := 1 TO g_maxArmNum DO
+        <ST><![CDATA[FOR i := 1 TO g_maxArmNum DO
 	//stop button and ui stop 
 	m_checkVariable[i].PCStopButton := GVL_interactUI.g_masterStopButton;
 	m_checkVariable[i].SlaveStopButton := MasterArmControl.m_masterInputDataPool.m_slaveStatus.m_slaveStopButton;
 	m_checkVariable[i].MasterStopButton := m_stopButton;
 	m_checkVariable[i].m_spacePoseErr := m_SafetyCheck.poseErrCheck(m_masterStatus.m_cmdArmPose[i], m_masterStatus.m_curArmPose[i] );
 	FOR j:=1 TO  g_mJntNum DO 		
-		m_checkVariable[i].m_masterDriverInput[j] := MasterArmControl.m_masterRobot.m_masterArms[i].m_joints[j].m_motorInputs;
-		m_checkVariable[i].m_masterDriverOutput[j] := MasterArmControl.m_masterRobot.m_masterArms[i].m_joints[j].m_motorOutputs;
+		m_checkVariable[i].m_masterDriverInput[j] := m_armMotorData.m_armMotorInput[i,j];
+		m_checkVariable[i].m_masterDriverOutput[j] := m_armMotorData.m_armMotorOutput[i,j];
 		m_checkVariable[i].m_EtherCATState[j] := m_EtherCATCheck[i,j].EtherCATVerify(g_ArmNetID[i],g_JointNetPort[i,j]);
-		m_checkVariable[i].m_motorEncSaltaValue[j] := ABS(MasterArmControl.m_masterRobot.m_masterArms[i].m_joints[j].m_motorInputs.m_motorEncoder - m_motorEncoderLast[i,j]);
-		m_motorEncoderLast[i,j] := MasterArmControl.m_masterRobot.m_masterArms[i].m_joints[j].m_motorInputs.m_motorEncoder;
+		m_checkVariable[i].m_motorEncSaltaValue[j] := m_armMotorData.m_motorEncSalta[i][j];
 		//The sum of the square of the motor current
 		g_motorCurrentLimit[j] := EXPT((GVL_ArmJointParameters.g_motorMaxCurrent[j]/1000),2)*15000;
 		IF ABS(m_checkVariable[i].m_masterDriverInput[j].m_current) > GVL_ArmJointParameters.g_motorMaxCurrent[j] THEN
@@ -165,6 +172,54 @@ FOR j:=1 TO  g_maxCartJoint DO
 	m_checkVariable[g_cartNum].m_cartDriverInput[j] := CartControl.m_masterCart.m_cartJoints[j].m_motorInputs;
 	m_checkVariable[g_cartNum].m_cartDriverOutput[j] := CartControl.m_masterCart.m_cartJoints[j].m_motorOutputs;
 	m_checkVariable[g_cartNum].m_cartEtherCATState[j] := m_EtherCATCheck[g_cartNum,j].EtherCATVerify(g_cartNetID,g_cartJointNetPort[j]);
+END_FOR
+
+IF m_safetyCheckInitWaitTime > 2.0 THEN
+	checkEtherCATAll(ADR(m_checkVariable) , o_EtherCATInOP=>m_safetyCheckData.m_armEtherCATAllOP,o_cartEtherCATAllOP=> m_safetyCheckData.m_cartEtherCATAllOP );
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="checkEtherCATAll" Id="{a164738b-81a3-4c66-88e6-d907208d76aa}">
+      <Declaration><![CDATA[METHOD checkEtherCATAll : BOOL
+VAR_INPUT CONSTANT
+	i_EtherCATState: POINTER TO ARRAY [1..g_maxNum] OF checkInputVariable;
+END_VAR
+VAR_OUTPUT
+	o_EtherCATInOP : BOOL;
+	o_cartEtherCATAllOP : BOOL;
+END_VAR
+
+VAR
+	i , j :INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO g_mArmNum DO
+	FOR j := 1 TO g_maxArmJoint DO
+		m_EtherCATCheck[i,j].setSlaveStatus(g_ArmNetID[i],g_JointNetPort[i,j]);
+	END_FOR
+END_FOR
+
+o_EtherCATInOP := TRUE;
+FOR i := 1 TO g_mArmNum DO
+	FOR j := 1 TO g_maxArmJoint DO
+		IF FALSE = i_EtherCATState^[i].m_EtherCATState[j].EtherCATState AND i <> GVL_interactUI.g_armIsDisbale THEN
+			o_EtherCATInOP := FALSE;
+			EXIT;
+		END_IF
+	END_FOR
+END_FOR
+
+FOR j := 1 TO g_maxCartJoint DO
+	m_EtherCATCheck[3,j].setSlaveStatus(g_cartNetID,g_cartJointNetPort[j]);
+END_FOR
+
+o_cartEtherCATAllOP := TRUE;
+FOR j := 1 TO g_maxCartJoint DO
+	IF FALSE = i_EtherCATState^[3].m_cartEtherCATState[j].EtherCATState THEN
+		o_cartEtherCATAllOP := FALSE;
+		EXIT;
+	END_IF
 END_FOR
 ]]></ST>
       </Implementation>
@@ -248,15 +303,22 @@ m_checkVariable[g_cartNum].m_promptLocation[7] := g_cartNum;
       </Implementation>
     </Method>
     <LineIds Name="SafetyCheck">
-      <LineId Id="132" Count="46" />
+      <LineId Id="263" Count="51" />
       <LineId Id="59" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.armSafetyCheckAllowed">
-      <LineId Id="3" Count="22" />
+      <LineId Id="58" Count="21" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.armSafetyCheckInputCast">
-      <LineId Id="3" Count="29" />
+      <LineId Id="39" Count="10" />
+      <LineId Id="51" Count="16" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="74" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.checkEtherCATAll">
+      <LineId Id="3" Count="26" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.readErrFlag">

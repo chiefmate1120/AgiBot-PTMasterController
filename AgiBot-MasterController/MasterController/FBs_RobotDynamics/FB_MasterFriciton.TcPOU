@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_MasterFriciton" Id="{e1c0a847-1949-4788-8871-72ab788e2df1}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MasterFriciton
 VAR_INPUT
@@ -8,7 +8,7 @@ VAR_OUTPUT
 END_VAR
 VAR
 	// joint friction compensation scale
-	m_frictionCompScale :Vec7d :=[0.7, 0.5, 0.5, 0.0, 0.7, 0.7, 0.7];
+	m_frictionCompScale :Vec7d :=[0.7, 0.5, 0.5, 0.0, 0.2, 0.2, 0.7];
 	
 	// joint velocity threshold for coulomb friction transition
 	m_cFrictionVelThres : LREAL := 5.0 * g_deg2Rad;
@@ -76,12 +76,12 @@ END_VAR
       <Implementation>
         <ST><![CDATA[FOR i:=1 TO g_mJntNum DO
 	transitScale := LIMIT(0, ABS(i_jntVel[i]/m_cFrictionVelThres),1);
-	cFriction:=m_frictionParamA[i]*ABS(i_jntGravity[i])+m_frictionParamB[i];
+	cFriction:=m_frictionParamA[i]*ABS(i_jntGravity[i])+m_frictionParamB[i]*m_frictionCompScale[i];
 	cFriction:= transitScale * sign(i_jntVel[i]) * cFriction;
 	
-	dFriction:= i_jntVel[i] * m_jntDamp[i];
+	dFriction:= i_jntVel[i] * m_jntDamp[i]*m_frictionCompScale[i];
 	
-	run[i] := LIMIT(-m_maxFriction[i], m_frictionCompScale[i] * (cFriction+dFriction) ,m_maxFriction[i]);
+	run[i] := LIMIT(-m_maxFriction[i],  (cFriction+dFriction) ,m_maxFriction[i]);
 END_FOR]]></ST>
       </Implementation>
     </Method>
@@ -93,7 +93,7 @@ END_FOR]]></ST>
       <LineId Id="21" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterFriciton.run">
-      <LineId Id="60" Count="7" />
+      <LineId Id="82" Count="7" />
       <LineId Id="45" Count="0" />
     </LineIds>
   </POU>

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_MasterArmCtrlBase" Id="{dee0ec68-3abc-4720-b67c-0fb3fd57933b}" SpecialFunc="None">
     <Declaration><![CDATA[// Master Arm Base Controller, Hold at Current Posture
 FUNCTION_BLOCK FB_MasterArmCtrlBase IMPLEMENTS I_MasterArmCtrl
@@ -101,6 +101,39 @@ r_masterArmCtrlCmd.m_cmdJntTrq:=m_cmdJntTrq;
 r_masterArmCtrlCmd.m_jntOPMode:=m_jntOPMode;]]></ST>
       </Implementation>
     </Method>
+    <Method Name="infoUpdate" Id="{15e46de9-abc5-4d45-987e-56ca2290ae8d}">
+      <Declaration><![CDATA[METHOD infoUpdate : BOOL
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR
+	i: INT;
+	k:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//update system information
+FOR i:=1 TO g_mJntNum BY 1 DO
+	k:=i_masterArm.armIdx;
+	
+	//motor input and output information
+	g_systemInfo.m_armJntInfo[k,i].m_motorInput:=i_masterArm.m_joints[i].m_motorInputs;
+	g_systemInfo.m_armJntInfo[k,i].m_motorOutput:=i_masterArm.m_joints[i].m_motorOutputs;
+	
+	//joint position and max/min
+	g_systemInfo.m_armJntInfo[k,i].m_actJntPos:=i_masterArm.curJntPos[i];
+	g_systemInfo.m_armJntInfo[k,i].m_jntMax:=GVL_ArmJointParameters.g_maxJntPos[k,i];
+	g_systemInfo.m_armJntInfo[k,i].m_jntMin:=GVL_ArmJointParameters.g_minJntPos[k,i];
+	
+	//state machine
+	g_systemInfo.m_masterArmState[k]:=MasterArmControl.m_masterRobot.m_masterArmState[k];
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="init" Id="{63e02c69-11c3-4e06-9c58-dcaf1b3a881b}">
       <Declaration><![CDATA[// override this function in each exact controller
 // NOTICE: set joint control mode here, and do some initialization if needed
@@ -189,6 +222,10 @@ copyCmds(r_masterArmCtrlCmd);
 
 // update time period
 m_timePeriod := m_timePeriod+g_armCtrlCycleTime;
+
+// information update
+//infoUpdate(i_slaveIdx, i_shoulderPose, i_masterArm,i_slaveStatus);
+
 ]]></ST>
       </Implementation>
     </Method>
@@ -221,6 +258,16 @@ END_VAR
     </LineIds>
     <LineIds Name="FB_MasterArmCtrlBase.copyCmds">
       <LineId Id="8" Count="6" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterArmCtrlBase.infoUpdate">
+      <LineId Id="12" Count="0" />
+      <LineId Id="18" Count="3" />
+      <LineId Id="24" Count="1" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="26" Count="3" />
+      <LineId Id="52" Count="2" />
+      <LineId Id="13" Count="0" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterArmCtrlBase.init">
@@ -261,6 +308,9 @@ END_VAR
       <LineId Id="27" Count="0" />
       <LineId Id="61" Count="0" />
       <LineId Id="84" Count="1" />
+      <LineId Id="159" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="160" Count="1" />
       <LineId Id="10" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterArmCtrlBase.timePeriod.Get">

@@ -59,7 +59,15 @@ VAR
 	m_armPerformance :ARRAY[1..g_mArmNum] OF FB_StateCtrlPerformance;
 	m_armSelfcheck :ARRAY[1..g_mArmNum] OF FB_StateCtrlSelfcheck;
 	m_armPowerOff :ARRAY[1..g_mArmNum] OF FB_StateCtrlPowerOff;	
-	m_armPrecisionTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlPrecisionTest;
+	m_armGravityBiasCali :ARRAY[1..g_mArmNum] OF FB_StateCtrlGraBiasCali;	
+	
+	//add code for test
+	m_armPrecisionTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlMotionTest;
+	m_armPrecisionTestCycle :ARRAY[1..g_mArmNum] OF FB_StateCtrlCycleTest;
+	m_armTestFriction :ARRAY[1..g_mArmNum] OF FB_StateCtrlFrictionTest;
+	m_armTestResponse :ARRAY[1..g_mArmNum] OF FB_StateCtrlResponseTest;
+	m_armTestDrag :ARRAY[1..g_mArmNum] OF FB_StateCtrlDragFreeTest;
+	m_armManiTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlManiTest;
 	
 	// specialized endoscope controller
 	m_scopeCtrl :FB_EndoscopeController;
@@ -228,13 +236,16 @@ VAR_IN_OUT
 	// master robot information, including arm status and cartesian data
 	r_masterStatus :ST_MasterStatus;
 	
+	//master motor in_output to safety check
+	r_armMotorData : ST_armMotorData;
+	
 	// master robot joint data
 	r_masterJointsData :ST_MasterJointData;
 	
 END_VAR
 
 VAR
-	i:INT;
+	i,j:INT;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -275,6 +286,14 @@ FOR i:=1 TO g_mArmNum DO
 	r_masterStatus.m_IKSuccess[i] := m_armMatching[i].IKSuccess;
 	r_masterStatus.m_timePeriod[i] := m_armMatching[i].timePeriod;
 	//r_masterStatus.m_selfCheckStatus
+	
+	//motor data to safety check
+	r_armMotorData.m_motorEncSalta[i] :=  m_masterArms[i].motorEncSalta;
+	FOR j := 1 TO g_mJntNum DO
+		r_armMotorData.m_armMotorInput[i,j] := m_masterArms[i].m_joints[j].m_motorInputs;
+		r_armMotorData.m_armMotorOutput[i,j] := m_masterArms[i].m_joints[j].m_motorOutputs;
+	END_FOR
+	
 END_FOR]]></ST>
       </Implementation>
     </Method>
@@ -329,7 +348,18 @@ FOR i:=1 TO g_mArmNum DO
 	m_armCtrlFactory[i,MasterArmState_Performance] := m_armPerformance[i];
 	m_armCtrlFactory[i,MasterArmState_Selfcheck] := m_armSelfcheck[i];
 	m_armCtrlFactory[i,MasterArmState_PowerOff] := m_armPowerOff[i];
+	m_armCtrlFactory[i,MasterArmState_GravityBiasCali] := m_armGravityBiasCali[i];
+	
+	
+	//add code for test
+	//m_armCtrlFactory[i,MasterArmState_Performance] := m_armPerformance[i];
 	m_armCtrlFactory[i,MasterArmState_PrecisionTest] := m_armPrecisionTest[i];
+	m_armCtrlFactory[i,MasterArmState_TestCycle] := m_armPrecisionTestCycle[i];
+	m_armCtrlFactory[i,MasterArmState_TestFriction] := m_armTestFriction[i];
+	m_armCtrlFactory[i,MasterArmState_TestResponse] := m_armTestResponse[i];
+	m_armCtrlFactory[i,MasterArmState_TestDragFree] := m_armTestDrag[i];
+	m_armCtrlFactory[i,MasterArmState_ManiTest] := m_armManiTest[i];
+	
 	
 	// assign controller
 	m_armCtrl[i]:=m_armCtrlFactory[i,m_masterArmState[i]];
@@ -447,7 +477,7 @@ VAR_IN_OUT CONSTANT
 END_VAR
 VAR
 	i:INT;
-	enableClutch :BOOL;
+	enableClutch :BOOL;	
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[// get instrument arm state
@@ -506,7 +536,14 @@ FOR i:=1 TO g_mArmNum DO
 		MasterArmState_Home:
 			IF m_armCtrl[i].isFinished  THEN
 				m_armSelfCheckFinshedFlag[i] := TRUE;
+				m_nextMasterArmState[i]:=MasterArmState_GravityBiasCali;
+			END_IF
+			
+		//graivity bias calibration
+		MasterArmState_GravityBiasCali:
+			IF m_armCtrl[i].isFinished  THEN
 				m_nextMasterArmState[i]:=MasterArmState_Standby;
+				m_masterArms[i].jntGravityBias := m_armGravityBiasCali[i].m_gravityBias;
 			END_IF
 		
 		//standby
@@ -568,7 +605,7 @@ FOR i:=1 TO g_mArmNum DO
 		
 		//MasterSlave
 		MasterArmState_MasterSlave:
-			IF (GVL_AccuracyTestVar.g_MSPrecisionTest[i]=FALSE) THEN							
+			IF (g_motionTest.m_MSPrecisionTest[i]=FALSE) THEN							
 				// to standdy
 				IF  (SlaveArmState_InstruReady <> m_instruArmState[i] AND SlaveArmState_MasterSlave <> m_instruArmState[i])
 					OR SlaveArmState_ScopeReady <> m_scopeArmState OR NOT(i_masterInputDataPool.m_cartStatus.m_surgonReady)
@@ -581,11 +618,13 @@ FOR i:=1 TO g_mArmNum DO
 				ELSIF NOT m_slaveOnLine THEN
 					m_nextMasterArmState[i] := MasterArmState_Standby;
 				END_IF
-		ELSE
+			ELSE
 				IF enableClutch THEN
 					m_nextMasterArmState[i] := MasterArmState_Clutch; 
-				END_IF	
-		END_IF							
+				END_IF
+			END_IF
+			
+			
 			
 		//Clutch
 		MasterArmState_Clutch:
@@ -598,6 +637,7 @@ FOR i:=1 TO g_mArmNum DO
 		MasterArmState_Endoscope:
 			// to standby
 			IF NOT(i_masterInputDataPool.m_cartStatus.m_surgonReady) OR NOT(i_masterInputDataPool.m_cartStatus.m_endoscopeSwitch) 
+				OR MasterArmState_Endoscope<> m_masterArmState[1] OR MasterArmState_Endoscope<> m_masterArmState[2]
 				OR (SlaveArmState_ScopeReady <> m_scopeArmState AND SlaveArmState_EndoScope <> m_scopeArmState) THEN
 				m_nextMasterArmState[i] := MasterArmState_Standby;
 			// to clutch
@@ -646,23 +686,79 @@ FOR i:=1 TO g_mArmNum DO
 				m_armSelfCheckFinshedFlag[i] := FALSE;
 				m_nextMasterArmState[i]:=MasterArmState_Init;
 			END_IF
-			
-		//MasterArmState_PrecisionTest
-		MasterArmState_PrecisionTest:
-			IF (GVL_AccuracyTestVar.g_enterPrecisionTestMode[i]=FALSE) THEN
-				m_nextMasterArmState[i]:=MasterArmState_Standby;
-			END_IF
 	END_CASE
 	
+	
+	
+	//*************************add for test**********************************//
 	// to precision test
-	IF (GVL_AccuracyTestVar.g_enterPrecisionTestMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_PrecisionTest) THEN
+	IF (g_motionTest.m_enterPrecisionTestMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_PrecisionTest) THEN
 		m_nextMasterArmState[i] := MasterArmState_PrecisionTest;
 	END_IF
 	
-	// to MS precision test
-	IF (GVL_AccuracyTestVar.g_MSPrecisionTest[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_MasterSlave) THEN
-		m_nextMasterArmState[i] := MasterArmState_MasterSlave;
+	//precision exit
+	IF (g_motionTest.m_enterPrecisionTestMode[i]=FALSE) AND (m_masterArmState[i]=MasterArmState_PrecisionTest) THEN
+		m_nextMasterArmState[i] := MasterArmState_Standby;
 	END_IF	
+	
+	// to MS precision test
+	IF (g_motionTest.m_MSPrecisionTest[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_MasterSlave) THEN
+		m_nextMasterArmState[i] := MasterArmState_MasterSlave;
+	END_IF
+	
+	// to MasterArmState_TestCycle
+	IF (g_cycleTest.m_enterCycleTestMode[i] OR g_cycleTest.m_enterESDTest[i]) AND NOT(m_masterArmState[i]=MasterArmState_TestCycle) THEN
+		m_nextMasterArmState[i] := MasterArmState_TestCycle;
+	END_IF
+	
+	//MasterArmState_TestCycle exit
+	IF (g_cycleTest.m_enterCycleTestMode[i]=FALSE) AND (g_cycleTest.m_enterESDTest[i]=FALSE) AND(m_masterArmState[i]=MasterArmState_TestCycle) THEN
+		m_nextMasterArmState[i] := MasterArmState_Standby;
+	END_IF
+	
+	// to MasterArmState_TestFriction
+	IF (g_frictionTest.m_testMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_TestFriction) THEN
+		m_nextMasterArmState[i] := MasterArmState_TestFriction;
+	END_IF
+	
+	// MasterArmState_TestFriction exit
+	IF (g_frictionTest.m_testMode[i]=FALSE) AND (m_MasterArmState[i]=MasterArmState_TestFriction) THEN
+		m_nextMasterArmState[i] := MasterArmState_Standby;
+	END_IF
+	
+	// to MasterArmState_TestDragFree
+	IF (g_frictionTest.m_clutchMode[i]=TRUE) AND (m_masterArms[i].handClutchSwitch=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_TestDragFree) THEN
+		m_nextMasterArmState[i] := MasterArmState_TestDragFree;
+	END_IF
+	
+	// MasterArmState_TestDragFree exit
+	IF (m_masterArms[i].handClutchSwitch=FALSE) AND (m_MasterArmState[i]=MasterArmState_TestDragFree) THEN
+		m_nextMasterArmState[i] := MasterArmState_Standby;
+	END_IF
+	
+	// to home
+	IF (g_frictionTest.m_getHome[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_Home) THEN
+		m_nextMasterArmState[i] := MasterArmState_Home;
+	END_IF
+	
+	//MasterArmState_TestMani
+	IF (g_maniTest.m_testStart[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_ManiTest) THEN
+		m_nextMasterArmState[i]:=MasterArmState_ManiTest;
+	END_IF
+	
+	//MasterArmState_TestMani exit
+	IF (g_maniTest.m_testStart[i]=FALSE) AND (m_masterArmState[i]=MasterArmState_ManiTest) THEN
+		m_nextMasterArmState[i]:=MasterArmState_Standby;
+	END_IF
+	
+	
+	//fault mask
+	IF (g_specialSignal.m_faultMask) THEN
+		RETURN;
+	END_IF
+	
+	
+	
 	
 	// arm disable
 	IF i_masterInputDataPool.m_UIData.m_masterArmDisableFlag[i] THEN
@@ -747,6 +843,12 @@ END_FOR]]></ST>
     </LineIds>
     <LineIds Name="FB_MasterRobot.getStatus">
       <LineId Id="172" Count="36" />
+      <LineId Id="222" Count="1" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="228" Count="1" />
+      <LineId Id="231" Count="0" />
+      <LineId Id="230" Count="0" />
+      <LineId Id="224" Count="0" />
       <LineId Id="21" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.Init">
@@ -772,8 +874,16 @@ END_FOR]]></ST>
       <LineId Id="152" Count="0" />
       <LineId Id="73" Count="0" />
       <LineId Id="72" Count="0" />
-      <LineId Id="12" Count="0" />
       <LineId Id="159" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="168" Count="2" />
+      <LineId Id="166" Count="1" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="194" Count="0" />
       <LineId Id="101" Count="0" />
       <LineId Id="125" Count="2" />
       <LineId Id="13" Count="0" />
@@ -831,25 +941,18 @@ END_FOR]]></ST>
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.stateMachine">
-      <LineId Id="845" Count="117" />
-      <LineId Id="1075" Count="0" />
-      <LineId Id="963" Count="11" />
-      <LineId Id="1077" Count="0" />
-      <LineId Id="1079" Count="1" />
-      <LineId Id="1078" Count="0" />
-      <LineId Id="975" Count="0" />
-      <LineId Id="1072" Count="0" />
-      <LineId Id="976" Count="58" />
-      <LineId Id="1064" Count="0" />
-      <LineId Id="1066" Count="3" />
-      <LineId Id="1065" Count="0" />
-      <LineId Id="1035" Count="1" />
-      <LineId Id="1056" Count="7" />
-      <LineId Id="1052" Count="0" />
-      <LineId Id="1055" Count="0" />
-      <LineId Id="1037" Count="6" />
-      <LineId Id="225" Count="0" />
-      <LineId Id="203" Count="12" />
+      <LineId Id="1424" Count="225" />
+      <LineId Id="1655" Count="19" />
+      <LineId Id="1751" Count="7" />
+      <LineId Id="1675" Count="0" />
+      <LineId Id="1707" Count="0" />
+      <LineId Id="1740" Count="2" />
+      <LineId Id="1738" Count="1" />
+      <LineId Id="1770" Count="7" />
+      <LineId Id="1767" Count="2" />
+      <LineId Id="1727" Count="2" />
+      <LineId Id="1708" Count="2" />
+      <LineId Id="1676" Count="22" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.updateShoulderPose">

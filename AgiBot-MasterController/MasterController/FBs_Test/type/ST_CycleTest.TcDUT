@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <DUT Name="ST_CycleTest" Id="{4d9eb782-72d4-4cf6-b3fc-606540001649}">
+    <Declaration><![CDATA[TYPE ST_CycleTest :
+STRUCT
+	//enter cycle test mode
+	m_enterCycleTestMode:ARRAY[1..g_mArmNum] OF BOOL;
+	m_enterESDTest:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//enter car cycle mode
+	m_carEnterCycleTest:BOOL;	
+	m_carEnterESDTest:BOOL;
+	
+	//start motion flag
+	m_startMotion:ARRAY[1..g_mArmNum] OF BOOL;
+	m_startMotionCar:BOOL;
+	
+	//motor encoder and joint encoder
+	m_motorEncoder:ARRAY[1..g_mArmNum] OF Vec7di;
+	m_jntEncoder:ARRAY[1..g_mArmNum] OF Vec7di;
+	
+	//cart joint motor encoder and joint encoder
+	m_cartMotorEncoder:Vec4di;
+	m_cartJntEncoder:Vec4di;
+	
+	//communication status
+	m_comStatus:ARRAY[1..g_mArmNum] OF Vec7b;
+	
+	//target joint position
+	m_targetJntPos:ARRAY[1..g_mArmNum,1..10] OF Vec7d;
+	m_targetJntPosCar:ARRAY[1..10] OF Vec4d;
+	
+	//point sum
+	m_pointSum:ARRAY[1..g_mArmNum] OF INT;
+	m_pointSumCar:INT;
+	
+	//cycle number and motion point number
+	m_targetCycleNum:ARRAY[1..g_mArmNum] OF INT;
+	m_curCycleNum:ARRAY[1..g_mArmNum] OF INT;
+	m_curPointNum:ARRAY[1..g_mArmNum] OF INT;
+	
+	//cycle number and motion point number
+	m_targetCycleNumCar: INT;
+	m_curCycleNumCar: INT;
+	m_curPointNumCar: INT;
+	
+	//cycle time
+	m_tgtCycleTime:ARRAY[1..g_mArmNum] OF LREAL; //hours
+	m_curCycleTime:ARRAY[1..g_mArmNum] OF LREAL;
+	
+	//motion pause and finish
+	m_pause:ARRAY[1..g_mArmNum] OF BOOL;
+	m_finish:ARRAY[1..g_mArmNum] OF BOOL;
+	m_pauseCar:BOOL;
+	m_finishCar:BOOL;
+	
+	//joint enable
+	m_jntEnable:ARRAY[1..g_mArmNum] OF Vec7i;	
+	
+	//output the arm joint position
+	m_armDHJntPos:ARRAY[1..g_mArmNum] OF Vec7d;
+	m_armActJntPos:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//output the car joint position
+	m_carJntPos:Vec4d;
+	
+	//target joint velocity
+	m_targetJntVel:ARRAY[1..g_mArmNum] OF Vec7d;
+	
+	//target joint position
+	m_targetJntVelCar:Vec4d;
+	
+	//cover command position
+	m_coverCmdPos:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//point id for cover command position
+	m_pntIdForCoverCmd:ARRAY[1..g_mArmNum] OF INT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
