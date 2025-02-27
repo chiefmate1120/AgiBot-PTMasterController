@@ -409,7 +409,7 @@ END_VAR
 g_frictionTest.m_armActJntPos[m_armId]:=i_masterArm.curJntPos;
 m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> g_frictionTest.m_armDHJntPos[m_armId]);
 g_frictionTest.m_armDHJntPos[m_armId]:=m_unitFun.masterArmUnit2User(i_dataSystem:= g_frictionTest.m_armDHJntPos[m_armId]);
-
+m_jntEnableFlag:=g_frictionTest.m_jntEnable[m_armId];
 
 
 //start motion flag
@@ -458,6 +458,7 @@ copyCmds(r_masterArmCtrlCmd);
 //init basic parameters
 m_armId:=i_masterArm.armIdx;
 m_startMotionLast:=FALSE;
+g_frictionTest.m_jntEnable[m_armId]:=g_onesVec7i;
 
 //joint home position---joint motion start position and end position
 FOR i:=1 TO g_mJntNum BY 1 DO
@@ -538,6 +539,7 @@ m_jntTestPos[5,2]:=m_homeDHPos[5]+90.0*g_deg2Rad;  m_jntTestPos[5,3]:=m_homeDHPo
       <LineId Id="147" Count="0" />
       <LineId Id="151" Count="0" />
       <LineId Id="165" Count="0" />
+      <LineId Id="222" Count="0" />
       <LineId Id="209" Count="0" />
       <LineId Id="168" Count="28" />
       <LineId Id="166" Count="0" />

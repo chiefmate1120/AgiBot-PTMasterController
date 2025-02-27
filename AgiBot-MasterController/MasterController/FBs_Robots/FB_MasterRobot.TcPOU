@@ -751,7 +751,16 @@ FOR i:=1 TO g_mArmNum DO
 		m_nextMasterArmState[i]:=MasterArmState_Standby;
 	END_IF
 	
+	// to MasterArmState_TestResponse
+	IF (g_responseTest.m_testMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_TestResponse) THEN
+		m_nextMasterArmState[i] := MasterArmState_TestResponse;
+	END_IF
 	
+	//MasterArmState_TestResponse exit
+	IF (g_responseTest.m_testMode[i]=FALSE) AND(m_masterArmState[i]=MasterArmState_TestResponse) THEN
+		m_nextMasterArmState[i] := MasterArmState_Standby;
+	END_IF
+		
 	//fault mask
 	IF (g_specialSignal.m_faultMask) THEN
 		RETURN;
@@ -949,7 +958,10 @@ END_FOR]]></ST>
       <LineId Id="1740" Count="2" />
       <LineId Id="1738" Count="1" />
       <LineId Id="1770" Count="7" />
-      <LineId Id="1767" Count="2" />
+      <LineId Id="1767" Count="1" />
+      <LineId Id="1789" Count="7" />
+      <LineId Id="1769" Count="0" />
+      <LineId Id="1786" Count="0" />
       <LineId Id="1727" Count="2" />
       <LineId Id="1708" Count="2" />
       <LineId Id="1676" Count="22" />

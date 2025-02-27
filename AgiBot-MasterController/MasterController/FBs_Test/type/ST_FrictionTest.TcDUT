@@ -26,6 +26,9 @@ STRUCT
 	//clutch mode
 	m_clutchMode:ARRAY[1..g_mArmNum] OF BOOL;
 	
+	//joint enable
+	m_jntEnable:ARRAY[1..g_mArmNum] OF Vec7i;	
+	
 	//joint gap
 	m_jntGap:ARRAY[1..g_mArmNum] OF Vec7d;
 	

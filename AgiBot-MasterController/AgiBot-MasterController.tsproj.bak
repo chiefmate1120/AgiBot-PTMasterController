@@ -221,10 +221,10 @@
 			</ArrayInfo>
 		</DataType>
 		<DataType>
-			<Name GUID="{7E2B5564-187F-D309-7B6F-4A31D33DF718}" AutoDeleteType="true">ST_SafetyData</Name>
+			<Name GUID="{276A188E-ED54-D0EE-8D17-D05AFB2AA6B2}" AutoDeleteType="true">ST_SafetyData</Name>
 			<Comment><![CDATA[ Output from safety check task
  Input to master arm control task]]></Comment>
-			<BitSize>48</BitSize>
+			<BitSize>64</BitSize>
 			<SubItem>
 				<Name>m_masterErrFlag</Name>
 				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
@@ -268,6 +268,18 @@
 						<Bool>false</Bool>
 					</SubItem>
 				</Default>
+			</SubItem>
+			<SubItem>
+				<Name>m_armEtherCATAllOP</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
+				<BitSize>8</BitSize>
+				<BitOffs>48</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>m_cartEtherCATAllOP</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
+				<BitSize>8</BitSize>
+				<BitOffs>56</BitOffs>
 			</SubItem>
 		</DataType>
 		<DataType>
@@ -541,7 +553,7 @@
 			</SubItem>
 		</DataType>
 		<DataType>
-			<Name GUID="{AEFA1132-DB56-CB02-3783-851F28049C75}" AutoDeleteType="true">E_MasterArmState</Name>
+			<Name GUID="{B09E021D-C03E-0164-A00B-1E834B605A9C}" AutoDeleteType="true">E_MasterArmState</Name>
 			<Comment><![CDATA[ Notice: Each state has a corresponding controller, which has a fixed index.
  Add the new state at the end and update the total num]]></Comment>
 			<BitSize>16</BitSize>
@@ -611,16 +623,36 @@
 				<Enum>16</Enum>
 			</EnumInfo>
 			<EnumInfo>
-				<Text><![CDATA[MasterArmState_PrecisionTest]]></Text>
+				<Text><![CDATA[MasterArmState_GravityBiasCali]]></Text>
 				<Enum>17</Enum>
 			</EnumInfo>
 			<EnumInfo>
-				<Text><![CDATA[MasterArmState_TestCycle]]></Text>
+				<Text><![CDATA[MasterArmState_PrecisionTest]]></Text>
 				<Enum>50</Enum>
 			</EnumInfo>
 			<EnumInfo>
+				<Text><![CDATA[MasterArmState_TestCycle]]></Text>
+				<Enum>51</Enum>
+			</EnumInfo>
+			<EnumInfo>
+				<Text><![CDATA[MasterArmState_TestFriction]]></Text>
+				<Enum>52</Enum>
+			</EnumInfo>
+			<EnumInfo>
+				<Text><![CDATA[MasterArmState_TestResponse]]></Text>
+				<Enum>53</Enum>
+			</EnumInfo>
+			<EnumInfo>
+				<Text><![CDATA[MasterArmState_TestDragFree]]></Text>
+				<Enum>54</Enum>
+			</EnumInfo>
+			<EnumInfo>
+				<Text><![CDATA[MasterArmState_ManiTest]]></Text>
+				<Enum>55</Enum>
+			</EnumInfo>
+			<EnumInfo>
 				<Text><![CDATA[MasterArmState_totalNum]]></Text>
-				<Enum>50</Enum>
+				<Enum>55</Enum>
 			</EnumInfo>
 			<Properties>
 				<Property>
@@ -798,7 +830,7 @@
 			</SubItem>
 		</DataType>
 		<DataType>
-			<Name GUID="{9FA04855-9A6F-547E-753B-AEFBC5BF67F2}" AutoDeleteType="true">ST_MasterStatus</Name>
+			<Name GUID="{5356315D-8B21-007F-C2BC-B403E992C774}" AutoDeleteType="true">ST_MasterStatus</Name>
 			<Comment><![CDATA[ Output from master arm control task, including arm status and cartesian data
  Input to safety task and Slave controller]]></Comment>
 			<BitSize>5184</BitSize>
@@ -814,7 +846,7 @@
 			</SubItem>
 			<SubItem>
 				<Name>m_armState</Name>
-				<Type GUID="{AEFA1132-DB56-CB02-3783-851F28049C75}">E_MasterArmState</Type>
+				<Type GUID="{B09E021D-C03E-0164-A00B-1E834B605A9C}">E_MasterArmState</Type>
 				<ArrayInfo>
 					<LBound>1</LBound>
 					<Elements>2</Elements>
@@ -1290,6 +1322,57 @@
 			</SubItem>
 		</DataType>
 		<DataType>
+			<Name GUID="{B679F2D4-9FAC-6BAA-F5D3-D4FF07B3F5AF}" AutoDeleteType="true">Vec7di</Name>
+			<BitSize>224</BitSize>
+			<BaseType GUID="{18071995-0000-0000-0000-000000000009}">DINT</BaseType>
+			<ArrayInfo>
+				<LBound>1</LBound>
+				<Elements>7</Elements>
+			</ArrayInfo>
+		</DataType>
+		<DataType>
+			<Name GUID="{BDF64DB4-C288-8F88-2FC3-664B5930CAEB}" AutoDeleteType="true">ST_armMotorData</Name>
+			<BitSize>4032</BitSize>
+			<SubItem>
+				<Name>m_armMotorInput</Name>
+				<Type GUID="{2976164F-36D9-360C-E3C9-0E373EED87DE}">ST_MotorInputs</Type>
+				<ArrayInfo>
+					<LBound>1</LBound>
+					<Elements>2</Elements>
+				</ArrayInfo>
+				<ArrayInfo>
+					<LBound>1</LBound>
+					<Elements>7</Elements>
+				</ArrayInfo>
+				<BitSize>2240</BitSize>
+				<BitOffs>0</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>m_armMotorOutput</Name>
+				<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
+				<ArrayInfo>
+					<LBound>1</LBound>
+					<Elements>2</Elements>
+				</ArrayInfo>
+				<ArrayInfo>
+					<LBound>1</LBound>
+					<Elements>7</Elements>
+				</ArrayInfo>
+				<BitSize>1344</BitSize>
+				<BitOffs>2240</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>m_motorEncSalta</Name>
+				<Type GUID="{B679F2D4-9FAC-6BAA-F5D3-D4FF07B3F5AF}">Vec7di</Type>
+				<ArrayInfo>
+					<LBound>1</LBound>
+					<Elements>2</Elements>
+				</ArrayInfo>
+				<BitSize>448</BitSize>
+				<BitOffs>3584</BitOffs>
+			</SubItem>
+		</DataType>
+		<DataType>
 			<Name GUID="{71B58F72-0E49-50EB-B8E4-1CCD027538EC}" IecBaseType="true" AutoDeleteType="true">ARRAY [1..8] OF BOOL</Name>
 			<BitSize>64</BitSize>
 			<BaseType GUID="{18071995-0000-0000-0000-000000000030}">BOOL</BaseType>
@@ -1711,11 +1794,6 @@
 					<Vars VarGrpType="1">
 						<Name>TaskArmControl Inputs</Name>
 						<Var>
-							<Name>SafetyCheck.m_stopButton</Name>
-							<Comment><![CDATA[stop botton]]></Comment>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
 							<Name>MasterArmControl.m_slaveRobotData</Name>
 							<Comment><![CDATA[ slave robot data, input from slave controller box]]></Comment>
 							<Type GUID="{5AD3316A-10EC-43CD-8AD7-C221FA7E1971}">MSCommu_SlaveStatus</Type>
@@ -1723,7 +1801,7 @@
 						<Var>
 							<Name>MasterArmControl.m_masterInputDataPool.m_safetyData</Name>
 							<Comment><![CDATA[ safety information, import from safety check task]]></Comment>
-							<Type GUID="{7E2B5564-187F-D309-7B6F-4A31D33DF718}">ST_SafetyData</Type>
+							<Type GUID="{276A188E-ED54-D0EE-8D17-D05AFB2AA6B2}">ST_SafetyData</Type>
 						</Var>
 						<Var>
 							<Name>MasterArmControl.m_masterInputDataPool.m_cartStatus</Name>
@@ -1825,13 +1903,18 @@
 							<Comment><![CDATA[ motor IO]]></Comment>
 							<Type GUID="{2976164F-36D9-360C-E3C9-0E373EED87DE}">ST_MotorInputs</Type>
 						</Var>
+						<Var>
+							<Name>SafetyCheck.m_stopButton</Name>
+							<Comment><![CDATA[stop botton]]></Comment>
+							<Type>BOOL</Type>
+						</Var>
 					</Vars>
 					<Vars VarGrpType="2" AreaNo="1">
 						<Name>TaskArmControl Outputs</Name>
 						<Var>
 							<Name>MasterArmControl.m_masterStatus</Name>
 							<Comment><![CDATA[ master robot information, including arm status and cartesian data, output to other tasks]]></Comment>
-							<Type GUID="{9FA04855-9A6F-547E-753B-AEFBC5BF67F2}">ST_MasterStatus</Type>
+							<Type GUID="{5356315D-8B21-007F-C2BC-B403E992C774}">ST_MasterStatus</Type>
 						</Var>
 						<Var>
 							<Name>MasterArmControl.m_masterJointsData</Name>
@@ -1842,6 +1925,11 @@
 							<Name>MasterArmControl.m_masterRobotData</Name>
 							<Comment><![CDATA[ master robot data, ouput to slave controller box]]></Comment>
 							<Type GUID="{DCC97959-1078-45A7-80A3-94E66FB26AE0}">MSCommu_MasterStatus</Type>
+						</Var>
+						<Var>
+							<Name>MasterArmControl.m_armMotorData</Name>
+							<Comment><![CDATA[master motor in_output to safety check]]></Comment>
+							<Type GUID="{BDF64DB4-C288-8F88-2FC3-664B5930CAEB}">ST_armMotorData</Type>
 						</Var>
 						<Var>
 							<Name>MasterArmControl.m_masterRobot.m_masterArms[1].m_joints[1].m_motorOutputs</Name>
@@ -2029,15 +2117,23 @@
 						<Var>
 							<Name>SafetyCheck.m_safetyCheckData</Name>
 							<Comment><![CDATA[ error check result]]></Comment>
-							<Type GUID="{7E2B5564-187F-D309-7B6F-4A31D33DF718}">ST_SafetyData</Type>
+							<Type GUID="{276A188E-ED54-D0EE-8D17-D05AFB2AA6B2}">ST_SafetyData</Type>
 						</Var>
 					</Vars>
 					<Vars VarGrpType="1" ContextId="3" AreaNo="48">
 						<Name>TaskSafetyCheck Inputs</Name>
 						<Var>
+							<Name>SafetyCheck.m_cartLockSignalLeft</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>SafetyCheck.m_cartLockSignalRight</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
 							<Name>SafetyCheck.m_masterStatus</Name>
 							<Comment><![CDATA[ master robot information, including arm status and cartesian data]]></Comment>
-							<Type GUID="{9FA04855-9A6F-547E-753B-AEFBC5BF67F2}">ST_MasterStatus</Type>
+							<Type GUID="{5356315D-8B21-007F-C2BC-B403E992C774}">ST_MasterStatus</Type>
 						</Var>
 						<Var>
 							<Name>SafetyCheck.m_masterJointData</Name>
@@ -2055,21 +2151,22 @@
 							<Type GUID="{B09070B0-7D71-A6A7-E97E-969B283AF690}">ST_CartJointData</Type>
 						</Var>
 						<Var>
-							<Name>SafetyCheck.m_cartLockSignalLeft</Name>
-							<Type>BOOL</Type>
+							<Name>SafetyCheck.m_armMotorData</Name>
+							<Comment><![CDATA[motor data]]></Comment>
+							<Type GUID="{BDF64DB4-C288-8F88-2FC3-664B5930CAEB}">ST_armMotorData</Type>
 						</Var>
 						<Var>
-							<Name>SafetyCheck.m_cartLockSignalRight</Name>
+							<Name>GVL_UIData.g_RobotToPlc</Name>
 							<Type>BOOL</Type>
 						</Var>
 					</Vars>
-					<UnrestoredVarLinks ImportTime="2024-12-20T18:48:35">
-						<OwnerA Name="OutputSrc" Prefix="TIPC^MasterController^MasterController Instance" Type="2">
-							<OwnerB Name="TIPC^MasterController^MasterController Instance">
-								<Link VarA="MasterArmControl.m_masterStatus" TypeA="ST_MasterStatus" InOutA="1" GuidA="{B31A0384-525D-B4D2-5EC0-13E4B1C5207A}" VarB="TaskSafetyCheck Inputs^SafetyCheck.m_masterStatus" RestoreInfo="TypeChanged" IdA="585"/>
-							</OwnerB>
-						</OwnerA>
-					</UnrestoredVarLinks>
+					<Vars VarGrpType="2" ContextId="3" AreaNo="49">
+						<Name>TaskSafetyCheck Outputs</Name>
+						<Var>
+							<Name>GVL_UIData.g_RunToRobot</Name>
+							<Type>BOOL</Type>
+						</Var>
+					</Vars>
 					<Contexts>
 						<Context>
 							<Id NeedCalleeCall="true">0</Id>
@@ -4690,6 +4787,7 @@
 				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_cartJointData" VarB="TaskCartControl Outputs^CartControl.m_cartJointData"/>
 				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_cartStatus" VarB="TaskCartControl Outputs^CartControl.m_cartStatus"/>
 				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_masterJointData" VarB="TaskArmControl Outputs^MasterArmControl.m_masterJointsData"/>
+				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_masterStatus" VarB="TaskArmControl Outputs^MasterArmControl.m_masterStatus"/>
 			</OwnerB>
 		</OwnerA>
 	</Mappings>

@@ -23,6 +23,9 @@ VAR_GLOBAL
 	
 	//special signals
 	g_specialSignal:ST_highLevelCtrlSig;
+	
+	//response test
+	g_responseTest:ST_ResponseTest;
 END_VAR
 
 

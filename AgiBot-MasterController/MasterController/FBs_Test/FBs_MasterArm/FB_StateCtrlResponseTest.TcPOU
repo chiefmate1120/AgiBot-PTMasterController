@@ -49,6 +49,9 @@ VAR
 	
 	//start motion flag
 	m_startMotion,m_startMotionLast:BOOL;
+	
+	//arm id
+	m_armId:INT;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -68,6 +71,14 @@ END_VAR]]></Declaration>
 
 CASE m_testStep OF 
 	0: //init the parameters
+		m_freqTestFlag:=g_responseTest.m_freqTestFlag;
+		m_stepTestFlag:=g_responseTest.m_stepTestFlag;		
+		m_jntMotionFreq:=g_responseTest.m_jntMotionFreq;
+		m_jntMotionRange:=g_responseTest.m_jntMotionRange;		
+		m_jntStep:=g_responseTest.m_jntStep;		
+		m_testJntIdx:=g_responseTest.m_testJntIdx;
+		m_stepCycle:=g_responseTest.m_stepCycle;
+		
 		m_initJntPos := i_masterArm.curJntPos;
 		m_jntOPMode := g_allPosMode;
 		
@@ -142,8 +153,9 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-
 //init parameters flag
+m_startMotion:=g_responseTest.m_startMotion[m_armId];
+
 IF (m_startMotionLast=FALSE) AND (m_startMotion=TRUE)THEN
 	m_testStep:=0;
 END_IF
@@ -195,7 +207,11 @@ m_holdLastCmds := checkToHoldLastCmds(i_masterArm);
 SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
 
 // update commands to arm
-copyCmds(r_masterArmCtrlCmd);]]></ST>
+copyCmds(r_masterArmCtrlCmd);
+
+//init
+m_startMotionLast:=FALSE;
+m_armId:=i_masterArm.armIdx;]]></ST>
       </Implementation>
     </Method>
     <LineIds Name="FB_StateCtrlResponseTest">
@@ -204,6 +220,11 @@ copyCmds(r_masterArmCtrlCmd);]]></ST>
     <LineIds Name="FB_StateCtrlResponseTest.armJntTest">
       <LineId Id="6" Count="2" />
       <LineId Id="11" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="87" Count="2" />
       <LineId Id="20" Count="0" />
       <LineId Id="17" Count="0" />
       <LineId Id="23" Count="0" />
@@ -234,9 +255,11 @@ copyCmds(r_masterArmCtrlCmd);]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlResponseTest.calcCmdJntPos">
-      <LineId Id="301" Count="0" />
       <LineId Id="305" Count="0" />
-      <LineId Id="319" Count="6" />
+      <LineId Id="319" Count="0" />
+      <LineId Id="340" Count="0" />
+      <LineId Id="339" Count="0" />
+      <LineId Id="320" Count="5" />
       <LineId Id="113" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlResponseTest.calcCmdJntTrq">
@@ -247,6 +270,9 @@ copyCmds(r_masterArmCtrlCmd);]]></ST>
       <LineId Id="67" Count="4" />
       <LineId Id="15" Count="1" />
       <LineId Id="2" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="81" Count="1" />
+      <LineId Id="80" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>
