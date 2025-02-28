@@ -484,6 +484,9 @@
     <Compile Include="FBs_Test\ManiTest\Socket.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FBs_Test\type\ST_CartInfo.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="FBs_Test\type\ST_CycleTest.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -506,6 +509,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_Test\type\ST_ResponseTest.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_Test\type\ST_ArmInfo.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_Test\UI\CycleTest\cycle_a1.TcVIS">
@@ -545,6 +551,10 @@
       <DependentUpon>视图管理器.TcVMO</DependentUpon>
     </Compile>
     <Compile Include="FBs_Test\UI\motionTest\motion_car.TcVIS">
+      <SubType>Code</SubType>
+      <DependentUpon>视图管理器.TcVMO</DependentUpon>
+    </Compile>
+    <Compile Include="FBs_Test\UI\motRangeTest\motRangeCar.TcVIS">
       <SubType>Code</SubType>
       <DependentUpon>视图管理器.TcVMO</DependentUpon>
     </Compile>
@@ -782,6 +792,7 @@
     <Folder Include="FBs_Test\UI\frictionTest" />
     <Folder Include="FBs_Test\UI\manipulateTest" />
     <Folder Include="FBs_Test\UI\motionTest" />
+    <Folder Include="FBs_Test\UI\motRangeTest" />
     <Folder Include="FBs_Test\UI\responseTest" />
     <Folder Include="FBs_Test\UI\precision" />
     <Folder Include="FBs_TrajectoryPlanning" />

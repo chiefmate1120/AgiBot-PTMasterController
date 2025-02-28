@@ -4,7 +4,7 @@
     <Declaration><![CDATA[TYPE ST_JntInfo :
 STRUCT
 	//joint position
-	m_actJntPos:LREAL;
+	m_curJntPos:LREAL;
 	
 	//joint maxmum
 	m_jntMax:LREAL;

@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <DUT Name="ST_CartInfo" Id="{d60cba0c-b85c-42ee-843d-a5ac9829e21c}">
+    <Declaration><![CDATA[TYPE ST_CartInfo :
+STRUCT
+	//joint position-unit:rad/m
+	m_curJntPos:Vec4d;
+	
+	//joint position-unit:deg/mm
+	m_curJntPosDegMM:Vec4d;
+	
+	//link position
+	m_curLinkPos:Vec4d;
+	
+	//Encoder deviation
+	m_encErr:Vec4d;
+	
+	//joint maxmum
+	m_jntMax:Vec4d;
+	
+	//joint minimum
+	m_jntMin:Vec4d;
+	
+	//motor input signal
+	m_motorInput:ARRAY[1..4] OF ST_MotorInputs;
+	
+	//motor output signal
+	m_motorOutput:ARRAY[1..4] OF ST_MotorOutputs;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

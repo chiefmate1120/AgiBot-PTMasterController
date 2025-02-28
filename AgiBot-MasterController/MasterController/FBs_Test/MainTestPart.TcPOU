@@ -55,6 +55,9 @@ VAR
 	m_controlModeInit:ARRAY[1..2,0..GVL_Const.g_controlModeNum] OF BOOL;
     m_controlMode_TRIG:ARRAY[1..2,0..GVL_Const.g_controlModeNum] OF  R_TRIG;
 	m_controlMode_FTRIG:ARRAY[1..2,0..GVL_Const.g_controlModeNum] OF  F_TRIG;	
+	
+	//unit function
+	m_unitFun:FB_UnitTransform;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -70,9 +73,108 @@ HmiMid();
 //write data related to precision test
 writePrecisionData();
 
-
+//information update
+infoUpdate();
 ]]></ST>
     </Implementation>
+    <Method Name="armInfoUpdate" Id="{a7405eea-71fb-4e9b-be9b-5854851bcf65}">
+      <Declaration><![CDATA[METHOD armInfoUpdate : BOOL
+VAR_IN_OUT CONSTANT
+	//i_slaveIdx :INT;
+	//i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	//i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR
+	i: INT;
+	k:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//update system information
+FOR i:=1 TO g_mJntNum BY 1 DO
+	k:=i_masterArm.armIdx;
+	
+	//motor input and output information
+	g_systemInfo.m_armJntInfo[k,i].m_motorInput:=i_masterArm.m_joints[i].m_motorInputs;
+	g_systemInfo.m_armJntInfo[k,i].m_motorOutput:=i_masterArm.m_joints[i].m_motorOutputs;
+	
+	//joint position and max/min
+	g_systemInfo.m_armJntInfo[k,i].m_curJntPos:=i_masterArm.curJntPos[i];
+	g_systemInfo.m_armJntInfo[k,i].m_jntMax:=GVL_ArmJointParameters.g_maxJntPos[k,i];
+	g_systemInfo.m_armJntInfo[k,i].m_jntMin:=GVL_ArmJointParameters.g_minJntPos[k,i];
+	
+	//state machine
+	g_systemInfo.m_masterArmState[k]:=MasterArmControl.m_masterRobot.m_masterArmState[k];
+END_FOR
+
+
+
+//update system information
+FOR i:=1 TO g_mJntNum BY 1 DO
+	k:=i_masterArm.armIdx;
+	
+	//motor input and output information
+	g_systemInfo.m_armInfo[k].m_motorInput[i]:=i_masterArm.m_joints[i].m_motorInputs;
+	g_systemInfo.m_armInfo[k].m_motorOutput[i]:=i_masterArm.m_joints[i].m_motorOutputs;
+	
+	//joint position and max/min	
+	g_systemInfo.m_armJntInfo[k,i].m_jntMax:=GVL_ArmJointParameters.g_maxJntPos[k,i];
+	g_systemInfo.m_armJntInfo[k,i].m_jntMin:=GVL_ArmJointParameters.g_minJntPos[k,i];
+	
+	//state machine
+	g_systemInfo.m_masterArmState[k]:=MasterArmControl.m_masterRobot.m_masterArmState[k];
+END_FOR
+
+g_systemInfo.m_armInfo[k].m_curJntPos:=i_masterArm.curJntPos;
+g_systemInfo.m_armInfo[k].m_curLinkPos:=i_masterArm.curLinkPos;
+g_systemInfo.m_armInfo[k].m_curJntPosDegMM:=m_unitFun.masterArmUnit2User(i_dataSystem:= i_masterArm.curJntPos);
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="carInfoUpdate" Id="{88999e7e-7139-439c-aa60-34b95dafb49b}">
+      <Declaration><![CDATA[METHOD carInfoUpdate : BOOL
+VAR_INPUT
+	m_masterCart :FB_MasterCart;
+END_VAR
+
+VAR
+	i: INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//update system information
+FOR i:=1 TO 4 BY 1 DO
+	//motor input and output information
+	g_systemInfo.m_cartJntInfo[i].m_motorInput:=m_masterCart.m_cartJoints[i].m_motorInputs;
+	g_systemInfo.m_cartJntInfo[i].m_motorOutput:=m_masterCart.m_cartJoints[i].m_motorOutputs;
+	
+	//joint position and max/min
+	g_systemInfo.m_cartJntInfo[i].m_curJntPos:=m_masterCart.m_curJntPos[i];
+	g_systemInfo.m_cartJntInfo[i].m_jntMax:=GVL_CartJointParameters.g_maxJntPos[i];
+	g_systemInfo.m_cartJntInfo[i].m_jntMin:=GVL_CartJointParameters.g_minJntPos[i];
+END_FOR
+
+
+//update system information
+FOR i:=1 TO 4 BY 1 DO
+	//motor input and output information
+	g_systemInfo.m_cartInfo.m_motorInput[i]:=m_masterCart.m_cartJoints[i].m_motorInputs;
+	g_systemInfo.m_cartInfo.m_motorOutput[i]:=m_masterCart.m_cartJoints[i].m_motorOutputs;		
+END_FOR
+
+//joint position and max/min
+g_systemInfo.m_cartInfo.m_curJntPos:=m_masterCart.m_curJntPos;
+g_systemInfo.m_cartInfo.m_curLinkPos:=m_masterCart.m_curLinkPos;
+g_systemInfo.m_cartInfo.m_curJntPosDegMM:=m_unitFun.carArmUnit2User(i_dataSystem:= m_masterCart.m_curJntPos);
+
+g_systemInfo.m_cartInfo.m_jntMax:=GVL_CartJointParameters.g_maxJntPos;
+g_systemInfo.m_cartInfo.m_jntMin:=GVL_CartJointParameters.g_minJntPos;
+
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="dataWriteExp" Id="{83e2b061-240b-48f5-a37e-40e2d8eb7275}">
       <Declaration><![CDATA[METHOD dataWriteExp : BOOL
 VAR_INPUT
@@ -147,6 +249,26 @@ FOR i:=1 TO 2  DO
 	END_IF
 END_FOR
 ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="infoUpdate" Id="{b5ebbaa2-522b-48df-8c3d-8db966613fb9}">
+      <Declaration><![CDATA[METHOD infoUpdate : BOOL
+VAR_INPUT
+	
+END_VAR
+
+VAR
+	i:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//update the system information
+FOR i:= 1 TO 2 BY 1 DO
+	armInfoUpdate(i_masterArm:= MasterArmControl.m_masterRobot.m_masterArms[i]);
+END_FOR
+
+//cart information
+carInfoUpdate(m_masterCart:= CartControl.m_masterCart);]]></ST>
       </Implementation>
     </Method>
     <Method Name="writeArmTestData" Id="{75371ddd-c0a5-4294-8245-87433006a1e9}">
@@ -378,9 +500,51 @@ END_CASE
       <LineId Id="149" Count="0" />
       <LineId Id="100" Count="0" />
       <LineId Id="148" Count="0" />
+      <LineId Id="266" Count="0" />
       <LineId Id="205" Count="0" />
       <LineId Id="207" Count="0" />
       <LineId Id="99" Count="0" />
+    </LineIds>
+    <LineIds Name="MainTestPart.armInfoUpdate">
+      <LineId Id="12" Count="0" />
+      <LineId Id="18" Count="3" />
+      <LineId Id="24" Count="1" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="26" Count="3" />
+      <LineId Id="52" Count="2" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="75" Count="2" />
+      <LineId Id="79" Count="8" />
+      <LineId Id="89" Count="4" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="94" Count="1" />
+      <LineId Id="97" Count="1" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="MainTestPart.carInfoUpdate">
+      <LineId Id="8" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="38" Count="2" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="65" Count="4" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="78" Count="1" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="75" Count="1" />
+      <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.dataWriteExp">
       <LineId Id="39" Count="1" />
@@ -425,6 +589,16 @@ END_CASE
       <LineId Id="183" Count="0" />
       <LineId Id="176" Count="6" />
       <LineId Id="103" Count="0" />
+    </LineIds>
+    <LineIds Name="MainTestPart.infoUpdate">
+      <LineId Id="18" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="19" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.writeArmTestData">
       <LineId Id="19" Count="0" />

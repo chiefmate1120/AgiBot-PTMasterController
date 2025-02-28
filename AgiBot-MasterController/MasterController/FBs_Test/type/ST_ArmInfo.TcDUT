@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <DUT Name="ST_ArmInfo" Id="{dd95914c-468b-44ae-a375-88db05270a66}">
+    <Declaration><![CDATA[TYPE ST_ArmInfo :
+STRUCT
+	//joint position-unit:rad/m
+	m_curJntPos:Vec7d;
+	
+	//joint position-unit:deg/mm
+	m_curJntPosDegMM:Vec7d;
+	
+	//link position
+	m_curLinkPos:Vec7d;
+	
+	//Encoder deviation
+	m_encErr:Vec7d;
+	
+	//joint maxmum
+	m_jntMax:Vec7d;
+	
+	//joint minimum
+	m_jntMin:Vec7d;
+	
+	//motor input signal
+	m_motorInput:ARRAY[1..7] OF ST_MotorInputs;
+	
+	//motor output signal
+	m_motorOutput:ARRAY[1..7] OF ST_MotorOutputs;	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -124,7 +124,7 @@ FOR i:=1 TO g_mJntNum BY 1 DO
 	g_systemInfo.m_armJntInfo[k,i].m_motorOutput:=i_masterArm.m_joints[i].m_motorOutputs;
 	
 	//joint position and max/min
-	g_systemInfo.m_armJntInfo[k,i].m_actJntPos:=i_masterArm.curJntPos[i];
+	g_systemInfo.m_armJntInfo[k,i].m_curJntPos:=i_masterArm.curJntPos[i];
 	g_systemInfo.m_armJntInfo[k,i].m_jntMax:=GVL_ArmJointParameters.g_maxJntPos[k,i];
 	g_systemInfo.m_armJntInfo[k,i].m_jntMin:=GVL_ArmJointParameters.g_minJntPos[k,i];
 	

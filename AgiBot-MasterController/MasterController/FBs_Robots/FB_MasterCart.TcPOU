@@ -564,7 +564,7 @@ FOR i:=1 TO 4 BY 1 DO
 	g_systemInfo.m_cartJntInfo[i].m_motorOutput:=m_cartJoints[i].m_motorOutputs;
 	
 	//joint position and max/min
-	g_systemInfo.m_cartJntInfo[i].m_actJntPos:=m_curJntPos[i];
+	g_systemInfo.m_cartJntInfo[i].m_curJntPos:=m_curJntPos[i];
 	g_systemInfo.m_cartJntInfo[i].m_jntMax:=GVL_CartJointParameters.g_maxJntPos[i];
 	g_systemInfo.m_cartJntInfo[i].m_jntMin:=GVL_CartJointParameters.g_minJntPos[i];
 END_FOR

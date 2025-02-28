@@ -11,6 +11,12 @@ STRUCT
 	
 	//arm state machine
 	m_masterArmState:ARRAY[1..g_mArmNum] OF E_masterArmState;
+	
+	//arm information
+	m_armInfo:ARRAY[1..g_mArmNum] OF ST_ArmInfo;
+	
+	//cart information
+	m_cartInfo:ST_CartInfo;	
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>
