@@ -104,12 +104,11 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-//data from ui
-m_uiControlMode:=A1_Arm1Mode;
+        <ST><![CDATA[//data from ui
+m_uiControlMode:=g_motionTest.m_uiArmMode;
 
 
-//the interface relate to variable A1_Arm1Mode
+//the interface relate to variable g_motionTest.m_uiArmMode
 FOR i:=1 TO 2  DO
 	FOR j:=1 TO GVL_Const.g_controlModeNum DO 
 		//Monitoring button signal rising edge
@@ -133,9 +132,9 @@ END_FOR
 
 
 //Upload variables for displaying button colors
-A1_Arm1ModeL:=m_controlModeInit;
+g_motionTest.m_uiArmModeL:=m_controlModeInit;
 FOR i:=1 TO 2  DO
-	A1_Arm1ModeL[i,g_motionTest.m_controlMode[i]]:=TRUE;
+	g_motionTest.m_uiArmModeL[i,g_motionTest.m_controlMode[i]]:=TRUE;
 END_FOR
 
 
@@ -147,11 +146,6 @@ FOR i:=1 TO 2  DO
 		g_motionTest.m_startMotion[i]:=FALSE;
 	END_IF
 END_FOR
-
-
-//ui signal copy
-g_motionTest.m_uiArmMode:=A1_Arm1Mode;
-
 ]]></ST>
       </Implementation>
     </Method>
@@ -399,7 +393,6 @@ END_CASE
       <LineId Id="38" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.HmiMid">
-      <LineId Id="199" Count="0" />
       <LineId Id="237" Count="0" />
       <LineId Id="236" Count="0" />
       <LineId Id="238" Count="0" />
@@ -431,10 +424,6 @@ END_CASE
       <LineId Id="201" Count="0" />
       <LineId Id="183" Count="0" />
       <LineId Id="176" Count="6" />
-      <LineId Id="228" Count="0" />
-      <LineId Id="217" Count="0" />
-      <LineId Id="225" Count="1" />
-      <LineId Id="266" Count="0" />
       <LineId Id="103" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.writeArmTestData">

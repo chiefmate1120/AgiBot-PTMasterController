@@ -5363,7 +5363,7 @@
                       <l n="VisualElemMemberList" t="VisualElemMemberCollection" cet="VisualElemMember">
                         <o>
                           <v n="Id">1186196937L</v>
-                          <v n="Value">"A1_Arm1Mode[2,2]"</v>
+                          <v n="Value">"g_motionTest.m_uiArmMode[2,2]"</v>
                         </o>
                         <o>
                           <v n="Id">1329445385L</v>
@@ -5523,7 +5523,7 @@
                     </o>
                     <o>
                       <v n="Id">1999528970L</v>
-                      <v n="Value">"A1_Arm1ModeL[2,2]"</v>
+                      <v n="Value">"g_motionTest.m_uiArmModeL[2,2]"</v>
                     </o>
                     <o>
                       <v n="Id">2880254039L</v>
@@ -5557,7 +5557,7 @@
                       <l n="VisualElemMemberList" t="VisualElemMemberCollection" cet="VisualElemMember">
                         <o>
                           <v n="Id">1186196937L</v>
-                          <v n="Value">"A1_Arm1Mode[2,4]"</v>
+                          <v n="Value">"g_motionTest.m_uiArmMode[2,4]"</v>
                         </o>
                       </l>
                     </o>
@@ -5713,7 +5713,7 @@
                     </o>
                     <o>
                       <v n="Id">1999528970L</v>
-                      <v n="Value">"A1_Arm1ModeL[2,4]"</v>
+                      <v n="Value">"g_motionTest.m_uiArmModeL[2,4]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -5743,7 +5743,7 @@
                       <l n="VisualElemMemberList" t="VisualElemMemberCollection" cet="VisualElemMember">
                         <o>
                           <v n="Id">1186196937L</v>
-                          <v n="Value">"A1_Arm1Mode[2,6]"</v>
+                          <v n="Value">"g_motionTest.m_uiArmMode[2,6]"</v>
                         </o>
                       </l>
                     </o>
@@ -5899,7 +5899,7 @@
                     </o>
                     <o>
                       <v n="Id">1999528970L</v>
-                      <v n="Value">"A1_Arm1ModeL[2,6]"</v>
+                      <v n="Value">"g_motionTest.m_uiArmModeL[2,6]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -9057,7 +9057,7 @@
                       <l n="VisualElemMemberList" t="VisualElemMemberCollection" cet="VisualElemMember">
                         <o>
                           <v n="Id">1186196937L</v>
-                          <v n="Value">"A1_Arm1Mode[2,5]"</v>
+                          <v n="Value">"g_motionTest.m_uiArmMode[2,5]"</v>
                         </o>
                       </l>
                     </o>
@@ -9213,7 +9213,7 @@
                     </o>
                     <o>
                       <v n="Id">1999528970L</v>
-                      <v n="Value">"A1_Arm1ModeL[2,5]"</v>
+                      <v n="Value">"g_motionTest.m_uiArmModeL[2,5]"</v>
                     </o>
                     <o>
                       <v n="Id">2880254039L</v>
@@ -9247,7 +9247,7 @@
                       <l n="VisualElemMemberList" t="VisualElemMemberCollection" cet="VisualElemMember">
                         <o>
                           <v n="Id">1186196937L</v>
-                          <v n="Value">"A1_Arm1Mode[2,7]"</v>
+                          <v n="Value">"g_motionTest.m_uiArmMode[2,7]"</v>
                         </o>
                       </l>
                     </o>
@@ -9403,7 +9403,7 @@
                     </o>
                     <o>
                       <v n="Id">1999528970L</v>
-                      <v n="Value">"A1_Arm1ModeL[2,7]"</v>
+                      <v n="Value">"g_motionTest.m_uiArmModeL[2,7]"</v>
                     </o>
                     <o>
                       <v n="Id">2880254039L</v>
@@ -10860,10 +10860,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>54135867-1c4a-4334-b8d8-63f78f9f0d7b</v>
-                <v>FB_Exit</v>
-                <v>6f9f2982-0d77-4895-bf00-bebb86179fdd</v>
                 <v>FB_Reinit</v>
                 <v>94c1d958-f74b-4312-8bca-87a2b2c08ba8</v>
+                <v>FB_Exit</v>
+                <v>6f9f2982-0d77-4895-bf00-bebb86179fdd</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{950ade82-7670-4335-afad-42d29d16dd52}</v>

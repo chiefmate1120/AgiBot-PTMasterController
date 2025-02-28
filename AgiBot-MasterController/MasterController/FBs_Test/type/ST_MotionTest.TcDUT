@@ -65,6 +65,7 @@ STRUCT
 	
 	//ui signal
 	m_uiArmMode:ARRAY[1..g_mArmNum,0..GVL_Const.g_controlModeNum] OF BOOL;
+	m_uiArmModeL:ARRAY[1..g_mArmNum,0..GVL_Const.g_controlModeNum] OF BOOL;
 	
 	//cover command position
 	m_coverCmdPos:ARRAY[1..g_mArmNum] OF BOOL;
