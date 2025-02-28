@@ -23,11 +23,11 @@ TYPE E_MasterArmState :
 	MasterArmState_PowerOff := 16,
 	MasterArmState_GravityBiasCali := 17,
 	
-	MasterArmState_PrecisionTest :=50,
-	MasterArmState_TestCycle :=51,
-	MasterArmState_TestFriction:=52,
-	MasterArmState_TestResponse:=53,
-	MasterArmState_TestDragFree:=54,
+	MasterArmState_MotionTest :=50,
+	MasterArmState_CycleTest :=51,
+	MasterArmState_FrictionTest:=52,
+	MasterArmState_ResponseTest:=53,
+	MasterArmState_DragFreeTest:=54,
 	MasterArmState_ManiTest :=55,
 	
 	MasterArmState_totalNum :=MasterArmState_ManiTest
