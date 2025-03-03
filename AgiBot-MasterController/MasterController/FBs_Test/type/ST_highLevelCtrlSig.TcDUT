@@ -3,8 +3,7 @@
   <DUT Name="ST_highLevelCtrlSig" Id="{bef0044b-eb1e-43eb-9495-0bc1484501d6}">
     <Declaration><![CDATA[TYPE ST_highLevelCtrlSig :
 STRUCT
-	m_faultMask:BOOL;
-	
+	m_faultMask:ARRAY[1..2] OF BOOL;
 	
 END_STRUCT
 END_TYPE

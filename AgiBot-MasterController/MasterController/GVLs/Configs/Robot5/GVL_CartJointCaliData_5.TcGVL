@@ -25,7 +25,7 @@ VAR_GLOBAL CONSTANT
 	
 	// flag if joint can rotate multiple cycles
 	g_multipleCyclesJoint :ARRAY[1..4] OF INT :=[0, 0, 0, 0];
-	
+		 
 	// joint position at link encoder calibrated point
 	//TODO: joint2 calibration position need to be checked
 	//g_linkEncCaliJntPos :ARRAY[1..4] OF LREAL :=[0, 0*g_deg2Rad,0,0];

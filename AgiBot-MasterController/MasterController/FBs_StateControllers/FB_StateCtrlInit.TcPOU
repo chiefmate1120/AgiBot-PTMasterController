@@ -57,6 +57,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+m_jntEnableFlag :=g_zeroVec7i;
 ]]></ST>
       </Implementation>
     </Method>
@@ -72,7 +73,9 @@ END_VAR
       <LineId Id="15" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlInit.init">
-      <LineId Id="11" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="12" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_StateCtrlArmCali" Id="{3cf21892-e263-450c-90d1-781538ddcb8e}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Slave Arm Adjust
+FUNCTION_BLOCK PUBLIC FB_StateCtrlArmCali EXTENDS FB_MasterArmCtrlBase
+VAR
+	m_lastLinkEncoder : Vec7di;
+	
+	//link encoder calibration timer
+	m_linkEncPosFristCaliTon :ARRAY [1..7] OF TON;
+	m_linkEncPosSecondCaliTon :ARRAY [1..7] OF TON;
+	m_linkEncPosHomeCaliTon :ARRAY [1..7] OF TON;
+	
+	//link encoder calibration tigger time
+	m_caliTime : TIME:= T#3S;
+	
+	//joint link zero crossing or not
+	m_linkZeroCrossOrNot : Vec7i;
+	
+	linkLimitFristPos : ARRAY [1..g_mArmNum] OF Vec7di;
+	linkLimitSecondPos : ARRAY [1..g_mArmNum] OF Vec7di;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{73d47bc3-ba2e-421d-8819-f86c38a4d122}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR
+	i:INT;
+	armIdx : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[armIdx := i_masterArm.armIdx;
+FOR i:= 1 TO g_mJntNum DO
+	IF m_jntOPMode[i] = DriverOPMode_Trq THEN
+		m_cmdJntPos[i]:=i_masterArm.curJntPos[i];
+	END_IF
+	
+	//determine link encoder cross zero
+	IF ABS(i_masterArm.m_joints[i].m_motorInputs.m_linkEncoder - m_lastLinkEncoder[i]) > GVL_ArmJointParameters.g_absEncoderRes[i] /2 THEN
+		 GVL_armCali.g_linkZeroCrossOrNot[armIdx][i] :=1;
+	END_IF
+	m_lastLinkEncoder[i] := i_masterArm.m_joints[i].m_motorInputs.m_linkEncoder;
+	
+	//link encoder calibration 
+	m_linkEncPosFristCaliTon[i](IN:= GVL_armCali.g_linkEncFristPosCali[armIdx][i], PT:= m_caliTime, Q=>  GVL_armCali.g_linkEncFristCaliTrigger[armIdx][i], ET=> );
+	m_linkEncPosSecondCaliTon[i](IN:=  GVL_armCali.g_linkEncSecondPosCali[armIdx][i], PT:= m_caliTime, Q=>  GVL_armCali.g_linkEncSecondCaliTrigger[armIdx][i], ET=> );
+	m_linkEncPosHomeCaliTon[i](IN:=  GVL_armCali.g_linkEncHomePosCali[armIdx][i], PT:= m_caliTime, Q=>  GVL_armCali.g_linkEncHomePosCaliTrigger[armIdx][i], ET=> );
+	IF  GVL_armCali.g_linkEncFristCaliTrigger[armIdx][i] THEN
+		linkLimitFristPos[armIdx][i] := i_masterArm.m_joints[i].m_motorInputs.m_linkEncoder;
+		IF linkLimitFristPos[armIdx][i] < linkLimitSecondPos[armIdx][i] THEN
+			GVL_armCali.g_linkLimitFristPos[armIdx][i] := linkLimitFristPos[armIdx][i];
+			GVL_armCali.g_linkLimitSecondPos[armIdx][i] := linkLimitSecondPos[armIdx][i];
+		ELSE
+			GVL_armCali.g_linkLimitFristPos[armIdx][i] := linkLimitSecondPos[armIdx][i];
+			GVL_armCali.g_linkLimitSecondPos[armIdx][i] := linkLimitFristPos[armIdx][i];
+		END_IF
+	ELSIF  GVL_armCali.g_linkEncSecondCaliTrigger[armIdx][i] THEN
+		linkLimitSecondPos[armIdx][i] := i_masterArm.m_joints[i].m_motorInputs.m_linkEncoder;
+		IF linkLimitFristPos[armIdx][i] < linkLimitSecondPos[armIdx][i] THEN
+			GVL_armCali.g_linkLimitFristPos[armIdx][i] := linkLimitFristPos[armIdx][i];
+			GVL_armCali.g_linkLimitSecondPos[armIdx][i] := linkLimitSecondPos[armIdx][i];
+		ELSE
+			GVL_armCali.g_linkLimitFristPos[armIdx][i] := linkLimitSecondPos[armIdx][i];
+			GVL_armCali.g_linkLimitSecondPos[armIdx][i] := linkLimitFristPos[armIdx][i];
+		END_IF
+		 
+	ELSIF  GVL_armCali.g_linkEncHomePosCaliTrigger[armIdx][i] THEN
+		 GVL_armCali.g_linkHomePos[armIdx][i] := i_masterArm.m_joints[i].m_motorInputs.m_linkEncoder;
+	END_IF
+
+END_FOR
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{42fdd78c-b96f-4685-a3e8-6aa21d39fc38}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i :INT;
+	armId :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[armId := i_masterArm.armIdx;
+// check if to hold the command joint position unchanged
+m_holdLastCmds := checkToHoldLastCmds(i_masterArm);
+
+//init
+SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+m_jntEnableFlag :=g_zeroVec7i;
+FOR i := 1 TO g_mJntNum DO
+	GVL_armCali.g_linkZeroCrossOrNot[armId][i+5] :=0;
+	m_lastLinkEncoder[i] := i_masterArm.m_joints[i].m_motorInputs.m_linkEncoder;
+END_FOR
+
+linkLimitFristPos[armId] := g_zeroVec7di;
+linkLimitSecondPos[armId] := g_zeroVec7di;
+// update commands to arm
+copyCmds(r_masterArmCtrlCmd);
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlArmCali">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlArmCali.calcCmdJntPos">
+      <LineId Id="165" Count="0" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="116" Count="1" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="180" Count="3" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="162" Count="1" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="207" Count="5" />
+      <LineId Id="206" Count="0" />
+      <LineId Id="150" Count="0" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="202" Count="3" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="136" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlArmCali.init">
+      <LineId Id="221" Count="0" />
+      <LineId Id="157" Count="4" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="205" Count="1" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="187" Count="2" />
+      <LineId Id="12" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -3,7 +3,7 @@
   <GVL Name="GVL_CartJointCaliData" Id="{9bad5a74-c717-4d0d-b524-56b1418cee8b}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 // Robot3 Data
-VAR_GLOBAL CONSTANT
+VAR_GLOBAL
 	(* cart joints are defiend in sequence as below
 	[monitor lift, monitor rotate, armset, pedal] *)
 

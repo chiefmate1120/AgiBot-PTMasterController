@@ -62,12 +62,13 @@ VAR
 	m_armGravityBiasCali :ARRAY[1..g_mArmNum] OF FB_StateCtrlGraBiasCali;	
 	
 	//add code for test
-	m_armMotionTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlMotionTest;
-	m_armCycleTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlCycleTest;
-	m_armFrictionTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlFrictionTest;
-	m_armResponseTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlResponseTest;
-	m_armDragFreeTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlDragFreeTest;
+	m_armPrecisionTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlMotionTest;
+	m_armPrecisionTestCycle :ARRAY[1..g_mArmNum] OF FB_StateCtrlCycleTest;
+	m_armTestFriction :ARRAY[1..g_mArmNum] OF FB_StateCtrlFrictionTest;
+	m_armTestResponse :ARRAY[1..g_mArmNum] OF FB_StateCtrlResponseTest;
+	m_armTestDrag :ARRAY[1..g_mArmNum] OF FB_StateCtrlDragFreeTest;
 	m_armManiTest :ARRAY[1..g_mArmNum] OF FB_StateCtrlManiTest;
+	m_armCali : ARRAY [1..g_mArmNum] OF FB_StateCtrlArmCali;
 	
 	// specialized endoscope controller
 	m_scopeCtrl :FB_EndoscopeController;
@@ -353,13 +354,13 @@ FOR i:=1 TO g_mArmNum DO
 	
 	//add code for test
 	//m_armCtrlFactory[i,MasterArmState_Performance] := m_armPerformance[i];
-	m_armCtrlFactory[i,MasterArmState_MotionTest] := m_armMotionTest[i];
-	m_armCtrlFactory[i,MasterArmState_CycleTest] := m_armCycleTest[i];
-	m_armCtrlFactory[i,MasterArmState_FrictionTest] := m_armFrictionTest[i];
-	m_armCtrlFactory[i,MasterArmState_ResponseTest] := m_armResponseTest[i];
-	m_armCtrlFactory[i,MasterArmState_DragFreeTest] := m_armDragFreeTest[i];
+	m_armCtrlFactory[i,MasterArmState_PrecisionTest] := m_armPrecisionTest[i];
+	m_armCtrlFactory[i,MasterArmState_TestCycle] := m_armPrecisionTestCycle[i];
+	m_armCtrlFactory[i,MasterArmState_TestFriction] := m_armTestFriction[i];
+	m_armCtrlFactory[i,MasterArmState_TestResponse] := m_armTestResponse[i];
+	m_armCtrlFactory[i,MasterArmState_TestDragFree] := m_armTestDrag[i];
 	m_armCtrlFactory[i,MasterArmState_ManiTest] := m_armManiTest[i];
-	
+	m_armCtrlFactory[i,MasterArmState_armCali] := m_armCali[i];
 	
 	// assign controller
 	m_armCtrl[i]:=m_armCtrlFactory[i,m_masterArmState[i]];
@@ -692,12 +693,12 @@ FOR i:=1 TO g_mArmNum DO
 	
 	//*************************add for test**********************************//
 	// to precision test
-	IF (g_motionTest.m_enterPrecisionTestMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_MotionTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_MotionTest;
+	IF (g_motionTest.m_enterPrecisionTestMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_PrecisionTest) THEN
+		m_nextMasterArmState[i] := MasterArmState_PrecisionTest;
 	END_IF
 	
 	//precision exit
-	IF (g_motionTest.m_enterPrecisionTestMode[i]=FALSE) AND (m_masterArmState[i]=MasterArmState_MotionTest) THEN
+	IF (g_motionTest.m_enterPrecisionTestMode[i]=FALSE) AND (m_masterArmState[i]=MasterArmState_PrecisionTest) THEN
 		m_nextMasterArmState[i] := MasterArmState_Standby;
 	END_IF	
 	
@@ -707,32 +708,32 @@ FOR i:=1 TO g_mArmNum DO
 	END_IF
 	
 	// to MasterArmState_TestCycle
-	IF (g_cycleTest.m_enterCycleTestMode[i] OR g_cycleTest.m_enterESDTest[i]) AND NOT(m_masterArmState[i]=MasterArmState_CycleTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_CycleTest;
+	IF (g_cycleTest.m_enterCycleTestMode[i] OR g_cycleTest.m_enterESDTest[i]) AND NOT(m_masterArmState[i]=MasterArmState_TestCycle) THEN
+		m_nextMasterArmState[i] := MasterArmState_TestCycle;
 	END_IF
 	
 	//MasterArmState_TestCycle exit
-	IF (g_cycleTest.m_enterCycleTestMode[i]=FALSE) AND (g_cycleTest.m_enterESDTest[i]=FALSE) AND(m_masterArmState[i]=MasterArmState_CycleTest) THEN
+	IF (g_cycleTest.m_enterCycleTestMode[i]=FALSE) AND (g_cycleTest.m_enterESDTest[i]=FALSE) AND(m_masterArmState[i]=MasterArmState_TestCycle) THEN
 		m_nextMasterArmState[i] := MasterArmState_Standby;
 	END_IF
 	
 	// to MasterArmState_TestFriction
-	IF (g_frictionTest.m_testMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_FrictionTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_FrictionTest;
+	IF (g_frictionTest.m_testMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_TestFriction) THEN
+		m_nextMasterArmState[i] := MasterArmState_TestFriction;
 	END_IF
 	
 	// MasterArmState_TestFriction exit
-	IF (g_frictionTest.m_testMode[i]=FALSE) AND (m_MasterArmState[i]=MasterArmState_FrictionTest) THEN
+	IF (g_frictionTest.m_testMode[i]=FALSE) AND (m_MasterArmState[i]=MasterArmState_TestFriction) THEN
 		m_nextMasterArmState[i] := MasterArmState_Standby;
 	END_IF
 	
 	// to MasterArmState_TestDragFree
-	IF (g_frictionTest.m_clutchMode[i]=TRUE) AND (m_masterArms[i].handClutchSwitch=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_DragFreeTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_DragFreeTest;
+	IF (g_frictionTest.m_clutchMode[i]=TRUE) AND (m_masterArms[i].handClutchSwitch=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_TestDragFree) THEN
+		m_nextMasterArmState[i] := MasterArmState_TestDragFree;
 	END_IF
 	
 	// MasterArmState_TestDragFree exit
-	IF (m_masterArms[i].handClutchSwitch=FALSE) AND (m_MasterArmState[i]=MasterArmState_DragFreeTest) THEN
+	IF (m_masterArms[i].handClutchSwitch=FALSE) AND (m_MasterArmState[i]=MasterArmState_TestDragFree) THEN
 		m_nextMasterArmState[i] := MasterArmState_Standby;
 	END_IF
 	
@@ -751,19 +752,16 @@ FOR i:=1 TO g_mArmNum DO
 		m_nextMasterArmState[i]:=MasterArmState_Standby;
 	END_IF
 	
-	// to MasterArmState_TestResponse
-	IF (g_responseTest.m_testMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_ResponseTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_ResponseTest;
-	END_IF
+	//robot calibration 
+	IF GVL_armCali.g_armEnterCaliMode[i] AND (m_masterArmState[i]<=MasterArmState_Standby) THEN
+		m_nextMasterArmState[i] := MasterArmState_armCali;
+	ELSIF NOT GVL_armCali.g_armEnterCaliMode[i] AND (m_masterArmState[i]=MasterArmState_armCali) THEN
+		m_nextMasterArmState[i] := MasterArmState_Init;
+	END_IF	
 	
-	//MasterArmState_TestResponse exit
-	IF (g_responseTest.m_testMode[i]=FALSE) AND(m_masterArmState[i]=MasterArmState_ResponseTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_Standby;
-	END_IF
-		
 	//fault mask
-	IF (g_specialSignal.m_faultMask) THEN
-		RETURN;
+	IF (g_specialSignal.m_faultMask[i]) THEN
+		CONTINUE;
 	END_IF
 	
 	
@@ -959,9 +957,9 @@ END_FOR]]></ST>
       <LineId Id="1738" Count="1" />
       <LineId Id="1770" Count="7" />
       <LineId Id="1767" Count="1" />
-      <LineId Id="1789" Count="7" />
-      <LineId Id="1769" Count="0" />
+      <LineId Id="1787" Count="4" />
       <LineId Id="1786" Count="0" />
+      <LineId Id="1769" Count="0" />
       <LineId Id="1727" Count="2" />
       <LineId Id="1708" Count="2" />
       <LineId Id="1676" Count="22" />

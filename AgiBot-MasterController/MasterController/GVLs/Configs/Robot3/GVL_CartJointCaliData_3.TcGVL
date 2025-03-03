@@ -18,14 +18,14 @@ VAR_GLOBAL CONSTANT
 	
 	// if absolute encoder value cross zeros within joint motion range
 	g_linkEncZeroCross :ARRAY[1..4] OF INT :=[0, 0, 0, 0];
-	
+		
 	 //################ DO NOT modify parameters below ###########################
 	// abolute encoder expanded limit buffer in case there is calibrtion error at limit position
 	g_linkEncLimitBuffer : DINT := 100000;
 	
 	// flag if joint can rotate multiple cycles
 	g_multipleCyclesJoint :ARRAY[1..4] OF INT :=[0, 0, 0, 0];
-	
+		 
 	// joint position at link encoder calibrated point
 	//TODO: joint2 calibration position need to be checked
 	//g_linkEncCaliJntPos :ARRAY[1..4] OF LREAL :=[0, 0*g_deg2Rad,0,0];

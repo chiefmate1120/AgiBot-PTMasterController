@@ -318,7 +318,7 @@ END_FOR
 FOR i:=1 TO g_maxCartJoint BY 1 DO
 	m_checkDelay[i_armId].T_cartJntEncErr[i](IN:= ABS (i_cartJointData.m_curLinkPos[i]-i_cartJointData.m_curJntPos[i])>g_cartMaxJntEncErr[i] AND m_checkPermit[i_ArmId].m_cartJntEncErr[i], PT:=m_checkDelayTime.Ti_CarDualEncDev , Q=> , ET=> );
 	IF m_checkDelay[i_armId].T_cartJntEncErr[i].Q THEN
-		errCodeAssign(i_armId, i_ArmId,  0, i, 16#3005 ,m_unrcvLevel );
+	//	errCodeAssign(i_armId, i_ArmId,  0, i, 16#3005 ,m_unrcvLevel );
 	END_IF
 END_FOR
 
@@ -327,7 +327,7 @@ END_FOR
 FOR i:=1 TO g_maxCartJoint BY 1 DO
 	m_checkDelay[i_armId].T_cartOutOfLimit[i](IN:= (i_cartJointData.m_curJntPos[i]>=g_cartMaxJntLimit[i] OR i_cartJointData.m_curJntPos[i]<=g_cartMinJntLimit[i]) AND m_checkPermit[i_ArmId].m_cartOutOfLimit[i] , PT:=m_checkDelayTime.Ti_CaroutofLimit , Q=> , ET=> );
 	IF m_checkDelay[i_armId].T_cartOutOfLimit[i].Q THEN
-		errCodeAssign(i_armId, i_ArmId,  0, i, 16#3006 ,m_unrcvLevel );
+		//errCodeAssign(i_armId, i_ArmId,  0, i, 16#3006 ,m_unrcvLevel );
 	END_IF
 END_FOR
 
@@ -379,6 +379,30 @@ END_FOR
 
 
 
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="checkOPStatus" Id="{3d1e8b99-1cb7-4b50-92fc-5aa7708cc80d}">
+      <Declaration><![CDATA[METHOD checkOPStatus : UDINT
+VAR_IN_OUT CONSTANT
+	i_armEtherCATOPStatus :vec2b;
+	i_cartEtherCATOPStatus : BOOL;
+END_VAR
+VAR
+	arm : UDINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+FOR arm := 1 TO g_mArmNum DO
+	IF NOT i_armEtherCATOPStatus[arm] THEN
+		checkOPStatus:=SHL(arm,24)+SHL(0,16)+16#103B;
+		RETURN;
+	END_IF
+END_FOR
+IF NOT i_cartEtherCATOPStatus THEN
+	arm := g_cartNum;
+	checkOPStatus:=SHL(arm,24)+SHL(0,16)+16#103B;
+END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -710,6 +734,18 @@ END_FOR
       <LineId Id="105" Count="0" />
       <LineId Id="128" Count="1" />
       <LineId Id="74" Count="0" />
+    </LineIds>
+    <LineIds Name="Fb_SafetyCheck.checkOPStatus">
+      <LineId Id="6" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="Fb_SafetyCheck.checkPermit.Get">
       <LineId Id="2" Count="0" />

@@ -157,12 +157,73 @@ VAR
 	
 	//unit function
 	m_unitFun:FB_UnitTransform;
+	
+	//cart link encoder calibration 
+	m_lastLinkEncoder : Vec4di;
+	m_linkEncPosFristCaliTon :ARRAY [1..4] OF TON;
+	m_linkEncPosSecondCaliTon :ARRAY [1..4] OF TON;
+	m_linkEncPosHomeCaliTon :ARRAY [1..4] OF TON;
+	m_caliTime : TIME:= T#3S;
+	m_linkZeroCrossOrNot : Vec4i;
+	linkLimitFristPos : Vec4di;
+	linkLimitSecondPos : Vec4di;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
     <Folder Name="property" Id="{37b9f91a-fbe1-4cae-807d-574d49e247d7}" />
+    <Method Name="calcCartLinkEncCali" Id="{d202ca1b-e2a5-4cd6-a72a-5e98470d1c01}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCartLinkEncCali : BOOL
+VAR_IN_OUT CONSTANT
+END_VAR
+VAR
+	i:INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i:= 1 TO 4 DO
+	//determine link encoder cross zero
+	IF ABS(m_cartJoints[i].m_motorInputs.m_linkEncoder - m_lastLinkEncoder[i]) > GVL_CartJointParameters.g_absEncoderRes[i] /2 THEN
+		 GVL_armCali.g_linkZeroCrossOrNotOfCart[i] :=1;
+	END_IF
+	m_lastLinkEncoder[i] := m_cartJoints[i].m_motorInputs.m_linkEncoder;
+	
+	//link encoder calibration 
+	m_linkEncPosFristCaliTon[i](IN:= GVL_armCali.g_linkEncFristPosCaliOfCart[i], PT:= m_caliTime, Q=>  GVL_armCali.g_linkEncFristCaliTriggerOfCart[i], ET=> );
+	m_linkEncPosSecondCaliTon[i](IN:=  GVL_armCali.g_linkEncSecondPosCaliOfCart[i], PT:= m_caliTime, Q=>  GVL_armCali.g_linkEncSecondCaliTriggerOfCart[i], ET=> );
+	m_linkEncPosHomeCaliTon[i](IN:=  GVL_armCali.g_linkEncHomePosCaliOfCart[i], PT:= m_caliTime, Q=>  GVL_armCali.g_linkEncHomePosCaliTriggerOfCart[i], ET=> );
+	IF  GVL_armCali.g_linkEncFristCaliTriggerOfCart[i] THEN
+		linkLimitFristPos[i] := m_cartJoints[i].m_motorInputs.m_linkEncoder;
+		IF linkLimitFristPos[i] < linkLimitSecondPos[i] THEN
+			GVL_armCali.g_linkLimitFristPosOfCart[i] := linkLimitFristPos[i];
+			GVL_armCali.g_linkLimitSecondPosOfCart[i] := linkLimitSecondPos[i];
+		ELSE
+			GVL_armCali.g_linkLimitFristPosOfCart[i] := linkLimitSecondPos[i];
+			GVL_armCali.g_linkLimitSecondPosOfCart[i] := linkLimitFristPos[i];
+		END_IF
+	ELSIF  GVL_armCali.g_linkEncSecondCaliTriggerOfCart[i] THEN
+		linkLimitSecondPos[i] := m_cartJoints[i].m_motorInputs.m_linkEncoder;
+		IF linkLimitFristPos[i] < linkLimitSecondPos[i] THEN
+			GVL_armCali.g_linkLimitFristPosOfCart[i] := linkLimitFristPos[i];
+			GVL_armCali.g_linkLimitSecondPosOfCart[i] := linkLimitSecondPos[i];
+		ELSE
+			GVL_armCali.g_linkLimitFristPosOfCart[i] := linkLimitSecondPos[i];
+			GVL_armCali.g_linkLimitSecondPosOfCart[i] := linkLimitFristPos[i];
+		END_IF
+		 
+	ELSIF  GVL_armCali.g_linkEncHomePosCaliTriggerOfCart[i] THEN
+		 GVL_armCali.g_linkHomePosOfCart[i] := m_cartJoints[i].m_motorInputs.m_linkEncoder;
+	END_IF
+
+END_FOR
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="cartTestCycle" Id="{ebc1a974-4490-4236-8e5f-48d6f3582755}">
       <Declaration><![CDATA[METHOD cartTestCycle : BOOL
 VAR_INPUT
@@ -547,31 +608,6 @@ r_cartJointData.m_cmdJntCurrent:=m_cmdJntCurrent;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="infoUpdate" Id="{184d313d-8cfa-436a-b9c0-a828c18f1825}">
-      <Declaration><![CDATA[METHOD infoUpdate : BOOL
-VAR_INPUT
-END_VAR
-
-VAR
-	i: INT;
-END_VAR]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[
-//update system information
-FOR i:=1 TO 4 BY 1 DO
-	//motor input and output information
-	g_systemInfo.m_cartJntInfo[i].m_motorInput:=m_cartJoints[i].m_motorInputs;
-	g_systemInfo.m_cartJntInfo[i].m_motorOutput:=m_cartJoints[i].m_motorOutputs;
-	
-	//joint position and max/min
-	g_systemInfo.m_cartJntInfo[i].m_curJntPos:=m_curJntPos[i];
-	g_systemInfo.m_cartJntInfo[i].m_jntMax:=GVL_CartJointParameters.g_maxJntPos[i];
-	g_systemInfo.m_cartJntInfo[i].m_jntMin:=GVL_CartJointParameters.g_minJntPos[i];
-END_FOR
-
-]]></ST>
-      </Implementation>
-    </Method>
     <Method Name="init" Id="{a9830b95-e937-4a29-b70e-785e20452d37}">
       <Declaration><![CDATA[METHOD PUBLIC init : BOOL
 VAR_INPUT
@@ -602,6 +638,7 @@ FOR i:=1 TO 4 DO
 	m_cmdJntTrq[i]:=0;
 	m_cmdJntVel[i]:=0;
 	m_cmdJntPos[i]:=m_cartJoints[i].jntPos;
+	m_lastLinkEncoder[i] := m_cartJoints[i].m_motorInputs.m_linkEncoder;
 END_FOR
 
 m_cartStatus.m_initFlag :=true;
@@ -630,6 +667,38 @@ FOR i := 1 TO 4 DO
 				(m_cmdJntPos[i]< GVL_CartJointParameters.g_minJntPos[i] + m_jntSoftwareLimit[i] AND m_cmdJntVel[i] <0 )  THEN
 				m_cmdJntVel[i] := 0.0;
 		END_IF
+		m_cmdJntPos[i]:= m_cmdJntPos[i]+ m_cmdJntVel[i]*g_cartCtrlCycleTime;
+	ELSE
+		m_cmdJntVel[i]:=0;
+		m_cmdJntPos[i] := m_cartJoints[i].jntPos;
+	END_IF
+END_FOR
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="manualAdjustCali" Id="{b68b3e93-bdd9-4ce0-a696-f75b36221e64}">
+      <Declaration><![CDATA[METHOD manualAdjustCali : INT
+VAR_INPUT
+END_VAR
+VAR
+	i : INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// update joint command positon
+manualAdjustCali := 1;
+//only update command after joints is truly enabled
+FOR i := 1 TO 4 DO
+	IF  m_jntEnableFlag[i] AND m_cartJoints[i].isEnabled() AND m_jntEnableCounts[i]>= m_jntEnableCountsThres THEN
+		//  update command joint velocity
+		m_cmdJntVel[i]:=m_jntCmdMotionDir[i]*GVL_CartJointParameters.g_jntCtrlMotionVel[i];
+		
+		// limit handle
+		//IF (m_cmdJntPos[i]> GVL_CartJointParameters.g_maxJntPos[i] - m_jntSoftwareLimit[i] AND m_cmdJntVel[i] >0 ) OR 
+		//		(m_cmdJntPos[i]< GVL_CartJointParameters.g_minJntPos[i] + m_jntSoftwareLimit[i] AND m_cmdJntVel[i] <0 )  THEN
+		//		m_cmdJntVel[i] := 0.0;
+		//END_IF
 		m_cmdJntPos[i]:= m_cmdJntPos[i]+ m_cmdJntVel[i]*g_cartCtrlCycleTime;
 	ELSE
 		m_cmdJntVel[i]:=0;
@@ -794,9 +863,6 @@ FOR i:=1 TO 4 DO
 		m_cartJoints[i].updateCmds(DriverOPMode_Pos,m_cmdJntPos[i],m_cmdJntTrq[i]);
 	END_IF	
 END_FOR
-
-//information update
-//infoUpdate();
 ]]></ST>
       </Implementation>
     </Method>
@@ -821,7 +887,12 @@ VAR
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF (m_jntCmdMotionDir[1] <>0 OR m_jntCmdMotionDir[2]<>0 OR m_jntCmdMotionDir[3] <>0 OR m_jntCmdMotionDir[4] <>0) AND m_carInMotion <> 2 THEN
-	m_carInMotion := manualAdjust();
+	IF Gvl_armCali.g_cartEnterCaliMode THEN
+		m_carInMotion := manualAdjustCali();
+	ELSE
+		m_carInMotion := manualAdjust();
+	END_IF
+	
 ELSIF (m_UIData.m_ergonomicCrl.m_recovErgonEnable OR m_UIData.m_ergonomicCrl.m_cancelRecovErgonEnable) AND m_carInMotion <> 1 THEN
 	m_carInMotion := ergonomicAdjust();
 ELSE
@@ -897,6 +968,10 @@ FOR i:=1 TO 4 DO
 	END_IF
 END_FOR
 
+IF  GVL_armCali.g_cartEnterCaliMode THEN
+	calcCartLinkEncCali();
+END_IF
+
 
 // if console is already in motion, only check the currently moving joint
 IF m_cartStatus.m_consoleInAdjust THEN
@@ -954,10 +1029,10 @@ FOR i:=1 TO 4 DO
 END_FOR 
 
 // transfer monitor angle from link side to motor side
-m_curLinkPos[2]:= monitorAngLink2Motor(m_cartJoints[2].linkPos);
+//m_curLinkPos[2]:= monitorAngLink2Motor(m_cartJoints[2].linkPos);
 
 // get monitor angle
-m_cartStatus.m_monitorAngle:= monitorAngLink2Image(m_cartJoints[2].linkPos);
+//m_cartStatus.m_monitorAngle:= monitorAngLink2Image(m_cartJoints[2].linkPos);
 
 // check if cart in motion
 m_cartStatus.m_consoleInAdjust:=FALSE;
@@ -983,6 +1058,34 @@ END_FOR]]></ST>
     </Method>
     <LineIds Name="FB_MasterCart">
       <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.calcCartLinkEncCali">
+      <LineId Id="113" Count="0" />
+      <LineId Id="180" Count="3" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="162" Count="1" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="207" Count="5" />
+      <LineId Id="206" Count="0" />
+      <LineId Id="150" Count="0" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="202" Count="3" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="136" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.cartTestCycle">
       <LineId Id="318" Count="0" />
@@ -1052,25 +1155,19 @@ END_FOR]]></ST>
       <LineId Id="110" Count="0" />
       <LineId Id="21" Count="0" />
     </LineIds>
-    <LineIds Name="FB_MasterCart.infoUpdate">
-      <LineId Id="8" Count="0" />
-      <LineId Id="28" Count="0" />
-      <LineId Id="9" Count="0" />
-      <LineId Id="34" Count="0" />
-      <LineId Id="36" Count="0" />
-      <LineId Id="48" Count="0" />
-      <LineId Id="47" Count="0" />
-      <LineId Id="38" Count="2" />
-      <LineId Id="37" Count="0" />
-      <LineId Id="30" Count="0" />
-      <LineId Id="10" Count="0" />
-      <LineId Id="5" Count="0" />
-    </LineIds>
     <LineIds Name="FB_MasterCart.init">
-      <LineId Id="90" Count="23" />
+      <LineId Id="90" Count="19" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="110" Count="3" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.manualAdjust">
+      <LineId Id="72" Count="8" />
+      <LineId Id="98" Count="2" />
+      <LineId Id="84" Count="8" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterCart.manualAdjustCali">
       <LineId Id="72" Count="8" />
       <LineId Id="98" Count="2" />
       <LineId Id="84" Count="8" />
@@ -1116,15 +1213,17 @@ END_FOR]]></ST>
       <LineId Id="122" Count="1" />
       <LineId Id="121" Count="0" />
       <LineId Id="19" Count="0" />
-      <LineId Id="135" Count="0" />
-      <LineId Id="132" Count="1" />
       <LineId Id="130" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.status.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.updateCmds">
-      <LineId Id="139" Count="10" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="178" Count="1" />
+      <LineId Id="181" Count="1" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="140" Count="9" />
       <LineId Id="167" Count="0" />
       <LineId Id="150" Count="2" />
       <LineId Id="168" Count="0" />
@@ -1134,7 +1233,13 @@ END_FOR]]></ST>
       <LineId Id="119" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.updateIO">
-      <LineId Id="154" Count="63" />
+      <LineId Id="154" Count="29" />
+      <LineId Id="234" Count="8" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="193" Count="0" />
+      <LineId Id="243" Count="1" />
+      <LineId Id="194" Count="23" />
       <LineId Id="219" Count="4" />
       <LineId Id="91" Count="0" />
     </LineIds>

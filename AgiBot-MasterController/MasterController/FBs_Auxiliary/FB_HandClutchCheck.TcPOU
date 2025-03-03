@@ -22,7 +22,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF (IOValue AND 10#1) > 0 THEN
+        <ST><![CDATA[IF (IOValue AND 10#1) = 1 THEN
 	m_handClutchOnCounts := MIN(m_handClutchOnCounts +1, m_handClutchOnCountThres);
 ELSE
 	 m_handClutchOnCounts :=0;

@@ -45,11 +45,31 @@ VAR
 	m_dataRecord : Fb_dataRecord;
 	
 	m_EtherCATAllOP : BOOL:=FALSE;
+	m_armEtherCATInOP : vec2b;
 	
+	//recipe read-write commands
+	RecipeManCommands:  RecipeManCommands;	
+	m_bReadRecipe:   BOOL := TRUE;
+	m_bWriteRecipe:   BOOL := FALSE;
+	m_bCartReadRecipe:   BOOL := TRUE;
+	
+	m_workHeartTon0 : TON;
+	m_workHeartTon1 : TON;
+	
+	m_slaveOnLine : BOOL;
+	m_slaveOnLineCheck :FB_slaveConnectionCheck;
+	
+	m_caliFileWriteTon : TON ;
+	m_caliFileWriteTonOfCart : TON ;
+	m_linkPosWriteCaliData:ARRAY [1..g_mArmNum] OF ARRAY [1..g_mJntNum] OF TON ;
+	m_linkPosWriteCaliDataOfCart:ARRAY [1..4] OF TON ;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// reset data
+      <ST><![CDATA[// load config file
+loadConfigFile();
+communicationCheck();
+// reset data
 IF FALSE = m_initFlag  THEN
 	FOR i:=1  TO g_mArmNum DO 
 		m_safetyCheckData.m_masterErrFlag[i]:=FALSE;
@@ -67,10 +87,11 @@ armSafetyCheckAllowed();
 robotPromptMassageCast();
 
 //check EtherCAT status of arm and cart , if All EtherCAT is OP then start system safty check
-IF m_safetyCheckData.m_armEtherCATAllOP AND m_safetyCheckData.m_cartEtherCATAllOP AND NOT m_EtherCATAllOP THEN
-	m_EtherCATAllOP := TRUE;
-	m_safetyCheckInitWaitTime := 28.0;
+IF (NOT m_safetyCheckData.m_armEtherCATAllOP OR NOT m_safetyCheckData.m_cartEtherCATAllOP) AND NOT m_EtherCATAllOP THEN
+	GVL_interactUI.g_errIdType1 := m_SafetyCheck.checkOPStatus(m_armEtherCATInOP, m_safetyCheckData.m_cartEtherCATAllOP);
+//	RETURN;
 END_IF
+m_EtherCATAllOP := TRUE;
 
 // wait communication to be stable
 IF(m_safetyCheckInitWaitTime<g_robotSafetyCheckWaitTime) THEN
@@ -118,7 +139,7 @@ END_VAR]]></Declaration>
 		//fault code 16#3002 
 		m_SafetyCheck.checkPermit[i].m_currentIsNotUpdate[j] :=m_checkVariable[i].m_masterDriverInput[j].m_statusWord<>0 ;
 		//fault code 16#2002
-		m_SafetyCheck.checkPermit[i].m_armJntFollowErr[j] := TRUE;//m_masterStatus.m_armState[j] = MasterArmState_Home OR m_masterStatus.m_armState[j] = MasterArmState_MasterSlave;//m_checkVariable[i].m_masterDriverInput[j].m_statusWord = DriverStatusWord_OP ;
+		m_SafetyCheck.checkPermit[i].m_armJntFollowErr[j] := m_masterStatus.m_armState[j] = MasterArmState_Home;// OR m_masterStatus.m_armState[j] = MasterArmState_MasterSlave;//m_checkVariable[i].m_masterDriverInput[j].m_statusWord = DriverStatusWord_OP ;
 		//fault code 16#3002
 		m_SafetyCheck.checkPermit[i].m_jntStatusErr[j] := TRUE;
 		//fault code 16#3004
@@ -173,10 +194,6 @@ FOR j:=1 TO  g_maxCartJoint DO
 	m_checkVariable[g_cartNum].m_cartDriverOutput[j] := CartControl.m_masterCart.m_cartJoints[j].m_motorOutputs;
 	m_checkVariable[g_cartNum].m_cartEtherCATState[j] := m_EtherCATCheck[g_cartNum,j].EtherCATVerify(g_cartNetID,g_cartJointNetPort[j]);
 END_FOR
-
-IF m_safetyCheckInitWaitTime > 2.0 THEN
-	checkEtherCATAll(ADR(m_checkVariable) , o_EtherCATInOP=>m_safetyCheckData.m_armEtherCATAllOP,o_cartEtherCATAllOP=> m_safetyCheckData.m_cartEtherCATAllOP );
-END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -187,6 +204,7 @@ VAR_INPUT CONSTANT
 END_VAR
 VAR_OUTPUT
 	o_EtherCATInOP : BOOL;
+	o_armEtherCATInOP : vec2b;
 	o_cartEtherCATAllOP : BOOL;
 END_VAR
 
@@ -196,22 +214,24 @@ END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[FOR i := 1 TO g_mArmNum DO
 	FOR j := 1 TO g_maxArmJoint DO
-		m_EtherCATCheck[i,j].setSlaveStatus(g_ArmNetID[i],g_JointNetPort[i,j]);
+		//m_EtherCATCheck[i,j].setSlaveStatus(g_ArmNetID[i],g_JointNetPort[i,j]);
 	END_FOR
 END_FOR
 
 o_EtherCATInOP := TRUE;
 FOR i := 1 TO g_mArmNum DO
+	o_armEtherCATInOP[i] := TRUE;
 	FOR j := 1 TO g_maxArmJoint DO
 		IF FALSE = i_EtherCATState^[i].m_EtherCATState[j].EtherCATState AND i <> GVL_interactUI.g_armIsDisbale THEN
 			o_EtherCATInOP := FALSE;
+			o_armEtherCATInOP[i] := FALSE;
 			EXIT;
 		END_IF
 	END_FOR
 END_FOR
 
 FOR j := 1 TO g_maxCartJoint DO
-	m_EtherCATCheck[3,j].setSlaveStatus(g_cartNetID,g_cartJointNetPort[j]);
+	//m_EtherCATCheck[3,j].setSlaveStatus(g_cartNetID,g_cartJointNetPort[j]);
 END_FOR
 
 o_cartEtherCATAllOP := TRUE;
@@ -221,6 +241,105 @@ FOR j := 1 TO g_maxCartJoint DO
 		EXIT;
 	END_IF
 END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="communicationCheck" Id="{c0220be1-9d28-48b5-a4a1-f8e6fbfbd89c}">
+      <Declaration><![CDATA[METHOD communicationCheck : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[checkEtherCATAll(ADR(m_checkVariable),o_EtherCATInOP=>m_safetyCheckData.m_armEtherCATAllOP,o_armEtherCATInOP=>m_armEtherCATInOP,o_cartEtherCATAllOP=> m_safetyCheckData.m_cartEtherCATAllOP );
+
+//work heart
+m_workHeartTon0(IN:= GVL_interactUI.g_heartBeat = 1, PT:= T#1S, Q=> , ET=> );
+m_workHeartTon1(IN:= GVL_interactUI.g_heartBeat = 0, PT:= T#1S, Q=> , ET=> );
+IF m_workHeartTon0.Q THEN
+	GVL_interactUI.g_heartBeat :=0 ;
+ELSIF m_workHeartTon1.Q THEN
+	GVL_interactUI.g_heartBeat  :=1 ;
+END_IF
+
+// check slave connection
+//m_slaveOnLine := m_slaveOnLineCheck.check(m_masterStatus.m_slaveHeartBeat);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="jointEncoderCaliCast" Id="{38e8df63-8a70-4816-82e7-e0e3cbf778d9}">
+      <Declaration><![CDATA[METHOD jointEncoderCaliCast : BOOL
+VAR_INPUT
+END_VAR
+VAR 
+	i,j : INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+FOR i := 1 TO g_mArmNum DO
+	FOR j := 1 TO g_mJntNum DO
+		m_linkPosWriteCaliData[i][j](IN:= GVL_armCali.g_linkPosWriteCaliData[i][j], PT:= T#3S, Q=> GVL_armCali.g_linkPosWriteCaliDataTrigger[i][j], ET=> );
+		IF GVL_armCali.g_linkPosWriteCaliDataTrigger[i][j] THEN
+			GVL_ArmJointCaliData.g_minLinkEncoder[i,j] := GVL_armCali.g_linkLimitFristPos[i][j];
+			GVL_ArmJointCaliData.g_maxLinkEncoder[i,j] := GVL_armCali.g_linkLimitSecondPos[i][j];
+			GVL_ArmJointCaliData.g_caliLinkEncoder[i,j] := GVL_armCali.g_linkHomePos[i][j];
+			GVL_ArmJointCaliData.g_linkEncZeroCross[i,j] := GVL_armCali.g_linkZeroCrossOrNot[i][j];
+		END_IF
+	END_FOR
+END_FOR
+
+FOR i := 1 TO 4 DO
+	m_linkPosWriteCaliDataOfCart[i](IN:=GVL_armCali.g_linkPosWriteCaliDataOfCart[i] , PT:= T#3S, Q=> GVL_armCali.g_linkPosWriteCaliDataTriggerOfCart[i], ET=> );
+	IF GVL_armCali.g_linkPosWriteCaliDataTriggerOfCart[i] THEN
+		GVL_CartJointCaliData.g_minLinkEncoder[i] := GVL_armCali.g_linkLimitFristPosOfCart[i];
+		GVL_CartJointCaliData.g_maxLinkEncoder[i] := GVL_armCali.g_linkLimitSecondPosOfCart[i];
+		GVL_CartJointCaliData.g_caliLinkEncoder[i] := GVL_armCali.g_linkHomePosOfCart[i];
+		GVL_CartJointCaliData.g_linkEncZeroCross[i] := GVL_armCali.g_linkZeroCrossOrNotOfCart[i];
+	END_IF
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="loadConfigFile" Id="{4c0dc918-96af-43cc-b9bb-b4355c51ecb7}">
+      <Declaration><![CDATA[METHOD loadConfigFile : BOOL
+VAR
+	ReturnDwordRead:DWORD;
+	ReturnDwordWrite:DWORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//read recipe
+IF m_bReadRecipe THEN
+	//The method loads a recipe from the specified recipe file.  It subsequently writes the recipe into the PLC variables.
+     ReturnDwordRead:=RecipeManCommands.LoadAndWriteRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionName , RecipeName:='RecipeRecord');	 
+     m_bReadRecipe:=FALSE; 
+END_IF 
+
+
+//write recipe
+jointEncoderCaliCast();
+m_caliFileWriteTon(IN:=GVL_armCali.g_caliDataWrite, PT:= T#3S, Q=> GVL_armCali.g_caliDataWriteTrigger, ET=> );
+//This method creates a new recipe in the specified recipe definition. It subsequently reads the current PLC values into the new recipe and saves it as a recipe file with a standard name.
+IF GVL_armCali.g_caliDataWriteTrigger THEN
+	RecipeManCommands.CreateRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionName , RecipeName:='RecipeRecord' );
+ 	ReturnDwordWrite:=RecipeManCommands.ReadAndSaveRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionName , RecipeName:='RecipeRecord' );
+END_IF
+
+
+// cart read Recipe 
+IF (m_bCartReadRecipe) THEN
+	//The method loads a recipe from the specified recipe file.  It subsequently writes the recipe into the PLC variables.
+     ReturnDwordRead:=RecipeManCommands.LoadAndWriteRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord');	 
+     m_bCartReadRecipe:=FALSE; 
+END_IF 
+
+//write recipe
+m_caliFileWriteTonOfCart(IN:= GVL_armCali.g_caliDataWriteOfCart, PT:= T#3S, Q=> GVL_armCali.g_caliDataWriteTriggerOfCart, ET=> );
+//创建一个Recipe(命名为Initialization_Parameter)，用于存储变量Absolute_encoder_Parameters
+IF GVL_armCali.g_caliDataWriteTriggerOfCart THEN
+	//This method creates a new recipe in the specified recipe definition. It subsequently reads the current PLC values into the new recipe and saves it as a recipe file with a standard name.
+	 RecipeManCommands.CreateRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord' );
+	 ReturnDwordWrite:=RecipeManCommands.ReadAndSaveRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord' );
+	 m_bWriteRecipe:=FALSE;
+END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -281,10 +400,10 @@ m_cartRS[1](SET:= m_masterStatus.m_matchedMasterArmIdx.left1ArmIdx <> GVL_intera
 m_checkVariable[g_cartNum].m_promptLocation[1] := 16#0B;
 
 //0*1015
-m_cartRS[5](SET:=NOT m_masterStatus.m_slaveOnLine, 
-						RESET1:= NOT m_cartRS[5].SET, 
-						Q1=> m_checkVariable[g_cartNum].m_promptStatus[5]);
-m_checkVariable[g_cartNum].m_promptLocation[5] := g_cartNum;
+//m_cartRS[5](SET:=NOT m_slaveOnLine, 
+//						RESET1:= NOT m_cartRS[5].SET, 
+//						Q1=> m_checkVariable[g_cartNum].m_promptStatus[5]);
+//m_checkVariable[g_cartNum].m_promptLocation[5] := g_cartNum;
 
 //0*1016
 m_cartRS[6](SET:=m_cartStatus.m_consoleInAdjust AND m_cartStatus.m_surgonReady, 
@@ -303,7 +422,15 @@ m_checkVariable[g_cartNum].m_promptLocation[7] := g_cartNum;
       </Implementation>
     </Method>
     <LineIds Name="SafetyCheck">
-      <LineId Id="263" Count="51" />
+      <LineId Id="411" Count="0" />
+      <LineId Id="410" Count="0" />
+      <LineId Id="470" Count="0" />
+      <LineId Id="263" Count="18" />
+      <LineId Id="362" Count="0" />
+      <LineId Id="361" Count="0" />
+      <LineId Id="284" Count="1" />
+      <LineId Id="363" Count="0" />
+      <LineId Id="286" Count="28" />
       <LineId Id="59" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.armSafetyCheckAllowed">
@@ -313,13 +440,56 @@ m_checkVariable[g_cartNum].m_promptLocation[7] := g_cartNum;
     <LineIds Name="SafetyCheck.armSafetyCheckInputCast">
       <LineId Id="39" Count="10" />
       <LineId Id="51" Count="16" />
-      <LineId Id="77" Count="0" />
-      <LineId Id="74" Count="2" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.checkEtherCATAll">
-      <LineId Id="3" Count="26" />
+      <LineId Id="3" Count="7" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="11" Count="2" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="14" Count="15" />
       <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.communicationCheck">
+      <LineId Id="6" Count="8" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="16" Count="2" />
+      <LineId Id="15" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.jointEncoderCaliCast">
+      <LineId Id="11" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="52" Count="5" />
+      <LineId Id="50" Count="1" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="70" Count="2" />
+      <LineId Id="68" Count="1" />
+      <LineId Id="66" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.loadConfigFile">
+      <LineId Id="6" Count="0" />
+      <LineId Id="8" Count="2" />
+      <LineId Id="12" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="52" Count="1" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="57" Count="1" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="32" Count="8" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="68" Count="2" />
+      <LineId Id="66" Count="1" />
+      <LineId Id="46" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.readErrFlag">
       <LineId Id="3" Count="6" />

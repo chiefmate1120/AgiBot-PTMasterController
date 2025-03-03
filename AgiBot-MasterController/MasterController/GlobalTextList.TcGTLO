@@ -66,6 +66,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"503"</v>
+              <v n="TextDefault">"CartArm"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"748"</v>
               <v n="TextDefault">"ESD测试-主从"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -106,6 +111,51 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"168"</v>
+              <v n="TextDefault">"Joint 1 标定启动"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"304"</v>
+              <v n="TextDefault">"Joint 2 标定启动"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"199"</v>
+              <v n="TextDefault">"Joint 3 标定启动"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1170"</v>
+              <v n="TextDefault">"Joint 4 标定启动"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1396"</v>
+              <v n="TextDefault">"Joint 5 标定启动"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"606"</v>
+              <v n="TextDefault">"Joint 6 标定启动"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1142"</v>
+              <v n="TextDefault">"Joint 7 标定启动"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"869"</v>
+              <v n="TextDefault">"LeftArm"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1251"</v>
+              <v n="TextDefault">"RightArm"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"204"</v>
               <v n="TextDefault">"VX"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -138,6 +188,11 @@
             <o>
               <v n="TextID">"322"</v>
               <v n="TextDefault">"下一个点位"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1376"</v>
+              <v n="TextDefault">"下极限"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -176,8 +231,23 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"93"</v>
+              <v n="TextDefault">"位置写入到本地"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"691"</v>
+              <v n="TextDefault">"位置记录 长按3s生效"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"933"</v>
               <v n="TextDefault">"使用增量控制"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"91"</v>
+              <v n="TextDefault">"停止按钮"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -386,8 +456,23 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"1206"</v>
+              <v n="TextDefault">"内窥镜脚踏"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"164"</v>
+              <v n="TextDefault">"写入变量"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"538"</v>
               <v n="TextDefault">"前置矩阵"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"427"</v>
+              <v n="TextDefault">"原点位置"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -403,6 +488,31 @@
             <o>
               <v n="TextID">"790"</v>
               <v n="TextDefault">"右主控制臂"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"890"</v>
+              <v n="TextDefault">"右侧上方传感器"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1834"</v>
+              <v n="TextDefault">"右侧下方传感器"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1543"</v>
+              <v n="TextDefault">"右侧蓝色踏板"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1502"</v>
+              <v n="TextDefault">"右侧锁定信号"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1331"</v>
+              <v n="TextDefault">"右侧黄色踏板"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -423,6 +533,11 @@
             <o>
               <v n="TextID">"201"</v>
               <v n="TextDefault">"回原点6"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1728"</v>
+              <v n="TextDefault">"头在位检测"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -448,6 +563,31 @@
             <o>
               <v n="TextID">"655"</v>
               <v n="TextDefault">"左主控制臂"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"846"</v>
+              <v n="TextDefault">"左侧上方传感器"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1383"</v>
+              <v n="TextDefault">"左侧下方传感器"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1795"</v>
+              <v n="TextDefault">"左侧蓝色踏板"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"676"</v>
+              <v n="TextDefault">"左侧锁定信号"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"33"</v>
+              <v n="TextDefault">"左侧黄色踏板"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -526,6 +666,26 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"235"</v>
+              <v n="TextDefault">"手术臂切换"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1427"</v>
+              <v n="TextDefault">"扶手升降"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1007"</v>
+              <v n="TextDefault">"扶手升降上"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1765"</v>
+              <v n="TextDefault">"扶手升降下"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"595"</v>
               <v n="TextDefault">"指令关节位置"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -596,6 +756,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"123"</v>
+              <v n="TextDefault">"文件中记录位置"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"270"</v>
               <v n="TextDefault">"施加目标电流"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -603,6 +768,11 @@
             <o>
               <v n="TextID">"449"</v>
               <v n="TextDefault">"是否使能"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"940"</v>
+              <v n="TextDefault">"是否过零点0/1"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -656,6 +826,36 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"1111"</v>
+              <v n="TextDefault">"监视器升降"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1832"</v>
+              <v n="TextDefault">"监视器升降上"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"845"</v>
+              <v n="TextDefault">"监视器升降下"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"335"</v>
+              <v n="TextDefault">"监视器旋转"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"994"</v>
+              <v n="TextDefault">"监视器旋转上"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"321"</v>
+              <v n="TextDefault">"监视器旋转下"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"371"</v>
               <v n="TextDefault">"目标关节电流"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -666,6 +866,36 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"1468"</v>
+              <v n="TextDefault">"离合按钮"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1491"</v>
+              <v n="TextDefault">"离合脚踏"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1317"</v>
+              <v n="TextDefault">"第一极限"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1185"</v>
+              <v n="TextDefault">"第一极限位置"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"333"</v>
+              <v n="TextDefault">"第二极限"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1341"</v>
+              <v n="TextDefault">"第二极限位置"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"455"</v>
               <v n="TextDefault">"系统状态"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -673,6 +903,21 @@
             <o>
               <v n="TextID">"258"</v>
               <v n="TextDefault">"结束关节ID"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"971"</v>
+              <v n="TextDefault">"脚踏伸缩"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1154"</v>
+              <v n="TextDefault">"脚踏伸缩上"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"241"</v>
+              <v n="TextDefault">"脚踏伸缩下"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -746,6 +991,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"1038"</v>
+              <v n="TextDefault">"进入标定模式"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"689"</v>
               <v n="TextDefault">"进入测试模式"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -753,6 +1003,11 @@
             <o>
               <v n="TextID">"96"</v>
               <v n="TextDefault">"进入精度测试模式"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1949"</v>
+              <v n="TextDefault">"里侧"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
