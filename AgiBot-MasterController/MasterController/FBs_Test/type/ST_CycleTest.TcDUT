@@ -48,6 +48,10 @@ STRUCT
 	m_tgtCycleTime:ARRAY[1..g_mArmNum] OF LREAL; //hours
 	m_curCycleTime:ARRAY[1..g_mArmNum] OF LREAL;
 	
+	//cycle time
+	m_tgtCycleTimeCar:LREAL; //hours
+	m_curCycleTimeCar:LREAL;
+	
 	//motion pause and finish
 	m_pause:ARRAY[1..g_mArmNum] OF BOOL;
 	m_finish:ARRAY[1..g_mArmNum] OF BOOL;
@@ -70,11 +74,20 @@ STRUCT
 	//target joint position
 	m_targetJntVelCar:Vec4d;
 	
+	//limit joint velocity
+	m_LimitJntVelCar:Vec4d:=[0.020,0.1,0.020,0.020];
+	
 	//cover command position
 	m_coverCmdPos:ARRAY[1..g_mArmNum] OF BOOL;
 	
 	//point id for cover command position
 	m_pntIdForCoverCmd:ARRAY[1..g_mArmNum] OF INT;
+	
+	//cover command position---car
+	m_coverCmdPosCar:BOOL;
+	
+	//point id for cover command position---car
+	m_pntIdForCoverCmdCar:INT;
 END_STRUCT
 END_TYPE
 ]]></Declaration>
