@@ -74,9 +74,6 @@ STRUCT
 	//target joint position
 	m_targetJntVelCar:Vec4d;
 	
-	//limit joint velocity
-	m_LimitJntVelCar:Vec4d:=[0.020,0.1,0.020,0.020];
-	
 	//cover command position
 	m_coverCmdPos:ARRAY[1..g_mArmNum] OF BOOL;
 	

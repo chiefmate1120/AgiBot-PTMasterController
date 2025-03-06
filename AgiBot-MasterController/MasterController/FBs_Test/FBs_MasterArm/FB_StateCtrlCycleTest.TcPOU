@@ -197,10 +197,11 @@ CASE m_testStep OF
 		END_IF
 		
 		m_maxjntVel:=m_unitFun.masterArmUnit2System(i_dataTest:=g_cycleTest.m_targetJntVel[m_armId]);
-		FOR i:=1 TO 7 BY 1 DO
+		FOR i:=1 TO 7 BY 1 DO			
 			IF ABS(m_maxjntVel[i])<g_smallNum THEN
 				m_maxjntVel[i]:=1;
 			END_IF
+			m_maxjntVel[i]:=LIMIT(-GVL_ArmJointParameters.g_maxJntVel[i],m_maxjntVel[i],GVL_ArmJointParameters.g_maxJntVel[i]);
 		END_FOR
 		vecMultiNum(m_maxjntVel,3,m_maxjntAcc);
 		vecMultiNum(m_maxjntAcc,3,m_maxjntJerk);
@@ -384,7 +385,9 @@ END_IF
       <LineId Id="161" Count="0" />
       <LineId Id="189" Count="3" />
       <LineId Id="186" Count="2" />
-      <LineId Id="133" Count="6" />
+      <LineId Id="133" Count="4" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="138" Count="1" />
       <LineId Id="130" Count="1" />
       <LineId Id="39" Count="0" />
       <LineId Id="121" Count="0" />
