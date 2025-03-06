@@ -266,6 +266,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"334"</v>
+              <v n="TextDefault">"关节1-监视器升降-mm"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"285"</v>
               <v n="TextDefault">"关节2"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -281,6 +286,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"1809"</v>
+              <v n="TextDefault">"关节2-监视器旋转-度"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"995"</v>
               <v n="TextDefault">"关节3"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -293,6 +303,11 @@
             <o>
               <v n="TextID">"50"</v>
               <v n="TextDefault">"关节3-扶手升降"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"678"</v>
+              <v n="TextDefault">"关节3-扶手升降-mm"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -313,6 +328,11 @@
             <o>
               <v n="TextID">"363"</v>
               <v n="TextDefault">"关节4-脚踏伸缩"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1155"</v>
+              <v n="TextDefault">"关节4-脚踏伸缩-mm"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
@@ -533,6 +553,11 @@
             <o>
               <v n="TextID">"201"</v>
               <v n="TextDefault">"回原点6"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"745"</v>
+              <v n="TextDefault">"回零点"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>

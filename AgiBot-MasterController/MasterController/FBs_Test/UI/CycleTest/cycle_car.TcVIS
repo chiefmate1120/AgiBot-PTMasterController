@@ -6664,7 +6664,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">"关节1-监视器升降"</v>
+                      <v n="Value">"关节1-监视器升降-mm"</v>
                     </o>
                     <o>
                       <v n="Id">3729828405L</v>
@@ -6707,7 +6707,7 @@
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
-                      <v n="Value">"818"</v>
+                      <v n="Value">"334"</v>
                     </o>
                   </l>
                 </o>
@@ -6793,7 +6793,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">"关节2-监视器旋转"</v>
+                      <v n="Value">"关节2-监视器旋转-度"</v>
                     </o>
                     <o>
                       <v n="Id">3729828405L</v>
@@ -6836,7 +6836,7 @@
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
-                      <v n="Value">"113"</v>
+                      <v n="Value">"1809"</v>
                     </o>
                   </l>
                 </o>
@@ -6922,7 +6922,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">"关节3-扶手升降"</v>
+                      <v n="Value">"关节3-扶手升降-mm"</v>
                     </o>
                     <o>
                       <v n="Id">3729828405L</v>
@@ -6965,7 +6965,7 @@
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
-                      <v n="Value">"50"</v>
+                      <v n="Value">"678"</v>
                     </o>
                   </l>
                 </o>
@@ -7051,7 +7051,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">"关节4-脚踏伸缩"</v>
+                      <v n="Value">"关节4-脚踏伸缩-mm"</v>
                     </o>
                     <o>
                       <v n="Id">3729828405L</v>
@@ -7094,7 +7094,7 @@
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
-                      <v n="Value">"363"</v>
+                      <v n="Value">"1155"</v>
                     </o>
                   </l>
                 </o>
@@ -9232,10 +9232,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>1646f238-a3b5-4822-a8a8-d3668ebbf658</v>
-                <v>FB_Exit</v>
-                <v>9eb61b41-5a30-488f-bbcc-5d821f76bb91</v>
                 <v>FB_Reinit</v>
                 <v>4b3301ed-740f-4ec4-9642-7e43c308016f</v>
+                <v>FB_Exit</v>
+                <v>9eb61b41-5a30-488f-bbcc-5d821f76bb91</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{2eb0fbd1-41a4-4a70-9312-333505ce090c}</v>

@@ -20,7 +20,7 @@ STRUCT
 	
 	//esd test
 	m_esdTest:ARRAY[1..g_mArmNum] OF BOOL;
-	
+		
 	//current step
 	m_curStep:ARRAY[1..g_mArmNum] OF INT;
 	
@@ -29,6 +29,9 @@ STRUCT
 	
 	//current cycle id
 	m_testCycleId:ARRAY[1..g_mArmNum] OF INT;
+	
+	//go home flag
+	m_goHome:ARRAY[1..g_mArmNum] OF Vec7b;
 	
 	//origin joint position
 	m_originJntPos:ARRAY[1..g_mArmNum] OF Vec7d;
@@ -107,6 +110,9 @@ STRUCT
 	
 	//position incresement mode
 	m_jntPosIncModeCar:BOOL;
+	
+	//go home car
+	m_goHomeCar:Vec4b;
 	
 	//car target joint position
 	m_targetJntPosCar:Vec4d;

@@ -346,6 +346,7 @@ m_jntEnableFlag :=g_motionTest.m_jntEnable[i_masterArm.armIdx];
 //Initialization of motion parameters
 m_startMotion:=g_motionTest.m_startMotion[m_armId];
 m_controlMode:=g_motionTest.m_controlMode[m_armId];
+controlSignalAnalysis();
 
 IF (m_startMotionLast=FALSE) AND (m_startMotion=TRUE) THEN
 	m_motionFinished:=FALSE;
@@ -364,7 +365,7 @@ ELSIF (m_controlMode=2) THEN
 		
 ELSIF (m_controlMode=3) THEN
 	spaceSinglePoint(i_masterArm);	
-		
+	
 ELSIF (m_controlMode=4) THEN
 	spaceContinuousPoint(i_masterArm);
 		
@@ -456,6 +457,46 @@ END_VAR
 
 
 
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="controlSignalAnalysis" Id="{0ea9740b-1e6a-46cd-942a-3025f4a46297}">
+      <Declaration><![CDATA[//*********Analyze the signals of the interactive interface*********//
+METHOD controlSignalAnalysis : BOOL
+VAR_INPUT
+END_VAR
+
+VAR
+	i:INT;
+	k:INT;
+	activeJntPos : vec7d;
+	targetDHJntPos:vec7d;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//go home signal
+FOR i:=1 TO g_mJntNum BY 1 DO
+	IF (g_motionTest.m_goHome[m_armId][i]=TRUE) THEN
+		m_startMotion:=TRUE;
+		m_controlMode:=1;
+		g_motionTest.m_controlMode[m_armId]:=1;
+		
+		//give the target joint position
+		FOR k:=1 TO g_mJntNum BY 1 DO
+			targetDHJntPos[k]:=gvl_const.g_jntDHInitPos[m_armId,k];
+		END_FOR
+		m_basicFun.DH2activeJnt(i_DHJntPos:= targetDHJntPos, o_activeJntPos=> activeJntPos);		
+		g_motionTest.m_targetJntPos[m_armId]:=g_motionTest.m_armActJntPos[m_armId];	
+		g_motionTest.m_targetJntPos[m_armId][i]:=activeJntPos[i];
+		
+		//transform to user unit
+		g_motionTest.m_targetJntPos[m_armId]:=m_unitFun.masterArmUnit2User(g_motionTest.m_targetJntPos[m_armId]);
+		
+		//exit for cycle
+		EXIT;
+	END_IF
+END_FOR
 ]]></ST>
       </Implementation>
     </Method>
@@ -1044,7 +1085,9 @@ END_CASE]]></ST>
       <LineId Id="308" Count="1" />
       <LineId Id="36" Count="0" />
       <LineId Id="39" Count="1" />
-      <LineId Id="220" Count="1" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="368" Count="0" />
+      <LineId Id="221" Count="0" />
       <LineId Id="41" Count="0" />
       <LineId Id="219" Count="0" />
       <LineId Id="222" Count="0" />
@@ -1095,6 +1138,26 @@ END_CASE]]></ST>
     <LineIds Name="FB_StateCtrlMotionTest.calcCmdJntTrq">
       <LineId Id="12" Count="5" />
       <LineId Id="11" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMotionTest.controlSignalAnalysis">
+      <LineId Id="6" Count="2" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="30" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="19" Count="1" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMotionTest.init">
       <LineId Id="12" Count="4" />
