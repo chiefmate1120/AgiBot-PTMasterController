@@ -1046,6 +1046,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"1753"</v>
+              <v n="TextDefault">"阶跃测试周期-秒"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"794"</v>
               <v n="TextDefault">"阶跃测试距离"</v>
               <l n="LanguageTexts" t="ArrayList" />

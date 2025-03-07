@@ -58,6 +58,9 @@ VAR
 	
 	//unit function
 	m_unitFun:FB_UnitTransform;
+	
+	//basic function
+	m_basicFun:FB_BasicFun;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -69,6 +72,7 @@ writeArmTestData();
 
 //HMI for accuracy test
 HmiMid();
+controlSignalAnalysis();
 
 //write data related to precision test
 writePrecisionData();
@@ -172,6 +176,47 @@ g_systemInfo.m_cartInfo.m_curJntPosDegMM:=m_unitFun.carArmUnit2User(i_dataSystem
 g_systemInfo.m_cartInfo.m_jntMax:=GVL_CartJointParameters.g_maxJntPos;
 g_systemInfo.m_cartInfo.m_jntMin:=GVL_CartJointParameters.g_minJntPos;
 
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="controlSignalAnalysis" Id="{76d4e0aa-8494-4bf3-9bc8-a41cc2549c3d}">
+      <Declaration><![CDATA[//*********Analyze the signals of the interactive interface*********//
+METHOD controlSignalAnalysis : BOOL
+VAR_INPUT
+END_VAR
+
+VAR
+	i:INT;
+	k:INT;
+	activeJntPos,activeJntPosUser : vec7d;
+	targetDHJntPos,targetDHJntPosUser:vec7d;
+	m_armId:INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//go home signal
+FOR m_armId:=1 TO 2 BY 1 DO
+	FOR i:=1 TO g_mJntNum BY 1 DO
+		IF (g_motionTest.m_goHome[m_armId][i]=TRUE) THEN
+			g_motionTest.m_controlMode[m_armId]:=1;
+			g_motionTest.m_startMotion[m_armId]:=TRUE;
+			g_motionTest.m_jntPosIncMode[m_armId]:=FALSE;
+			
+			//give the target joint position
+			FOR k:=1 TO g_mJntNum BY 1 DO
+				targetDHJntPos[k]:=gvl_const.g_jntDHInitPos[m_armId,k];
+			END_FOR
+			targetDHJntPosUser:=m_unitFun.masterArmUnit2User(targetDHJntPos);
+			
+			g_motionTest.m_targetJntPos[m_armId]:=g_motionTest.m_armDHJntPos[m_armId];
+			g_motionTest.m_targetJntPos[m_armId][i]:=targetDHJntPosUser[i];
+			
+			//exit for cycle
+			EXIT;
+		END_IF
+	END_FOR
+END_FOR
 ]]></ST>
       </Implementation>
     </Method>
@@ -502,6 +547,7 @@ END_CASE
       <LineId Id="101" Count="0" />
       <LineId Id="30" Count="0" />
       <LineId Id="5" Count="0" />
+      <LineId Id="328" Count="0" />
       <LineId Id="149" Count="0" />
       <LineId Id="100" Count="0" />
       <LineId Id="148" Count="0" />
@@ -549,6 +595,19 @@ END_CASE
       <LineId Id="82" Count="0" />
       <LineId Id="80" Count="0" />
       <LineId Id="75" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="MainTestPart.controlSignalAnalysis">
+      <LineId Id="6" Count="1" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="61" Count="3" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="65" Count="3" />
+      <LineId Id="81" Count="1" />
+      <LineId Id="71" Count="1" />
+      <LineId Id="76" Count="3" />
+      <LineId Id="59" Count="1" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.dataWriteExp">

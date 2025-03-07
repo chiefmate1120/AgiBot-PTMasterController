@@ -2310,7 +2310,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -2320,6 +2320,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -2328,7 +2332,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_31"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -2339,7 +2343,7 @@
                       <v n="InputBoxDialogTitle">""</v>
                       <v n="Password">false</v>
                       <v n="UseTextOutputVariable">true</v>
-                      <v n="TextOutputVariableInitialized">false</v>
+                      <v n="TextOutputVariableInitialized">true</v>
                       <v n="OtherVarConversion">""</v>
                       <v n="Format">""</v>
                       <v n="DialogPosition" t="DialogPositionSetting">UseGlobalSetting</v>
@@ -2494,7 +2498,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -2504,6 +2508,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -2512,7 +2520,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_33"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -2678,7 +2686,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -2688,6 +2696,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -2696,7 +2708,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_35"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -2862,7 +2874,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -2872,6 +2884,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -2880,7 +2896,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_37"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -3046,7 +3062,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -3056,6 +3072,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -3064,7 +3084,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_39"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -3230,7 +3250,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -3240,6 +3260,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -3248,7 +3272,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_41"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -3414,7 +3438,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -3424,6 +3448,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -3432,7 +3460,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_43"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -3598,7 +3626,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -3608,6 +3636,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -3616,7 +3648,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_45"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -3782,7 +3814,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -3792,6 +3824,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -3800,7 +3836,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_47"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -3966,7 +4002,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -3976,6 +4012,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -3984,7 +4024,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_49"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -4150,7 +4190,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -4160,6 +4200,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -4168,7 +4212,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_51"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -4287,7 +4331,7 @@
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
-                      <v n="Value">432</v>
+                      <v n="Value">433</v>
                     </o>
                     <o>
                       <v n="Id">2422045748L</v>
@@ -4322,7 +4366,7 @@
                     </o>
                     <o>
                       <v n="Id">1473355128L</v>
-                      <v n="Value">454</v>
+                      <v n="Value">455</v>
                     </o>
                     <o>
                       <v n="Id">2678395525L</v>
@@ -4334,7 +4378,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -4344,6 +4388,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -4352,7 +4400,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_53"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -4518,7 +4566,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -4528,6 +4576,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -4536,7 +4588,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_55"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -4702,7 +4754,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -4712,6 +4764,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -4720,7 +4776,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_57"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -7407,11 +7463,11 @@
                     </o>
                     <o>
                       <v n="Id">1649127785L</v>
-                      <v n="Value">49</v>
+                      <v n="Value">246</v>
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
-                      <v n="Value">735</v>
+                      <v n="Value">730</v>
                     </o>
                     <o>
                       <v n="Id">2422045748L</v>
@@ -7572,11 +7628,11 @@
                     </o>
                     <o>
                       <v n="Id">1649127785L</v>
-                      <v n="Value">188</v>
+                      <v n="Value">387</v>
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
-                      <v n="Value">729</v>
+                      <v n="Value">720</v>
                     </o>
                     <o>
                       <v n="Id">2422045748L</v>
@@ -7607,11 +7663,11 @@
                     </o>
                     <o>
                       <v n="Id">550940142L</v>
-                      <v n="Value">251</v>
+                      <v n="Value">450</v>
                     </o>
                     <o>
                       <v n="Id">1473355128L</v>
-                      <v n="Value">751</v>
+                      <v n="Value">742</v>
                     </o>
                     <o>
                       <v n="Id">2678395525L</v>
@@ -7623,7 +7679,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%d"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -7633,6 +7689,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"279"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -7641,7 +7701,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_89"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -7720,11 +7780,11 @@
                     </o>
                     <o>
                       <v n="Id">1649127785L</v>
-                      <v n="Value">358</v>
+                      <v n="Value">667</v>
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
-                      <v n="Value">739</v>
+                      <v n="Value">680</v>
                     </o>
                     <o>
                       <v n="Id">2422045748L</v>
@@ -7885,11 +7945,11 @@
                     </o>
                     <o>
                       <v n="Id">1649127785L</v>
-                      <v n="Value">497</v>
+                      <v n="Value">832</v>
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
-                      <v n="Value">733</v>
+                      <v n="Value">665</v>
                     </o>
                     <o>
                       <v n="Id">2422045748L</v>
@@ -7920,11 +7980,11 @@
                     </o>
                     <o>
                       <v n="Id">550940142L</v>
-                      <v n="Value">560</v>
+                      <v n="Value">895</v>
                     </o>
                     <o>
                       <v n="Id">1473355128L</v>
-                      <v n="Value">755</v>
+                      <v n="Value">687</v>
                     </o>
                     <o>
                       <v n="Id">2678395525L</v>
@@ -7936,7 +7996,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -7946,6 +8006,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -7954,7 +8018,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_93"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -8033,11 +8097,11 @@
                     </o>
                     <o>
                       <v n="Id">1649127785L</v>
-                      <v n="Value">677</v>
+                      <v n="Value">665</v>
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
-                      <v n="Value">741</v>
+                      <v n="Value">744</v>
                     </o>
                     <o>
                       <v n="Id">2422045748L</v>
@@ -8049,7 +8113,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">"阶跃测试周期"</v>
+                      <v n="Value">"阶跃测试周期-秒"</v>
                     </o>
                     <o>
                       <v n="Id">3729828405L</v>
@@ -8092,7 +8156,7 @@
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
-                      <v n="Value">"88"</v>
+                      <v n="Value">"1753"</v>
                     </o>
                   </l>
                 </o>
@@ -8198,11 +8262,11 @@
                     </o>
                     <o>
                       <v n="Id">1649127785L</v>
-                      <v n="Value">816</v>
+                      <v n="Value">828</v>
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
-                      <v n="Value">735</v>
+                      <v n="Value">738</v>
                     </o>
                     <o>
                       <v n="Id">2422045748L</v>
@@ -8233,11 +8297,11 @@
                     </o>
                     <o>
                       <v n="Id">550940142L</v>
-                      <v n="Value">879</v>
+                      <v n="Value">891</v>
                     </o>
                     <o>
                       <v n="Id">1473355128L</v>
-                      <v n="Value">757</v>
+                      <v n="Value">760</v>
                     </o>
                     <o>
                       <v n="Id">2678395525L</v>
@@ -8249,7 +8313,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">""</v>
+                      <v n="Value">"%f"</v>
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
@@ -8259,6 +8323,10 @@
                       <v n="Id">2597686782L</v>
                       <v n="Value">false</v>
                     </o>
+                    <o>
+                      <v n="Id">823443203L</v>
+                      <v n="Value">"7"</v>
+                    </o>
                   </l>
                 </o>
                 <v n="VisualElementName">"Rectangle"</v>
@@ -8267,7 +8335,7 @@
                 <v n="VisualElementIdentifier">"GenElemInst_97"</v>
                 <n n="VisualElementOfflinePaintCommands" />
                 <n n="VisualElementFrameInformation" />
-                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="IInputAction[]">
+                <d n="VisualElementInputActions" t="Hashtable" ckt="String" cvt="InputBoxInputAction[]">
                   <v>OnMouseClick</v>
                   <a cet="InputBoxInputAction">
                     <o>
@@ -8396,10 +8464,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>2ff2f42f-4936-4f2e-98f4-f9640fd62c5e</v>
-                <v>FB_Reinit</v>
-                <v>f9969799-1637-4942-a002-bd289f19c6f0</v>
                 <v>FB_Exit</v>
                 <v>9c2dccd9-72a1-4e3b-8a52-ca00709c0cb4</v>
+                <v>FB_Reinit</v>
+                <v>f9969799-1637-4942-a002-bd289f19c6f0</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{c105c78e-8e3b-4f0d-a99d-14e571b09b3a}</v>
@@ -8481,12 +8549,12 @@
               <v>0</v>
               <o>
                 <v n="Width">1191</v>
-                <v n="Height">779</v>
+                <v n="Height">782</v>
               </o>
               <v>1</v>
               <o>
                 <v n="Width">1190</v>
-                <v n="Height">780</v>
+                <v n="Height">783</v>
               </o>
             </d2>
             <v n="Version">1</v>
@@ -8507,8 +8575,8 @@
         <Type n="Guid">System.Guid</Type>
         <Type n="Hashtable">System.Collections.Hashtable</Type>
         <Type n="HotkeyConfiguration">{6b108d46-58af-4e41-a3f4-174d8f160cc4}</Type>
-        <Type n="IInputAction[]">_3S.CoDeSys.VisualElem.IInputAction[], VisualElem, Version=3.5.13.0, Culture=neutral, PublicKeyToken=null</Type>
         <Type n="InputBoxInputAction">{e8e7e747-f76f-4dee-ab1c-b9637e41ac26}</Type>
+        <Type n="InputBoxInputAction[]">_3S.CoDeSys.VisualElem.InputBoxInputAction[], VisualElem.plugin, Version=3.5.13.32, Culture=neutral, PublicKeyToken=null</Type>
         <Type n="Int16">System.Int16</Type>
         <Type n="Int32">System.Int32</Type>
         <Type n="Int64">System.Int64</Type>

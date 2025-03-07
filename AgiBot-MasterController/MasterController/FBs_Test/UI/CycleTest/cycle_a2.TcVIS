@@ -284,7 +284,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[2][1]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[2][1]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -954,7 +954,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[2][2]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[2][2]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1123,7 +1123,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[2][3]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[2][3]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1233,7 +1233,7 @@
                     </o>
                     <o>
                       <v n="Id">1649127785L</v>
-                      <v n="Value">224</v>
+                      <v n="Value">233</v>
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
@@ -1268,7 +1268,7 @@
                     </o>
                     <o>
                       <v n="Id">550940142L</v>
-                      <v n="Value">299</v>
+                      <v n="Value">308</v>
                     </o>
                     <o>
                       <v n="Id">1473355128L</v>
@@ -1292,7 +1292,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[2][4]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[2][4]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1461,7 +1461,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[2][5]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[2][5]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1630,7 +1630,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[2][6]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[2][6]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1799,7 +1799,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[2][7]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[2][7]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -9381,7 +9381,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_targetCycleNum[2]"</v>
+                      <v n="Value">"g_cycleTest.m_curCycleNum[2]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -9730,9 +9730,9 @@
                         </o>
                       </l>
                     </o>
-                    <v n="SignatureName">"Visu_TapInput"</v>
-                    <v n="Name">"Tap"</v>
-                    <v n="Description">"Configure the tapping of a Boolean variable"</v>
+                    <v n="SignatureName">"Visu_ToggleInput"</v>
+                    <v n="Name">"Toggle"</v>
+                    <v n="Description">"Configure the toggling of a Boolean variable"</v>
                   </o>
                 </a>
                 <l n="Elements" t="ArrayList" />
@@ -14936,10 +14936,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>bf00d852-043b-470d-b405-fa7562142418</v>
-                <v>FB_Reinit</v>
-                <v>bdb3d8ad-fae5-4579-844f-d4ef064c3fc4</v>
                 <v>FB_Exit</v>
                 <v>9a023b15-63b5-4b65-9bff-74a4e5d52da6</v>
+                <v>FB_Reinit</v>
+                <v>bdb3d8ad-fae5-4579-844f-d4ef064c3fc4</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{17a879e9-cba6-4bb2-a7b3-0483319c85ac}</v>

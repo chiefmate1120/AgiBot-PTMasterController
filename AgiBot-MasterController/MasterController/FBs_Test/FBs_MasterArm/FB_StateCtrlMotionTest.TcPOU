@@ -119,6 +119,9 @@ VAR
 	m_current2TrqRatio:LREAL;
 	m_armCurrent2TrqRatio:Vec7d;
 	m_jntGravity :Vec7d:=g_zeroVec7d;
+	
+	//current DH joint position
+	m_armDHJntPos:Vec7d;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -335,7 +338,9 @@ g_motionTest.m_frontPose[m_armId]:=m_frontPose;
 g_motionTest.m_endPose[m_armId]:=m_endPose;
 g_motionTest.m_masterArmPose[m_armId]:=m_masterArmPose;
 g_motionTest.m_armActJntPos[m_armId]:=m_unitFun.masterArmUnit2User(i_dataSystem:= i_masterArm.curJntPos);
-m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> g_motionTest.m_armDHJntPos[m_armId]);
+
+m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_armDHJntPos);
+g_motionTest.m_armDHJntPos[m_armId]:=m_unitFun.masterArmUnit2User(i_dataSystem:=m_armDHJntPos);
 g_motionTest.m_curJntCurrent[m_armId]:=i_masterArm.filtJntCurrent;
 
 
@@ -346,7 +351,6 @@ m_jntEnableFlag :=g_motionTest.m_jntEnable[i_masterArm.armIdx];
 //Initialization of motion parameters
 m_startMotion:=g_motionTest.m_startMotion[m_armId];
 m_controlMode:=g_motionTest.m_controlMode[m_armId];
-controlSignalAnalysis();
 
 IF (m_startMotionLast=FALSE) AND (m_startMotion=TRUE) THEN
 	m_motionFinished:=FALSE;
@@ -420,7 +424,8 @@ END_IF
 
 //cover the command joint position
 IF (g_motionTest.m_coverCmdPos[m_armId]=TRUE) THEN
-	g_motionTest.m_targetJntPos[m_armId]:=m_unitFun.masterArmUnit2User(i_dataSystem:= g_motionTest.m_armDHJntPos[m_armId]);
+	//g_motionTest.m_targetJntPos[m_armId]:=m_unitFun.masterArmUnit2User(i_dataSystem:= g_motionTest.m_armDHJntPos[m_armId]);
+	g_motionTest.m_targetJntPos[m_armId]:=g_motionTest.m_armDHJntPos[m_armId];
 END_IF
 
 
@@ -457,46 +462,6 @@ END_VAR
 
 
 
-]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="controlSignalAnalysis" Id="{0ea9740b-1e6a-46cd-942a-3025f4a46297}">
-      <Declaration><![CDATA[//*********Analyze the signals of the interactive interface*********//
-METHOD controlSignalAnalysis : BOOL
-VAR_INPUT
-END_VAR
-
-VAR
-	i:INT;
-	k:INT;
-	activeJntPos : vec7d;
-	targetDHJntPos:vec7d;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[
-//go home signal
-FOR i:=1 TO g_mJntNum BY 1 DO
-	IF (g_motionTest.m_goHome[m_armId][i]=TRUE) THEN
-		m_startMotion:=TRUE;
-		m_controlMode:=1;
-		g_motionTest.m_controlMode[m_armId]:=1;
-		
-		//give the target joint position
-		FOR k:=1 TO g_mJntNum BY 1 DO
-			targetDHJntPos[k]:=gvl_const.g_jntDHInitPos[m_armId,k];
-		END_FOR
-		m_basicFun.DH2activeJnt(i_DHJntPos:= targetDHJntPos, o_activeJntPos=> activeJntPos);		
-		g_motionTest.m_targetJntPos[m_armId]:=g_motionTest.m_armActJntPos[m_armId];	
-		g_motionTest.m_targetJntPos[m_armId][i]:=activeJntPos[i];
-		
-		//transform to user unit
-		g_motionTest.m_targetJntPos[m_armId]:=m_unitFun.masterArmUnit2User(g_motionTest.m_targetJntPos[m_armId]);
-		
-		//exit for cycle
-		EXIT;
-	END_IF
-END_FOR
 ]]></ST>
       </Implementation>
     </Method>
@@ -681,7 +646,7 @@ CASE m_testStep OF
 		m_jntGravity:=i_masterArm.jntGravity;
 		FOR i:=1 TO 7 BY 1 DO
 			targetTrq[i]:=g_motionTest.m_targetJntCurrent[m_armId][i]*m_armCurrent2TrqRatio[i];
-			m_cmdJntTrq[i]:=targetTrq[i]-m_jntGravity[i]-i_masterArm.jntGravityBias[i];
+			m_cmdJntTrq[i]:=targetTrq[i]-m_jntGravity[i];//-i_masterArm.jntGravityBias[i];
 			//g_motionTest.m_curJntCurrent[m_armId][i]:=i_masterArm.curJntTrq[i]/m_armCurrent2TrqRatio[i];
 		END_FOR
 		
@@ -726,7 +691,8 @@ CASE m_testStep OF
 	0: //Trajectory parameter initialization
 		m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);	
 		tgtJntPos:=m_unitFun.masterArmUnit2System(i_dataTest:= g_motionTest.m_targetJntPos[m_armId]);
-		m_basicFun.activeJnt2DH(i_activeJntPos:= tgtJntPos, o_DHJntPos=> m_endDHPos);		
+		//m_basicFun.activeJnt2DH(i_activeJntPos:= tgtJntPos, o_DHJntPos=> m_endDHPos);		
+		m_endDHPos:=tgtJntPos;
 		
 		//velocity initial
 		m_maxjntVel:=m_unitFun.masterArmUnit2System(i_dataTest:= g_motionTest.m_targetJntVel[m_armId]);
@@ -741,10 +707,10 @@ CASE m_testStep OF
 		
 		//joint test mode
 		IF (g_motionTest.m_jntPosIncMode[m_armId]=TRUE) THEN
-			curJntPos:=i_masterArm.curJntPos;	
+			//curJntPos:=i_masterArm.curJntPos;
 			tgtJntPosInc:=m_unitFun.masterArmUnit2System(i_dataTest:= g_motionTest.m_targetJntPosInc[m_armId]);
-			vecAdd(curJntPos,tgtJntPosInc,m_endJntPos);
-			m_basicFun.activeJnt2DH(i_activeJntPos:= m_endJntPos, o_DHJntPos=> m_endDHPos);
+			vecAdd(m_startDHPos,tgtJntPosInc,m_endDHPos);
+			//m_basicFun.activeJnt2DH(i_activeJntPos:= m_endJntPos, o_DHJntPos=> m_endDHPos);
 		END_IF
 		
 		//motion distance judgement
@@ -1078,16 +1044,17 @@ END_CASE]]></ST>
       <LineId Id="32" Count="3" />
       <LineId Id="22" Count="3" />
       <LineId Id="13" Count="0" />
-      <LineId Id="273" Count="1" />
+      <LineId Id="273" Count="0" />
+      <LineId Id="385" Count="0" />
+      <LineId Id="274" Count="0" />
+      <LineId Id="384" Count="0" />
       <LineId Id="325" Count="0" />
       <LineId Id="275" Count="1" />
       <LineId Id="310" Count="0" />
       <LineId Id="308" Count="1" />
       <LineId Id="36" Count="0" />
       <LineId Id="39" Count="1" />
-      <LineId Id="220" Count="0" />
-      <LineId Id="368" Count="0" />
-      <LineId Id="221" Count="0" />
+      <LineId Id="220" Count="1" />
       <LineId Id="41" Count="0" />
       <LineId Id="219" Count="0" />
       <LineId Id="222" Count="0" />
@@ -1127,6 +1094,7 @@ END_CASE]]></ST>
       <LineId Id="351" Count="0" />
       <LineId Id="330" Count="0" />
       <LineId Id="347" Count="2" />
+      <LineId Id="386" Count="0" />
       <LineId Id="238" Count="0" />
       <LineId Id="352" Count="0" />
       <LineId Id="239" Count="1" />
@@ -1138,26 +1106,6 @@ END_CASE]]></ST>
     <LineIds Name="FB_StateCtrlMotionTest.calcCmdJntTrq">
       <LineId Id="12" Count="5" />
       <LineId Id="11" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_StateCtrlMotionTest.controlSignalAnalysis">
-      <LineId Id="6" Count="2" />
-      <LineId Id="17" Count="0" />
-      <LineId Id="23" Count="1" />
-      <LineId Id="38" Count="0" />
-      <LineId Id="25" Count="0" />
-      <LineId Id="37" Count="0" />
-      <LineId Id="28" Count="0" />
-      <LineId Id="30" Count="1" />
-      <LineId Id="26" Count="0" />
-      <LineId Id="21" Count="0" />
-      <LineId Id="34" Count="0" />
-      <LineId Id="40" Count="1" />
-      <LineId Id="35" Count="0" />
-      <LineId Id="39" Count="0" />
-      <LineId Id="36" Count="0" />
-      <LineId Id="19" Count="1" />
-      <LineId Id="18" Count="0" />
-      <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMotionTest.init">
       <LineId Id="12" Count="4" />
@@ -1240,6 +1188,7 @@ END_CASE]]></ST>
       <LineId Id="103" Count="0" />
       <LineId Id="86" Count="0" />
       <LineId Id="60" Count="0" />
+      <LineId Id="166" Count="0" />
       <LineId Id="108" Count="0" />
       <LineId Id="106" Count="0" />
       <LineId Id="141" Count="3" />

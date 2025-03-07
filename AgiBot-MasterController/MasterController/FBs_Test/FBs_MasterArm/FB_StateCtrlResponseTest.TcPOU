@@ -52,6 +52,16 @@ VAR
 	
 	//arm id
 	m_armId:INT;
+	
+	//current DH joint position
+	m_curDHJntPos:Vec7d;
+	
+	//basic function
+	m_basicFun:FB_BasicFun;
+	
+	//DH joint position/velocity/acc
+	m_cmdDHJntPos : VEC7d;
+	m_cmdDHJntVel : VEC7d;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -64,7 +74,7 @@ VAR_INPUT
 END_VAR
 
 VAR
-	//
+	
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -78,13 +88,17 @@ CASE m_testStep OF
 		m_jntStep:=g_responseTest.m_jntStep;		
 		m_testJntIdx:=g_responseTest.m_testJntIdx;
 		m_stepCycle:=g_responseTest.m_stepCycle;
-		
-		m_initJntPos := i_masterArm.curJntPos;
+				
+		m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_curDHJntPos);
+		//m_initJntPos := i_masterArm.curJntPos;
+		m_initJntPos := m_curDHJntPos;
 		m_jntOPMode := g_allPosMode;
 		
 		//after change the control mode,we need to change the inital target joint position and velocity
 		m_cmdJntPos:=i_masterArm.curJntPos;
 		m_cmdJntVel:=g_zeroVec7d;	
+		m_cmdDHJntPos:=m_curDHJntPos;
+		m_cmdDHJntVel:=g_zeroVec7d;
 		m_time:=0;
 		
 		IF (m_testJntIdx >=1 AND m_testJntIdx <=7) THEN
@@ -94,15 +108,16 @@ CASE m_testStep OF
 		
 	10:// start the motion
 		m_time:=m_time+g_armCtrlCycleTime;
-	
-		IF (m_freqTestFlag[m_testJntIdx]=TRUE) THEN 
-			m_cmdJntPos[m_testJntIdx]:=m_initJntPos[m_testJntIdx]+m_jntMotionRange[m_testJntIdx]/2
+		m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_curDHJntPos);
+		
+		IF (m_freqTestFlag[m_testJntIdx]=TRUE) AND (m_stepTestFlag[m_testJntIdx]=FALSE) THEN 
+			m_cmdDHJntPos[m_testJntIdx]:=m_initJntPos[m_testJntIdx]+m_jntMotionRange[m_testJntIdx]/2
 										+0.5*m_jntMotionRange[m_testJntIdx]*SIN(2*pi*m_jntMotionFreq[m_testJntIdx]*m_time-pi/2);
-			m_cmdJntVel[m_testJntIdx]:=0.5*m_jntMotionRange[m_testJntIdx]*2*pi*m_jntMotionFreq[m_testJntIdx]*COS(2*pi*m_jntMotionFreq[m_testJntIdx]*m_time-pi/2);
+			m_cmdDHJntVel[m_testJntIdx]:=0.5*m_jntMotionRange[m_testJntIdx]*2*pi*m_jntMotionFreq[m_testJntIdx]*COS(2*pi*m_jntMotionFreq[m_testJntIdx]*m_time-pi/2);
 		END_IF
 		
 		//step test
-		IF (m_stepTestFlag[m_testJntIdx]=TRUE) THEN
+		IF (m_stepTestFlag[m_testJntIdx]=TRUE) AND (m_freqTestFlag[m_testJntIdx]=FALSE) THEN
 			IF (m_time>m_cycleTime) THEN				
 				//update the position every cycle
 				m_time:=0;
@@ -115,11 +130,15 @@ CASE m_testStep OF
 				END_IF
 				
 				//update the target joint position
-				m_cmdJntPos[m_testJntIdx]:=m_initJntPos[m_testJntIdx]+0.5*m_jntStep*m_stepTestDir[m_testJntIdx];
-				m_cmdJntVel[m_testJntIdx]:=0;			
+				m_cmdDHJntPos[m_testJntIdx]:=m_initJntPos[m_testJntIdx]+0.5*m_jntStep*m_stepTestDir[m_testJntIdx];
+				m_cmdDHJntVel[m_testJntIdx]:=0;			
 			END_IF	
 		END_IF
-				
+		
+		//transform to active joint position		
+		m_basicFun.DH2activeJnt(i_DHJntPos:=m_cmdDHJntPos, o_activeJntPos=> m_cmdJntPos);
+		m_cmdJntVel:=m_cmdDHJntVel;
+		
 		//finish the test
 		IF (m_startMotion=FALSE) THEN
 			m_testStep:=20;
@@ -225,16 +244,19 @@ m_armId:=i_masterArm.armIdx;]]></ST>
       <LineId Id="80" Count="1" />
       <LineId Id="83" Count="0" />
       <LineId Id="87" Count="2" />
-      <LineId Id="20" Count="0" />
+      <LineId Id="97" Count="2" />
       <LineId Id="17" Count="0" />
       <LineId Id="23" Count="0" />
       <LineId Id="21" Count="1" />
       <LineId Id="18" Count="0" />
+      <LineId Id="108" Count="1" />
       <LineId Id="61" Count="0" />
       <LineId Id="24" Count="0" />
       <LineId Id="19" Count="0" />
       <LineId Id="26" Count="4" />
-      <LineId Id="38" Count="1" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="39" Count="0" />
       <LineId Id="31" Count="0" />
       <LineId Id="35" Count="2" />
       <LineId Id="33" Count="0" />
@@ -245,6 +267,9 @@ m_armId:=i_masterArm.armIdx;]]></ST>
       <LineId Id="48" Count="12" />
       <LineId Id="44" Count="1" />
       <LineId Id="41" Count="0" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="106" Count="1" />
       <LineId Id="65" Count="2" />
       <LineId Id="63" Count="1" />
       <LineId Id="42" Count="0" />

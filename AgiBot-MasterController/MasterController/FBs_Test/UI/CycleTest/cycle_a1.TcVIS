@@ -284,7 +284,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[1][1]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[1][1]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -954,7 +954,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[1][2]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[1][2]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1123,7 +1123,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[1][3]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[1][3]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1292,7 +1292,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[1][4]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[1][4]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1461,7 +1461,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[1][5]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[1][5]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1630,7 +1630,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[1][6]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[1][6]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -1799,7 +1799,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_armActJntPos[1][7]"</v>
+                      <v n="Value">"g_cycleTest.m_armDHJntPos[1][7]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -9381,7 +9381,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_targetCycleNum[1]"</v>
+                      <v n="Value">"g_cycleTest.m_curCycleNum[1]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -9730,9 +9730,9 @@
                         </o>
                       </l>
                     </o>
-                    <v n="SignatureName">"Visu_TapInput"</v>
-                    <v n="Name">"Tap"</v>
-                    <v n="Description">"Configure the tapping of a Boolean variable"</v>
+                    <v n="SignatureName">"Visu_ToggleInput"</v>
+                    <v n="Name">"Toggle"</v>
+                    <v n="Description">"Configure the toggling of a Boolean variable"</v>
                   </o>
                 </a>
                 <l n="Elements" t="ArrayList" />
@@ -14936,10 +14936,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>d1f84b20-109c-43dc-8fbf-30f982a54348</v>
-                <v>FB_Exit</v>
-                <v>d723fa6f-af52-424b-94ac-5b9650229091</v>
                 <v>FB_Reinit</v>
                 <v>17e0d9a3-6c03-4313-b8d7-233b1c115508</v>
+                <v>FB_Exit</v>
+                <v>d723fa6f-af52-424b-94ac-5b9650229091</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{2bfcff0b-520d-4c5f-bc15-a94840ffb73d}</v>
