@@ -19,7 +19,7 @@ VAR_GLOBAL CONSTANT
 		g_mArmNum :INT := 2;	
 		g_mJntNum:INT:=7;		
 		g_deg2Rad :LREAL := pi/180.0;
-			
+		
 		//DH joint minmum position
 		g_minJntDHPos:ARRAY[1..2,1..7] OF LREAL:=[-60*g_deg2Rad, -60*g_deg2Rad-pi/2,  -45*g_deg2Rad+pi/2, -150*g_deg2Rad-pi,  -135*g_deg2Rad+pi,  -62*g_deg2Rad-pi/2, -150*g_deg2Rad,
 																						-60*g_deg2Rad, -60*g_deg2Rad-pi/2,  -45*g_deg2Rad+pi/2,  -90*g_deg2Rad,    -135*g_deg2Rad+pi,    -242*g_deg2Rad+pi/2, -150*g_deg2Rad];

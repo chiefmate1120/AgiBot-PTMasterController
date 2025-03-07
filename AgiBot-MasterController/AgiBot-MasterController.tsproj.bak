@@ -2111,11 +2111,11 @@
 					<Vars VarGrpType="1" ContextId="2" AreaNo="32">
 						<Name>TaskCartControl Inputs</Name>
 						<Var>
-							<Name>SafetyCheck.m_cartLockSignalLeft</Name>
+							<Name>SafetyCheck.m_cartLockSignalRight</Name>
 							<Type>BOOL</Type>
 						</Var>
 						<Var>
-							<Name>SafetyCheck.m_cartLockSignalRight</Name>
+							<Name>SafetyCheck.m_cartLockSignalLeft</Name>
 							<Type>BOOL</Type>
 						</Var>
 					</Vars>

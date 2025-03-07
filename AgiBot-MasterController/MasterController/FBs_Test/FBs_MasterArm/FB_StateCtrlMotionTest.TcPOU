@@ -388,7 +388,6 @@ END_IF
 
 
 
-
 //show the motion step
 IF (m_controlMode=5) OR (m_controlMode=7) THEN
 	g_motionTest.m_curStep[m_armId]:=m_testStep;
@@ -401,31 +400,20 @@ ELSE
 END_IF
 
 
-(*
-// feedback the motion status
-IF (m_controlMode=1) OR (m_controlMode=3) OR (m_controlMode=5) OR (m_controlMode=6) OR (m_controlMode=7) THEN
-	IF (m_testStep=-1) THEN
-		g_motionTest.m_controlMode[m_armId]:=0;	
-	END_IF
-	
-ELSIF (m_controlMode=2) OR (m_controlMode=4) THEN
-	IF (m_testStep=-1) THEN
-		g_motionTest.m_controlMode[m_armId]:=0;
-	END_IF
-END_IF
-*)
-
-
+//end the signal
 IF (m_testStep=-1) THEN
 	g_motionTest.m_controlMode[m_armId]:=0;	
 END_IF
 
 
-
 //cover the command joint position
 IF (g_motionTest.m_coverCmdPos[m_armId]=TRUE) THEN
-	//g_motionTest.m_targetJntPos[m_armId]:=m_unitFun.masterArmUnit2User(i_dataSystem:= g_motionTest.m_armDHJntPos[m_armId]);
 	g_motionTest.m_targetJntPos[m_armId]:=g_motionTest.m_armDHJntPos[m_armId];
+END_IF
+
+//cover the command joint current
+IF (g_motionTest.m_coverCmdCurrent[m_armId]=TRUE) THEN
+	g_motionTest.m_targetJntCurrent[m_armId]:=g_motionTest.m_curJntCurrent[m_armId];
 END_IF
 
 
@@ -646,7 +634,7 @@ CASE m_testStep OF
 		m_jntGravity:=i_masterArm.jntGravity;
 		FOR i:=1 TO 7 BY 1 DO
 			targetTrq[i]:=g_motionTest.m_targetJntCurrent[m_armId][i]*m_armCurrent2TrqRatio[i];
-			m_cmdJntTrq[i]:=targetTrq[i]-m_jntGravity[i];//-i_masterArm.jntGravityBias[i];
+			m_cmdJntTrq[i]:=targetTrq[i]-m_jntGravity[i]-i_masterArm.jntGravityBias[i];
 			//g_motionTest.m_curJntCurrent[m_armId][i]:=i_masterArm.curJntTrq[i]/m_armCurrent2TrqRatio[i];
 		END_FOR
 		
@@ -712,6 +700,12 @@ CASE m_testStep OF
 			vecAdd(m_startDHPos,tgtJntPosInc,m_endDHPos);
 			//m_basicFun.activeJnt2DH(i_activeJntPos:= m_endJntPos, o_DHJntPos=> m_endDHPos);
 		END_IF
+		
+		//limit the joint position
+		FOR i:=1 TO 7 BY 1 DO
+			m_startDHPos[i]:=LIMIT(gvl_const.g_minJntDHPos[m_armId,i],m_startDHPos[i],gvl_const.g_maxJntDHPos[m_armId,i]);
+			m_endDHPos[i]:=LIMIT(gvl_const.g_minJntDHPos[m_armId,i],m_endDHPos[i],gvl_const.g_maxJntDHPos[m_armId,i]);
+		END_FOR
 		
 		//motion distance judgement
 		vecSub(m_endDHPos,m_startDHPos,m_motDist);
@@ -1069,34 +1063,26 @@ END_CASE]]></ST>
       <LineId Id="292" Count="0" />
       <LineId Id="64" Count="0" />
       <LineId Id="11" Count="0" />
-      <LineId Id="83" Count="0" />
-      <LineId Id="202" Count="0" />
-      <LineId Id="84" Count="1" />
+      <LineId Id="83" Count="2" />
       <LineId Id="88" Count="1" />
       <LineId Id="107" Count="1" />
       <LineId Id="91" Count="1" />
       <LineId Id="109" Count="1" />
       <LineId Id="90" Count="0" />
-      <LineId Id="134" Count="0" />
-      <LineId Id="187" Count="0" />
-      <LineId Id="152" Count="1" />
-      <LineId Id="155" Count="0" />
-      <LineId Id="158" Count="2" />
-      <LineId Id="258" Count="0" />
-      <LineId Id="165" Count="0" />
-      <LineId Id="253" Count="0" />
-      <LineId Id="256" Count="1" />
-      <LineId Id="157" Count="0" />
-      <LineId Id="137" Count="0" />
-      <LineId Id="326" Count="1" />
+      <LineId Id="326" Count="0" />
+      <LineId Id="408" Count="0" />
+      <LineId Id="327" Count="0" />
       <LineId Id="331" Count="1" />
-      <LineId Id="328" Count="1" />
+      <LineId Id="328" Count="0" />
       <LineId Id="351" Count="0" />
       <LineId Id="330" Count="0" />
-      <LineId Id="347" Count="2" />
+      <LineId Id="347" Count="1" />
       <LineId Id="386" Count="0" />
       <LineId Id="238" Count="0" />
-      <LineId Id="352" Count="0" />
+      <LineId Id="401" Count="0" />
+      <LineId Id="404" Count="1" />
+      <LineId Id="407" Count="0" />
+      <LineId Id="402" Count="1" />
       <LineId Id="239" Count="1" />
       <LineId Id="245" Count="7" />
       <LineId Id="241" Count="1" />
@@ -1204,6 +1190,12 @@ END_CASE]]></ST>
       <LineId Id="111" Count="0" />
       <LineId Id="61" Count="0" />
       <LineId Id="64" Count="0" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="181" Count="0" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="178" Count="0" />
       <LineId Id="124" Count="4" />
       <LineId Id="121" Count="0" />
       <LineId Id="123" Count="0" />

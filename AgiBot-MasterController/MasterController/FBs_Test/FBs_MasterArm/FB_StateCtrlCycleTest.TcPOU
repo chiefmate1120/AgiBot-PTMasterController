@@ -221,6 +221,12 @@ CASE m_testStep OF
 		m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> startDHPos);		
 		endDHPos:=m_targetJntPos[m_pointNum];	
 		
+		//limit the joint position
+		FOR i:=1 TO 7 BY 1 DO
+			startDHPos[i]:=LIMIT(gvl_const.g_minJntDHPos[m_armId,i],startDHPos[i],gvl_const.g_maxJntDHPos[m_armId,i]);
+			endDHPos[i]:=LIMIT(gvl_const.g_minJntDHPos[m_armId,i],endDHPos[i],gvl_const.g_maxJntDHPos[m_armId,i]);
+		END_FOR
+		
 		//motion distance judgement
 		vecSub(endDHPos,startDHPos,m_motDist);
 		IF (norm(m_motDist)<g_smallNum) THEN
@@ -406,6 +412,8 @@ END_IF
       <LineId Id="11" Count="1" />
       <LineId Id="80" Count="0" />
       <LineId Id="141" Count="0" />
+      <LineId Id="228" Count="3" />
+      <LineId Id="226" Count="1" />
       <LineId Id="144" Count="4" />
       <LineId Id="142" Count="1" />
       <LineId Id="14" Count="8" />

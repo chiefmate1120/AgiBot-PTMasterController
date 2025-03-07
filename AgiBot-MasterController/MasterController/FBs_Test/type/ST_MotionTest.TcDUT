@@ -73,6 +73,9 @@ STRUCT
 	//cover command position
 	m_coverCmdPos:ARRAY[1..g_mArmNum] OF BOOL;
 	
+	//cover command current
+	m_coverCmdCurrent:ARRAY[1..g_mArmNum] OF BOOL;
+	
 	
 	
 	
@@ -137,6 +140,9 @@ STRUCT
 	
 	//cover command position-car
 	m_coverCmdPosCar:BOOL;
+	
+	//cover command current-car
+	m_coverCmdCurrentCar:BOOL;
 END_STRUCT
 END_TYPE
 ]]></Declaration>

@@ -318,6 +318,12 @@ CASE m_testStep OF
 			m_endJntPos[i]:=endDHPos[i];
 		END_FOR		
 		
+		//limit the joint position
+		FOR i:=1 TO 4 BY 1 DO
+			m_startJntPos[i]:=LIMIT(GVL_CartJointParameters.g_minJntPos[i],m_startJntPos[i],GVL_CartJointParameters.g_maxJntPos[i]);
+			m_endJntPos[i]:=LIMIT(GVL_CartJointParameters.g_minJntPos[i],m_endJntPos[i],GVL_CartJointParameters.g_maxJntPos[i]);
+		END_FOR
+		
 		//motion distance judgement
 		vecSub(m_endJntPos,m_startJntPos,m_motDist);
 		IF (norm(m_motDist)<g_smallNum) THEN
@@ -486,6 +492,12 @@ CASE m_testStepJntPos OF
 			m_endJntPos[i]:=m_endDHJntPos[i];
 		END_FOR		
 		
+		//limit the joint position
+		FOR i:=1 TO 4 BY 1 DO
+			m_startJntPos[i]:=LIMIT(GVL_CartJointParameters.g_minJntPos[i],m_startJntPos[i],GVL_CartJointParameters.g_maxJntPos[i]);
+			m_endJntPos[i]:=LIMIT(GVL_CartJointParameters.g_minJntPos[i],m_endJntPos[i],GVL_CartJointParameters.g_maxJntPos[i]);
+		END_FOR
+		
 		//motion distance judgement
 		vecSub(m_endJntPos,m_startJntPos,m_motDist);
 		IF (norm(m_motDist)<g_smallNum) THEN
@@ -584,7 +596,16 @@ CASE m_jntCurTestStep OF
 	
 	
 	-1: //
-END_CASE]]></ST>
+END_CASE
+
+
+//cover the command joint current
+IF (g_motionTest.m_coverCmdCurrentCar=TRUE) THEN
+	g_motionTest.m_targetJntCurrentCar:=g_motionTest.m_carJntCurrent;
+END_IF
+
+
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="eleKnifeCtrl" Id="{802e30d4-05e6-4f42-9cf9-00572025b770}">
@@ -925,7 +946,7 @@ cartTestCycle();
 cartTestJnt();
 
 //current test
-cartTestJntCurrent();
+//cartTestJntCurrent();
 
 // send command to joint driver
 FOR i:=1 TO 4 DO
@@ -1203,6 +1224,8 @@ END_FOR]]></ST>
       <LineId Id="350" Count="2" />
       <LineId Id="564" Count="0" />
       <LineId Id="353" Count="12" />
+      <LineId Id="577" Count="3" />
+      <LineId Id="575" Count="1" />
       <LineId Id="516" Count="4" />
       <LineId Id="514" Count="1" />
       <LineId Id="366" Count="42" />
@@ -1256,6 +1279,8 @@ END_FOR]]></ST>
       <LineId Id="233" Count="1" />
       <LineId Id="231" Count="1" />
       <LineId Id="149" Count="10" />
+      <LineId Id="318" Count="3" />
+      <LineId Id="316" Count="1" />
       <LineId Id="219" Count="4" />
       <LineId Id="217" Count="1" />
       <LineId Id="160" Count="27" />
@@ -1287,6 +1312,10 @@ END_FOR]]></ST>
       <LineId Id="43" Count="0" />
       <LineId Id="39" Count="1" />
       <LineId Id="25" Count="0" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="85" Count="2" />
+      <LineId Id="82" Count="2" />
+      <LineId Id="79" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.eleKnifeCtrl">
       <LineId Id="131" Count="31" />
