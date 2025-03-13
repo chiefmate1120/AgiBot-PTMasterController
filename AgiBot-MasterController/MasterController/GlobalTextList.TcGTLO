@@ -196,6 +196,16 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"776"</v>
+              <v n="TextDefault">"主从变姿态控制"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1371"</v>
+              <v n="TextDefault">"主从测试中是否回原点"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"646"</v>
               <v n="TextDefault">"主控制臂空间操作力测试，需要抓取数据包括：协作机器人关节位置、力传感器数据、主控制臂的关节角、主控制臂的实际电流、协作机器人运动开启信号"</v>
               <l n="LanguageTexts" t="ArrayList" />

@@ -409,6 +409,9 @@
     <Compile Include="FBs_StateControllers\FB_StateCtrlMasterSlave.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FBs_StateControllers\FB_StateCtrlMasterSlave_buk1.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="FBs_StateControllers\FB_StateCtrlMatching.TcPOU">
       <SubType>Code</SubType>
     </Compile>

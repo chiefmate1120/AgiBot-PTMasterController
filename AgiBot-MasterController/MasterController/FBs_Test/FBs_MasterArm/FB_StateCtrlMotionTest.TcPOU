@@ -170,7 +170,7 @@ CASE m_testStep OF
 		IF (m_time>m_Planner.duration) AND (norm(m_JntErr)<g_jntCtrlAngTolHigh)THEN
 			m_testStep:=15;
 		END_IF
-				
+		
 		
 	15: //Waiting for confirmation and measurement
 		IF (g_motionTest.m_nextStep[m_armId]=TRUE) THEN
