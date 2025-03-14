@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
-  <POU Name="FB_StateCtrlMasterSlave_buk1" Id="{f63174e3-bf67-44ce-8ab1-07106e672938}" SpecialFunc="None">
+  <POU Name="FB_StateCtrlMasterSlave_buk1" Id="{07c3d5bf-d513-476a-86d1-5fc792ca4372}" SpecialFunc="None">
     <Declaration><![CDATA[// Brief: Master Arm MasterSlave controller
 FUNCTION_BLOCK PUBLIC FB_StateCtrlMasterSlave_buk1 EXTENDS FB_MasterArmCtrlBase
 VAR_INPUT
@@ -93,7 +93,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
-    <Method Name="armIKSlove" Id="{2a411832-d28c-4af7-9f0e-9d1532af5c3b}">
+    <Method Name="armIKSlove" Id="{416f8bd2-7199-488c-994d-6f5a289e0c8a}">
       <Declaration><![CDATA[METHOD armIKSlove : BOOL
 VAR_INPUT	
 	i_masterArm :FB_MasterArm;
@@ -138,7 +138,7 @@ armIKSlove:=TRUE;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcCmdJntPos" Id="{4919d2f4-0419-47e2-b339-daa6d2bbcb56}">
+    <Method Name="calcCmdJntPos" Id="{2c8db3d3-3f33-44bb-a997-a22acf43e66b}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntPos : BOOL
 
@@ -171,7 +171,7 @@ ELSE
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcCmdJntPos_BasicInstru" Id="{93e9522c-69e9-4a6d-b612-daee5a7a2ce2}">
+    <Method Name="calcCmdJntPos_BasicInstru" Id="{db789822-4135-4ee1-975d-b68181de8f48}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntPos_BasicInstru : BOOL
 
@@ -191,7 +191,7 @@ m_cmdCartPose:=i_masterArm.curCartPose;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcCmdJntPos_BasicInstru_Test" Id="{70fb9752-9d0e-4a23-86a1-d1f9c506aac6}">
+    <Method Name="calcCmdJntPos_BasicInstru_Test" Id="{21703493-9306-4482-b4d2-8fe0e9296e0e}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntPos_BasicInstru_Test : BOOL
 
@@ -308,7 +308,7 @@ g_motionTest.m_testCycleId[m_armId]:=m_motionCycleNum;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcCmdJntPos_USKnife" Id="{4062661c-22d6-42f4-a150-0f6e82deb6c6}">
+    <Method Name="calcCmdJntPos_USKnife" Id="{4f7eedaa-3d91-4a86-a8f4-1940af8c65ac}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntPos_USKnife : BOOL
 
@@ -412,7 +412,7 @@ END_FOR
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcCmdJntTrq" Id="{4086a760-e11d-44c6-9816-ec18e4e8f259}">
+    <Method Name="calcCmdJntTrq" Id="{9a01d18e-f2d6-41e8-b675-63c24aec187a}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntTrq : BOOL
 
@@ -438,7 +438,7 @@ END_IF
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcCmdJntTrq_BasicInstru" Id="{648a1493-c407-4541-be25-dba42a8cddcb}">
+    <Method Name="calcCmdJntTrq_BasicInstru" Id="{5d4dcd6d-3299-4e51-b916-5f589f321c08}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntTrq_BasicInstru : BOOL
 
@@ -487,7 +487,7 @@ m_cmdJntTrq[6]:= m_cmdJntTrq[6]+ joint6LimitTrq;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcCmdJntTrq_USKnife" Id="{2c253f80-2cd4-497c-abb0-b0d48d51cf6f}">
+    <Method Name="calcCmdJntTrq_USKnife" Id="{77b2536e-7216-45f8-bed2-f9f9c211fac1}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntTrq_USKnife : BOOL
 
@@ -510,7 +510,7 @@ m_cmdJntTrq[7] := m_boundaryTrq[7];
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcRedunVel" Id="{14de51dc-3eee-4afb-a293-a9bb688a4e79}">
+    <Method Name="calcRedunVel" Id="{0d49d065-ce72-4ef2-bb97-8e659bed02a4}">
       <Declaration><![CDATA[METHOD PROTECTED calcRedunVel : LREAL
 VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
@@ -560,7 +560,7 @@ IF (calcRedunVel > 0 AND jnt4LinkPos+calcRedunVel * g_armCtrlCycleTime > GVL_Arm
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="init" Id="{ae9d4154-7013-4e8c-abd6-1bdbea6076fd}">
+    <Method Name="init" Id="{06814110-3a32-4626-9f8f-1a1f47d8a103}">
       <Declaration><![CDATA[METHOD PUBLIC init : BOOL
 VAR_IN_OUT CONSTANT
 	i_masterArm	:FB_MasterArm;
@@ -612,7 +612,7 @@ END_IF
 motionParamInit(i_masterArm);]]></ST>
       </Implementation>
     </Method>
-    <Method Name="motionParamInit" Id="{548cb4d0-e536-4881-ac42-3c3f1a4dfb05}">
+    <Method Name="motionParamInit" Id="{1e421f12-b059-4bb5-8bf5-72285803d632}">
       <Declaration><![CDATA[METHOD motionParamInit : BOOL
 VAR_INPUT
 	// arm data

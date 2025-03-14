@@ -89,6 +89,13 @@ VAR
 	
 	//rotation angle
 	m_rotAngle:LREAL:=20*g_deg2Rad;	
+	
+	o_targetJntPos1,o_targetJntPos2,o_targetJntPos3:Vec7d;
+	
+	// joint position at link encoder calibrated point
+	m_linkEncCaliJntPos :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF LREAL :=
+		[0.0, -PI/2, 0.0, -pi, pi, -PI/2, 0.0,
+		 0.0, -PI/2, 0.0, 0.0, pi, PI/2, 0.0];
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -119,6 +126,7 @@ IF (IKSucceed=FALSE) THEN
 	armIKSlove:=FALSE;
 	RETURN;
 END_IF
+o_targetJntPos1:=targetJntPos;
 
 
 //Constrained solution range and transform to active joint position
@@ -126,6 +134,7 @@ FOR i:=1 TO 7 BY 1 DO
 	m_basicFun.minimumDistMot(i_current:= GVL_Const.g_jntDHInitPos[m_armId,i], i_target:= targetJntPos[i], o_target=> targetJntPos[i]);
 END_FOR
 m_basicFun.DH2activeJnt(i_DHJntPos:= targetJntPos, o_activeJntPos=> o_targetJntPos);
+o_targetJntPos2:=targetJntPos;
 
 
 //Determine whether the solution result is appropriate
@@ -154,7 +163,6 @@ VAR
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-
 IF (g_motionTest.m_MSPrecisionTest[i_masterArm.armIdx]=FALSE) THEN	
 	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
 		i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
@@ -173,12 +181,12 @@ ELSE
 	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
 		i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
 		calcCmdJntPos_USKnife_Test(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+		
+		m_cmdJntPos[4]:=m_redunJntCtrl.m_cmdJntPos;
+		m_cmdJntVel[4]:=m_redunJntCtrl.m_cmdJntVel;	
 	ELSE
 		calcCmdJntPos_BasicInstru_Test(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
-	END_IF
-	
-	m_cmdJntPos[4]:=m_redunJntCtrl.m_cmdJntPos;
-	m_cmdJntVel[4]:=m_redunJntCtrl.m_cmdJntVel;	
+	END_IF		
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -982,7 +990,7 @@ m_tgtMotionCycleNum:=gvl_const.g_testMotCycNum;
 
 //original joint position
 FOR i:=1 TO g_mJntNum BY 1 DO
-	m_originJntPos[i]:=GVL_ArmJointCaliData.g_linkEncCaliJntPos[m_armId,i];
+	m_originJntPos[i]:=m_linkEncCaliJntPos[m_armId,i];
 END_FOR
 
 
@@ -1066,12 +1074,14 @@ END_FOR
       <LineId Id="27" Count="0" />
       <LineId Id="30" Count="0" />
       <LineId Id="28" Count="1" />
+      <LineId Id="88" Count="0" />
       <LineId Id="31" Count="0" />
       <LineId Id="41" Count="0" />
       <LineId Id="38" Count="0" />
       <LineId Id="66" Count="0" />
       <LineId Id="68" Count="1" />
       <LineId Id="72" Count="0" />
+      <LineId Id="89" Count="0" />
       <LineId Id="67" Count="0" />
       <LineId Id="22" Count="1" />
       <LineId Id="32" Count="0" />
@@ -1084,8 +1094,11 @@ END_FOR
       <LineId Id="34" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos">
-      <LineId Id="160" Count="1" />
-      <LineId Id="184" Count="23" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="184" Count="17" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="207" Count="1" />
+      <LineId Id="202" Count="2" />
       <LineId Id="165" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_BasicInstru">

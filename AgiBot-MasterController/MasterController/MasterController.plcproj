@@ -775,13 +775,13 @@
     <Compile Include="Sandbox\FB_MasterArmCheck.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Sandbox\FB_RedunJntControl_ver2.TcPOU">
+    <Compile Include="Sandbox\FB_RedunJntControl_bak.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Sandbox\FB_RedunJntControl_bak2.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Sandbox\FB_RedunJntControl_bak.TcPOU">
+    <Compile Include="Sandbox\FB_RedunJntControl_ver2.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TaskArmControl.TcTTO">

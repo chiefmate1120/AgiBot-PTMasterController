@@ -604,6 +604,9 @@ FOR i:=1 TO g_mArmNum DO
 				m_nextMasterArmState[i]:=MasterArmState_Standby;
 			END_IF
 		
+			
+			
+		(*
 		//MasterSlave
 		MasterArmState_MasterSlave:
 			IF (g_motionTest.m_MSPrecisionTest[i]=FALSE) THEN							
@@ -623,6 +626,41 @@ FOR i:=1 TO g_mArmNum DO
 				IF enableClutch THEN
 					m_nextMasterArmState[i] := MasterArmState_Clutch; 
 				END_IF
+			END_IF
+		*)
+			
+		
+		//MasterSlave
+		MasterArmState_MasterSlave:
+			IF (g_motionTest.m_MSPrecisionTest[i]=FALSE)THEN							
+				// to standdy
+				IF  (SlaveArmState_InstruReady <> m_instruArmState[i] AND SlaveArmState_MasterSlave <> m_instruArmState[i])
+					OR SlaveArmState_ScopeReady <> m_scopeArmState OR NOT(i_masterInputDataPool.m_cartStatus.m_surgonReady)
+					OR m_armSwitchFlag[i] THEN
+					m_nextMasterArmState[i]:=MasterArmState_Standby;
+				// to clutch
+				ELSIF enableClutch THEN
+					m_nextMasterArmState[i] := MasterArmState_Clutch; 
+				//to standby
+				ELSIF NOT m_slaveOnLine THEN
+					m_nextMasterArmState[i] := MasterArmState_Standby;
+				END_IF
+			ELSE
+				IF enableClutch THEN
+					//m_nextMasterArmState[i] := MasterArmState_Clutch; 
+				END_IF
+								
+				// to standdy
+				IF  (SlaveArmState_InstruReady <> m_instruArmState[i] AND SlaveArmState_MasterSlave <> m_instruArmState[i])
+					OR SlaveArmState_ScopeReady <> m_scopeArmState OR m_armSwitchFlag[i] THEN
+					m_nextMasterArmState[i]:=MasterArmState_Standby;
+				// to clutch
+				ELSIF enableClutch THEN
+					m_nextMasterArmState[i] := MasterArmState_Clutch; 
+				//to standby
+				ELSIF NOT m_slaveOnLine THEN
+					m_nextMasterArmState[i] := MasterArmState_Standby;
+				END_IF				
 			END_IF
 			
 			
@@ -704,8 +742,17 @@ FOR i:=1 TO g_mArmNum DO
 	
 	// to MS precision test
 	IF (g_motionTest.m_MSPrecisionTest[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_MasterSlave) THEN
-		m_nextMasterArmState[i] := MasterArmState_MasterSlave;
+		//m_nextMasterArmState[i] := MasterArmState_MasterSlave;
 	END_IF
+	
+	// to MS precision test
+	IF (g_motionTest.m_MSPrecisionTest[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_MasterSlave) THEN
+		IF (m_masterArmState[i]=MasterArmState_Ready) THEN
+			IF SlaveArmState_InstruReady = m_instruArmState[i] AND SlaveArmState_ScopeReady = m_scopeArmState AND NOT(i_masterInputDataPool.m_cartStatus.m_consoleInAdjust) THEN
+				m_nextMasterArmState[i] := MasterArmState_MasterSlave;
+			END_IF
+		END_IF		
+	END_IF	
 	
 	// to MasterArmState_TestCycle
 	IF (g_cycleTest.m_enterCycleTestMode[i] OR g_cycleTest.m_enterESDTest[i]) AND NOT(m_masterArmState[i]=MasterArmState_CycleTest) THEN
@@ -758,16 +805,6 @@ FOR i:=1 TO g_mArmNum DO
 	ELSIF NOT GVL_armCali.g_armEnterCaliMode[i] AND (m_masterArmState[i]=MasterArmState_armCali) THEN
 		m_nextMasterArmState[i] := MasterArmState_Init;
 	END_IF	
-	
-	// to MasterArmState_ResponseTest
-	IF (g_responseTest.m_testMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_ResponseTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_ResponseTest;
-	END_IF
-	
-	//MasterArmState_ResponseTest exit
-	IF (g_responseTest.m_testMode[i]=FALSE) AND (m_masterArmState[i]=MasterArmState_ResponseTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_Standby;
-	END_IF
 	
 	//fault mask
 	IF (g_specialSignal.m_faultMask[i]) THEN
@@ -955,9 +992,17 @@ END_FOR]]></ST>
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.stateMachine">
-      <LineId Id="1424" Count="209" />
+      <LineId Id="1424" Count="122" />
+      <LineId Id="1883" Count="2" />
+      <LineId Id="1547" Count="22" />
+      <LineId Id="1852" Count="30" />
+      <LineId Id="1848" Count="3" />
+      <LineId Id="1570" Count="63" />
       <LineId Id="1800" Count="13" />
       <LineId Id="1648" Count="1" />
+      <LineId Id="1889" Count="6" />
+      <LineId Id="1886" Count="0" />
+      <LineId Id="1888" Count="0" />
       <LineId Id="1814" Count="17" />
       <LineId Id="1673" Count="1" />
       <LineId Id="1832" Count="7" />
@@ -970,8 +1015,6 @@ END_FOR]]></ST>
       <LineId Id="1787" Count="4" />
       <LineId Id="1786" Count="0" />
       <LineId Id="1769" Count="0" />
-      <LineId Id="1850" Count="7" />
-      <LineId Id="1848" Count="1" />
       <LineId Id="1727" Count="2" />
       <LineId Id="1708" Count="2" />
       <LineId Id="1676" Count="22" />

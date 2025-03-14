@@ -122,6 +122,11 @@ VAR
 	
 	//current DH joint position
 	m_armDHJntPos:Vec7d;
+	
+	// joint position at link encoder calibrated point
+	m_linkEncCaliJntPos :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF LREAL :=
+		[0.0, -PI/2, 0.0, -pi, pi, -PI/2, 0.0,
+		 0.0, -PI/2, 0.0, 0.0, pi, PI/2, 0.0];
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -497,7 +502,7 @@ vecMultiNum(m_maxjntAcc,3,m_maxjntJerk);
 
 //original joint position
 FOR i:=1 TO g_mJntNum BY 1 DO
-	m_originJntPos[i]:=GVL_ArmJointCaliData.g_linkEncCaliJntPos[m_armId,i];
+	m_originJntPos[i]:=m_linkEncCaliJntPos[m_armId,i];
 END_FOR
 
 
