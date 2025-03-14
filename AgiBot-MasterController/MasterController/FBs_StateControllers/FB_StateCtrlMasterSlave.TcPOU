@@ -88,7 +88,7 @@ VAR
 	rot2:Mat3d;
 	
 	//rotation angle
-	m_rotAngle:LREAL:=20*g_deg2Rad;	
+	m_rotAngle:LREAL:=15*g_deg2Rad;	
 	
 	o_targetJntPos1,o_targetJntPos2,o_targetJntPos3:Vec7d;
 	
