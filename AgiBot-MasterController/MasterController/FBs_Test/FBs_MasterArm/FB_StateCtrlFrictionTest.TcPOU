@@ -368,7 +368,7 @@ CASE m_testStep OF
 	50: //update the joint id
 		m_jntId:=m_jntId+1;
 		m_trajId:=1;
-		IF (m_jntId<g_frictionTest.m_jntIdEnd[m_armId]) THEN
+		IF (m_jntId<=g_frictionTest.m_jntIdEnd[m_armId]) THEN
 			m_testStep:=10;
 		ELSE
 			m_testStep:=60;
