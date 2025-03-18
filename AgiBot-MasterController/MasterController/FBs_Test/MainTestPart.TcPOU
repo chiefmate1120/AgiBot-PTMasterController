@@ -339,10 +339,6 @@ FOR i:=1 TO 2 BY 1 DO
 	END_IF
 END_FOR
 
-IF (g_frictionTest.m_writeData[m_armSelect]=TRUE) THEN
-	//gvl_armTest.g_writeData[m_armSelect]:=FALSE;
-	//m_writeStart:=TRUE;
-END_IF
 
 IF (m_writeStart=TRUE) THEN
 	m_writeStep:=0;
@@ -391,22 +387,22 @@ CASE m_writeStep OF
 	10: //enable
 		m_fileId:=m_fileId+1;
 		IF (m_fileId=1) THEN
-			sFileName:='D:\file1.txt';
+			sFileName:='C:\file1.txt';
 			m_data:=m_jntPosD2;
 		ELSIF (m_fileId=2) THEN
-			sFileName:='D:\file2.txt';
+			sFileName:='C:\file2.txt';
 			m_data:=m_jntPosD3;
 		ELSIF (m_fileId=3) THEN
-			sFileName:='D:\file3.txt';
+			sFileName:='C:\file3.txt';
 			m_data:=m_jntTrqD2;
 		ELSIF (m_fileId=4) THEN
-			sFileName:='D:\file4.txt';
+			sFileName:='C:\file4.txt';
 			m_data:=m_jntTrqD3;
 		ELSIF (m_fileId=5) THEN
-			sFileName:='D:\file5.txt';
+			sFileName:='C:\file5.txt';
 			m_data:=m_cmdDHjntPosD2;
 		ELSIF (m_fileId=6) THEN
-			sFileName:='D:\file6.txt';
+			sFileName:='C:\file6.txt';
 			m_data:=m_cmdDHjntPosD3;
 		END_IF	
 		m_testDataWriteEnable:=TRUE;
@@ -668,8 +664,7 @@ END_CASE
     <LineIds Name="MainTestPart.writeArmTestData">
       <LineId Id="19" Count="0" />
       <LineId Id="291" Count="6" />
-      <LineId Id="300" Count="3" />
-      <LineId Id="240" Count="0" />
+      <LineId Id="310" Count="0" />
       <LineId Id="31" Count="1" />
       <LineId Id="37" Count="0" />
       <LineId Id="155" Count="0" />

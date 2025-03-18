@@ -7154,7 +7154,22 @@
                 <l n="UserManagementAccessRights" t="ArrayList" />
               </o>
               <o>
-                <a n="ConfiguredComplexInputs" et="ComplexInput" />
+                <a n="ConfiguredComplexInputs" cet="ComplexInput">
+                  <o>
+                    <n n="DescriptionTree" />
+                    <o n="VisualElemMemberList" t="VisualElemMemberList">
+                      <l n="VisualElemMemberList" t="VisualElemMemberCollection" cet="VisualElemMember">
+                        <o>
+                          <v n="Id">1186196937L</v>
+                          <v n="Value">"g_frictionTest.m_writeData[1]"</v>
+                        </o>
+                      </l>
+                    </o>
+                    <v n="SignatureName">"Visu_TapInput"</v>
+                    <v n="Name">"Tap"</v>
+                    <v n="Description">"Configure the tapping of a Boolean variable"</v>
+                  </o>
+                </a>
                 <l n="Elements" t="ArrayList" />
                 <n n="VisualElementDescription" />
                 <o n="VisualElemMemberList" t="VisualElemMemberList">
@@ -7294,7 +7309,7 @@
                     </o>
                     <o>
                       <v n="Id">390574330L</v>
-                      <v n="Value">"数据正在导出"</v>
+                      <v n="Value">"导出数据"</v>
                     </o>
                     <o>
                       <v n="Id">2597686782L</v>
@@ -7306,7 +7321,7 @@
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
-                      <v n="Value">"203"</v>
+                      <v n="Value">"1132"</v>
                     </o>
                   </l>
                 </o>
@@ -17857,10 +17872,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>ac72811a-1166-4b20-ab46-159dc7494186</v>
-                <v>FB_Exit</v>
-                <v>c60fb9ad-e784-43db-8c27-b3a00f6d4c70</v>
                 <v>FB_Reinit</v>
                 <v>3c5c172a-3b0b-4bf2-9b0b-e125680c72b2</v>
+                <v>FB_Exit</v>
+                <v>c60fb9ad-e784-43db-8c27-b3a00f6d4c70</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{a626f0cb-5cd3-4850-9afd-1e6656100e39}</v>
