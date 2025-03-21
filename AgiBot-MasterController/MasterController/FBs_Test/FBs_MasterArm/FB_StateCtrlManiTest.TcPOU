@@ -52,7 +52,11 @@ END_IF
 *)
 
 calcCmdJntPos_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
-]]></ST>
+
+// data monitor
+g_maniTest.m_armJntPos:=i_masterArm.curJntPos;
+g_maniTest.m_armJntTrq:=i_masterArm.curJntTrq;
+g_maniTest.m_motStart:=g_RobotToPlc;]]></ST>
       </Implementation>
     </Method>
     <Method Name="calcCmdJntPos_BasicInstru" Id="{0b102ad8-53f7-407f-bae1-08a5fc9990a7}">
@@ -384,6 +388,7 @@ copyCmds(r_masterArmCtrlCmd);
       <LineId Id="124" Count="0" />
       <LineId Id="144" Count="1" />
       <LineId Id="143" Count="0" />
+      <LineId Id="159" Count="3" />
       <LineId Id="146" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlManiTest.calcCmdJntPos_BasicInstru">

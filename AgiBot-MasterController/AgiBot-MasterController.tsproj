@@ -1987,6 +1987,11 @@
 							<Comment><![CDATA[stop botton]]></Comment>
 							<Type>BOOL</Type>
 						</Var>
+						<Var>
+							<Name>GVL_UIData.g_RobotToPlc</Name>
+							<Comment><![CDATA[start signal]]></Comment>
+							<Type>BOOL</Type>
+						</Var>
 					</Vars>
 					<Vars VarGrpType="2" AreaNo="1">
 						<Name>TaskArmControl Outputs</Name>
@@ -2159,15 +2164,12 @@
 							<Comment><![CDATA[motor data]]></Comment>
 							<Type GUID="{BDF64DB4-C288-8F88-2FC3-664B5930CAEB}">ST_armMotorData</Type>
 						</Var>
-						<Var>
-							<Name>GVL_UIData.g_RobotToPlc</Name>
-							<Type>BOOL</Type>
-						</Var>
 					</Vars>
 					<Vars VarGrpType="2" ContextId="3" AreaNo="49">
 						<Name>TaskSafetyCheck Outputs</Name>
 						<Var>
 							<Name>GVL_UIData.g_RunToRobot</Name>
+							<Comment><![CDATA[no use]]></Comment>
 							<Type>BOOL</Type>
 						</Var>
 					</Vars>

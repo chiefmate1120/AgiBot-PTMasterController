@@ -28,8 +28,8 @@ END_VAR
 
 //robot manipulate force analysis
 VAR_GLOBAL
-	g_RunToRobot AT %Q*: BOOL;
-	g_RobotToPlc AT %I*: BOOL;
+	g_RunToRobot AT %Q*: BOOL; //no use
+	g_RobotToPlc AT %I*: BOOL; //start signal
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>
