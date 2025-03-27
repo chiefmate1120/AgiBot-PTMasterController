@@ -196,12 +196,12 @@ VAR_GLOBAL CONSTANT
 			    0.3061,    0.3275,    0.4515,   1.5708,0,-1.5708,0,
 			    0.1625,    0.2014,    0.4395,   1.5708,0,-1.5708,0];
 		
-		(*
+		
 		//Accuracy testing points under the condition of unchanged posture
 		//Test sequence:C-D-H-G-B-A-E-F
 		//If testing the accuracy of a single arm, it is necessary to test point by point
 		//If testing master-slave accuracy, it is necessary to test point by point
-		g_armPoseA1:ARRAY [1..8,1..7] OF LREAL:=[
+		g_armPoseA1_Origal:ARRAY [1..8,1..7] OF LREAL:=[
 			0.1341,   -0.2232,    0.1479,   1.5708,0,-1.5708,0,
 			0.3136,   -0.3808,    0.1698,   1.5708,0,-1.5708,0,
 			0.3136,   -0.3808,    0.5270,   1.5708,0,-1.5708,0,
@@ -210,7 +210,7 @@ VAR_GLOBAL CONSTANT
 			0.4060,    0.0735,     0.0474,   1.5708,0,-1.5708,0,
 			0.4060,    0.0735,     0.5716,   1.5708,0,-1.5708,0,
 			0.2498,    0.0735,     0.530,   1.5708,0,-1.5708,0];
-		g_armPoseA2:ARRAY [1..8,1..7] OF LREAL:=[
+		g_armPoseA2_Origal:ARRAY [1..8,1..7] OF LREAL:=[
 			0.2498,    -0.0735,     0.0626,   1.5708,0,-1.5708,0,
 			0.4060,    -0.0735,     0.0474,   1.5708,0,-1.5708,0,
 			0.4060,    -0.0735,     0.5716,   1.5708,0,-1.5708,0,
@@ -219,7 +219,13 @@ VAR_GLOBAL CONSTANT
 			0.3136,      0.3808,     0.1698,   1.5708,0,-1.5708,0,
 			0.3136,      0.3808,     0.4870,   1.5708,0,-1.5708,0,
 			0.1341,      0.2232,     0.4720,   1.5708,0,-1.5708,0];	
-		*)
+		
+		
+		//center point
+		g_centerPnt:ARRAY[1..3] OF LREAL:=[0.3650,0,0.38285];
+		
+		//sacle factor
+		g_scaleFactor:LREAL:=0.5;
 		
 		//reassign value
 		g_armPoseA1:ARRAY [1..8,1..7] OF LREAL:=g_armPoseA1_40;

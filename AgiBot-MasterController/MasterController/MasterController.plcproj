@@ -439,6 +439,9 @@
     <Compile Include="FBs_Test\FBs_BasicFun\FB_BasicFun.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FBs_Test\FBs_BasicFun\FB_calTestPnt.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="FBs_Test\FBs_BasicFun\FB_CSV_TextMode_ReadWrite.TcPOU">
       <SubType>Code</SubType>
     </Compile>
