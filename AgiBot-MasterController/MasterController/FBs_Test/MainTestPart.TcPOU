@@ -260,7 +260,8 @@ FOR i:=1 TO 2  DO
 	FOR j:=1 TO GVL_Const.g_controlModeNum DO 
 		//Monitoring button signal rising edge
 		m_controlMode_TRIG[i,j](CLK:=m_uiControlMode[i,j],Q=>);
-		IF m_controlMode_TRIG[i,j].Q THEN 			
+		
+		IF (m_controlMode_TRIG[i,j].Q) AND (g_motionTest.m_controlMode[i]=0) THEN 			
 			g_motionTest.m_controlMode[i]:=j;			
 		END_IF
 		
@@ -624,7 +625,9 @@ END_CASE
       <LineId Id="200" Count="0" />
       <LineId Id="156" Count="1" />
       <LineId Id="204" Count="0" />
-      <LineId Id="158" Count="1" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="258" Count="0" />
+      <LineId Id="159" Count="0" />
       <LineId Id="161" Count="0" />
       <LineId Id="163" Count="0" />
       <LineId Id="205" Count="1" />
