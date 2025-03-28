@@ -20,6 +20,9 @@ STRUCT
 	
 	//torque sensor data
 	m_sensorData:ARRAY[1..6] OF LREAL;
+	
+	//friction factor
+	m_frictionFactor:ARRAY[1..2] OF vec7d;
 END_STRUCT
 END_TYPE
 ]]></Declaration>

@@ -74,7 +74,10 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[FOR i:=1 TO g_mJntNum DO
+        <ST><![CDATA[
+m_frictionCompScale:=g_maniTest.m_frictionFactor[m_armIdx];
+
+FOR i:=1 TO g_mJntNum DO
 	transitScale := LIMIT(0, ABS(i_jntVel[i]/m_cFrictionVelThres),1);
 	cFriction:=m_frictionParamA[i]*ABS(i_jntGravity[i])+m_frictionParamB[i]*m_frictionCompScale[i];
 	cFriction:= transitScale * sign(i_jntVel[i]) * cFriction;
@@ -93,6 +96,7 @@ END_FOR]]></ST>
       <LineId Id="21" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterFriciton.run">
+      <LineId Id="105" Count="2" />
       <LineId Id="82" Count="7" />
       <LineId Id="45" Count="0" />
     </LineIds>
