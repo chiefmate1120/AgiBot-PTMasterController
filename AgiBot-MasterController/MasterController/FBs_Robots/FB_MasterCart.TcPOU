@@ -389,7 +389,7 @@ m_jntTestStartMotionLast:=m_jntTestStartMotion;
 
 CASE m_testStepJntPos OF 
 	0: //Trajectory parameter initialization		 
-		startDHPos:=m_curJntPos;				
+		startDHPos:=m_curJntPos;
 		IF (g_motionTest.m_jntPosIncModeCar=FALSE) THEN
 			FOR i:=4 TO 7 BY 1 DO
 				m_maxjntVel[i]:=g_motionTest.m_targetJntVelCar[i-3];
@@ -402,7 +402,7 @@ CASE m_testStepJntPos OF
 		
 		//velocity and acceleration
 		vecMultiNum(m_maxjntVel,5,m_maxjntAcc);
-		vecMultiNum(m_maxjntAcc,5,m_maxjntJerk);				
+		vecMultiNum(m_maxjntAcc,5,m_maxjntJerk);
 		m_testStepJntPos:=10;	
 		
 		

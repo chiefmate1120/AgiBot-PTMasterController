@@ -133,7 +133,7 @@ END_FOR
 g_systemInfo.m_armInfo[k].m_curJntPos:=i_masterArm.curJntPos;
 g_systemInfo.m_armInfo[k].m_curLinkPos:=i_masterArm.curLinkPos;
 g_systemInfo.m_armInfo[k].m_curJntPosDegMM:=m_unitFun.masterArmUnit2User(i_dataSystem:= i_masterArm.curJntPos);
-
+g_systemInfo.m_armInfo[k].m_curJntVelDegMM:=m_unitFun.masterArmUnit2User(i_dataSystem:= i_masterArm.curJntVel);
 ]]></ST>
       </Implementation>
     </Method>
@@ -172,6 +172,8 @@ END_FOR
 g_systemInfo.m_cartInfo.m_curJntPos:=m_masterCart.m_curJntPos;
 g_systemInfo.m_cartInfo.m_curLinkPos:=m_masterCart.m_curLinkPos;
 g_systemInfo.m_cartInfo.m_curJntPosDegMM:=m_unitFun.carArmUnit2User(i_dataSystem:= m_masterCart.m_curJntPos);
+g_systemInfo.m_cartInfo.m_curJntVelDegMM:=m_unitFun.carArmUnit2User(i_dataSystem:= m_masterCart.m_curJntVel);
+
 
 g_systemInfo.m_cartInfo.m_jntMax:=GVL_CartJointParameters.g_maxJntPos;
 g_systemInfo.m_cartInfo.m_jntMin:=GVL_CartJointParameters.g_minJntPos;
@@ -194,9 +196,9 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
+        <ST><![CDATA[(*
 //go home signal
-FOR m_armId:=1 TO 2 BY 1 DO
+FOR m_armId:=1 TO g_mArmNum BY 1 DO
 	FOR i:=1 TO g_mJntNum BY 1 DO
 		IF (g_motionTest.m_goHome[m_armId][i]=TRUE) THEN
 			g_motionTest.m_controlMode[m_armId]:=1;
@@ -217,6 +219,22 @@ FOR m_armId:=1 TO 2 BY 1 DO
 		END_IF
 	END_FOR
 END_FOR
+*)
+
+
+//go home signal
+FOR m_armId:=1 TO g_mArmNum BY 1 DO
+	FOR i:=1 TO g_mJntNum BY 1 DO
+		IF (g_motionTest.m_goHome[m_armId][i]) OR (g_motionTest.m_singleMotorStartMotion[m_armId][i]) OR (g_motionTest.m_singleMotorStartIncMotion[m_armId][i]) THEN
+			g_motionTest.m_controlMode[m_armId]:=1;
+			g_motionTest.m_startMotion[m_armId]:=TRUE;				
+			EXIT; //exit for cycle
+		END_IF
+	END_FOR
+END_FOR
+
+
+
 ]]></ST>
       </Implementation>
     </Method>
@@ -589,6 +607,8 @@ END_CASE
       <LineId Id="78" Count="1" />
       <LineId Id="85" Count="0" />
       <LineId Id="84" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="93" Count="0" />
       <LineId Id="82" Count="0" />
       <LineId Id="80" Count="0" />
       <LineId Id="75" Count="1" />
@@ -605,6 +625,13 @@ END_CASE
       <LineId Id="71" Count="1" />
       <LineId Id="76" Count="3" />
       <LineId Id="59" Count="1" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="156" Count="1" />
+      <LineId Id="163" Count="5" />
+      <LineId Id="181" Count="2" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="184" Count="1" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.dataWriteExp">

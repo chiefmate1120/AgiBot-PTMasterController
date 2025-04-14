@@ -127,6 +127,9 @@ VAR
 	m_linkEncCaliJntPos :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF LREAL :=
 		[0.0, -PI/2, 0.0, -pi, pi, -PI/2, 0.0,
 		 0.0, -PI/2, 0.0, 0.0, pi, PI/2, 0.0];
+		 
+	//home joint position
+	m_homeJntPos,m_homeJntPos_UnitUser:Vec7d;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -469,7 +472,7 @@ VAR_IN_OUT
 	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
 END_VAR
 VAR
-	i,j:INT;
+	i,j,k:INT;
 	poseVec:Vec6d;
 	originPose:ST_Frame;
 	gripperRollFlip:BOOL;
@@ -540,6 +543,13 @@ FOR i:=1 TO GVL_Const.g_testPointNum BY 1 DO
 	m_workspacePosArr[i].m_rot:=originPose.m_rot;
 END_FOR
 
+
+
+//home position
+FOR i:=1 TO g_mJntNum BY 1 DO
+	m_homeJntPos[i]:=gvl_const.g_jntDHInitPos[m_armId,i];
+END_FOR
+m_homeJntPos_UnitUser:=m_unitFun.masterArmUnit2User(m_homeJntPos);
 
 ]]></ST>
       </Implementation>
@@ -676,7 +686,7 @@ VAR
 	curJntPos:Vec7d;
 	tgtJntPos:Vec7d;
 	tgtJntPosInc:Vec7d;
-	i:INT;
+	i:INT;	
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -684,8 +694,47 @@ CASE m_testStep OF
 	0: //Trajectory parameter initialization
 		m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);	
 		tgtJntPos:=m_unitFun.masterArmUnit2System(i_dataTest:= g_motionTest.m_targetJntPos[m_armId]);
-		//m_basicFun.activeJnt2DH(i_activeJntPos:= tgtJntPos, o_DHJntPos=> m_endDHPos);		
 		m_endDHPos:=tgtJntPos;
+		
+		//go home
+		FOR i:=1 TO 7 BY 1 DO
+			IF (g_motionTest.m_goHome[m_armId][i]=TRUE) THEN					
+					m_endDHPos:=m_startDHPos;
+					m_endDHPos[i]:=m_homeJntPos[i];
+				EXIT; //exit for cycle
+			END_IF
+		END_FOR
+		
+		//single motor target joint position
+		FOR i:=1 TO 7 BY 1 DO
+			IF (g_motionTest.m_singleMotorStartMotion[m_armId][i]=TRUE) THEN					
+					m_endDHPos:=m_startDHPos;
+					m_endDHPos[i]:=tgtJntPos[i];
+				EXIT; //exit for cycle
+			END_IF
+		END_FOR		
+		
+		//single motor incresement control
+		FOR i:=1 TO 7 BY 1 DO
+			IF (g_motionTest.m_singleMotorStartIncMotion[m_armId][i]=TRUE) THEN	
+					tgtJntPosInc:=m_unitFun.masterArmUnit2System(i_dataTest:= g_motionTest.m_targetJntPosInc[m_armId]);				
+					m_endDHPos:=m_startDHPos;
+					m_endDHPos[i]:=m_startDHPos[i]+tgtJntPosInc[i];
+				EXIT; //exit for cycle
+			END_IF
+		END_FOR
+		
+		//joint test mode
+		IF (g_motionTest.m_jntPosIncMode[m_armId]=TRUE) THEN
+			tgtJntPosInc:=m_unitFun.masterArmUnit2System(i_dataTest:= g_motionTest.m_targetJntPosInc[m_armId]);
+			vecAdd(m_startDHPos,tgtJntPosInc,m_endDHPos);
+		END_IF
+		
+		//limit the joint position
+		FOR i:=1 TO 7 BY 1 DO
+			m_startDHPos[i]:=LIMIT(gvl_const.g_minJntDHPos[m_armId,i],m_startDHPos[i],gvl_const.g_maxJntDHPos[m_armId,i]);
+			m_endDHPos[i]:=LIMIT(gvl_const.g_minJntDHPos[m_armId,i],m_endDHPos[i],gvl_const.g_maxJntDHPos[m_armId,i]);
+		END_FOR
 		
 		//velocity initial
 		m_maxjntVel:=m_unitFun.masterArmUnit2System(i_dataTest:= g_motionTest.m_targetJntVel[m_armId]);
@@ -696,21 +745,7 @@ CASE m_testStep OF
 			m_maxjntVel[i]:=LIMIT(-GVL_ArmJointParameters.g_maxJntVel[i],m_maxjntVel[i],GVL_ArmJointParameters.g_maxJntVel[i]);
 		END_FOR		
 		vecMultiNum(m_maxjntVel,3,m_maxjntAcc);
-		vecMultiNum(m_maxjntAcc,3,m_maxjntJerk);
-		
-		//joint test mode
-		IF (g_motionTest.m_jntPosIncMode[m_armId]=TRUE) THEN
-			//curJntPos:=i_masterArm.curJntPos;
-			tgtJntPosInc:=m_unitFun.masterArmUnit2System(i_dataTest:= g_motionTest.m_targetJntPosInc[m_armId]);
-			vecAdd(m_startDHPos,tgtJntPosInc,m_endDHPos);
-			//m_basicFun.activeJnt2DH(i_activeJntPos:= m_endJntPos, o_DHJntPos=> m_endDHPos);
-		END_IF
-		
-		//limit the joint position
-		FOR i:=1 TO 7 BY 1 DO
-			m_startDHPos[i]:=LIMIT(gvl_const.g_minJntDHPos[m_armId,i],m_startDHPos[i],gvl_const.g_maxJntDHPos[m_armId,i]);
-			m_endDHPos[i]:=LIMIT(gvl_const.g_minJntDHPos[m_armId,i],m_endDHPos[i],gvl_const.g_maxJntDHPos[m_armId,i]);
-		END_FOR
+		vecMultiNum(m_maxjntAcc,3,m_maxjntJerk);		
 		
 		//motion distance judgement
 		vecSub(m_endDHPos,m_startDHPos,m_motDist);
@@ -1129,7 +1164,12 @@ END_CASE]]></ST>
       <LineId Id="76" Count="7" />
       <LineId Id="72" Count="0" />
       <LineId Id="85" Count="1" />
+      <LineId Id="141" Count="0" />
       <LineId Id="84" Count="0" />
+      <LineId Id="143" Count="1" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="146" Count="1" />
+      <LineId Id="145" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMotionTest.jntContinuousPoint">
       <LineId Id="34" Count="3" />
@@ -1177,22 +1217,25 @@ END_CASE]]></ST>
       <LineId Id="19" Count="0" />
       <LineId Id="52" Count="0" />
       <LineId Id="103" Count="0" />
-      <LineId Id="86" Count="0" />
       <LineId Id="60" Count="0" />
       <LineId Id="166" Count="0" />
-      <LineId Id="108" Count="0" />
-      <LineId Id="106" Count="0" />
-      <LineId Id="141" Count="3" />
-      <LineId Id="155" Count="0" />
-      <LineId Id="138" Count="0" />
-      <LineId Id="107" Count="0" />
+      <LineId Id="206" Count="0" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="222" Count="1" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="216" Count="1" />
+      <LineId Id="208" Count="1" />
+      <LineId Id="224" Count="5" />
+      <LineId Id="210" Count="2" />
+      <LineId Id="230" Count="1" />
+      <LineId Id="236" Count="0" />
+      <LineId Id="232" Count="3" />
       <LineId Id="104" Count="1" />
       <LineId Id="65" Count="0" />
       <LineId Id="71" Count="0" />
-      <LineId Id="78" Count="0" />
       <LineId Id="110" Count="0" />
       <LineId Id="72" Count="0" />
-      <LineId Id="111" Count="0" />
       <LineId Id="61" Count="0" />
       <LineId Id="64" Count="0" />
       <LineId Id="182" Count="0" />
@@ -1201,6 +1244,9 @@ END_CASE]]></ST>
       <LineId Id="181" Count="0" />
       <LineId Id="180" Count="0" />
       <LineId Id="178" Count="0" />
+      <LineId Id="196" Count="8" />
+      <LineId Id="193" Count="0" />
+      <LineId Id="195" Count="0" />
       <LineId Id="124" Count="4" />
       <LineId Id="121" Count="0" />
       <LineId Id="123" Count="0" />

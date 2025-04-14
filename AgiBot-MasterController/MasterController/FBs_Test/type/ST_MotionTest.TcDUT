@@ -81,7 +81,7 @@ STRUCT
 	
 	//if go home during master-slave operation
 	m_goHomeFlag:BOOL:=TRUE;
-
+	
 	//if scale the work space
 	m_scaleSpace:BOOL:=FALSE;	
 	
@@ -94,7 +94,7 @@ STRUCT
 	m_jntPosIncMode:ARRAY[1..g_mArmNum] OF BOOL;
 	
 	//target joint position
-	m_targetJntPosTest:ARRAY[1..g_mArmNum] OF Vec7d;
+	//m_targetJntPosTest:ARRAY[1..g_mArmNum] OF Vec7d;
 	
 	//target joint velocity
 	m_targetJntVel:ARRAY[1..g_mArmNum] OF Vec7d;
@@ -126,6 +126,9 @@ STRUCT
 	//go home car
 	m_goHomeCar:Vec4b;
 	
+	//m_jntEnable
+	m_jntEnableCar:Vec4b;
+	
 	//car target joint position
 	m_targetJntPosCar:Vec4d;
 	
@@ -152,6 +155,16 @@ STRUCT
 	
 	//cover command current-car
 	m_coverCmdCurrentCar:BOOL;
+	
+	
+	
+	//single motor target joint position control interface---car
+	m_singleMotorStartMotion_Car:Vec4b;
+	m_singleMotorStartIncMotion_Car:Vec4b;	
+	
+	//single motor target joint position control interface
+	m_singleMotorStartMotion:ARRAY[1..g_mArmNum] OF Vec7b;
+	m_singleMotorStartIncMotion:ARRAY[1..g_mArmNum] OF Vec7b;
 END_STRUCT
 END_TYPE
 ]]></Declaration>
