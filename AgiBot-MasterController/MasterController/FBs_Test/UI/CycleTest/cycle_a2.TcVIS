@@ -11811,7 +11811,7 @@
                     </o>
                     <o>
                       <v n="Id">2477733581L</v>
-                      <v n="Value">"g_cycleTest.m_targetJntVel[2][6]"</v>
+                      <v n="Value">"g_cycleTest.m_targetJntVel[2][7]"</v>
                     </o>
                     <o>
                       <v n="Id">823443203L</v>
@@ -15887,10 +15887,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>bf00d852-043b-470d-b405-fa7562142418</v>
-                <v>FB_Reinit</v>
-                <v>bdb3d8ad-fae5-4579-844f-d4ef064c3fc4</v>
                 <v>FB_Exit</v>
                 <v>9a023b15-63b5-4b65-9bff-74a4e5d52da6</v>
+                <v>FB_Reinit</v>
+                <v>bdb3d8ad-fae5-4579-844f-d4ef064c3fc4</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{17a879e9-cba6-4bb2-a7b3-0483319c85ac}</v>
