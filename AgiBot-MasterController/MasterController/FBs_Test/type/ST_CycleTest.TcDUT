@@ -59,7 +59,8 @@ STRUCT
 	m_finishCar:BOOL;
 	
 	//joint enable
-	m_jntEnable:ARRAY[1..g_mArmNum] OF Vec7i;	
+	m_jntEnable:ARRAY[1..g_mArmNum] OF Vec7i;
+	//m_jntEnableCar:Vec4i:=[1,1,1,1];
 	
 	//output the arm joint position
 	m_armDHJntPos:ARRAY[1..g_mArmNum] OF Vec7d;

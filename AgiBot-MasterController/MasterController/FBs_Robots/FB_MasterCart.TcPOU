@@ -1016,7 +1016,11 @@ FOR i:=1 TO 4 DO
 	
 	//car joint cycle test-----add code for test
 	IF (m_startMotion=TRUE) OR (g_motionTest.m_enterJntTestCar=TRUE) OR (g_motionTest.m_carJntCurTest=TRUE) THEN
-		m_cartJoints[i].enable();
+		IF (g_motionTest.m_jntEnableCar[i]=TRUE) THEN
+			m_cartJoints[i].enable();
+		ELSE
+			m_cartJoints[i].disable();
+		END_IF		
 	END_IF
 	
 	// set command position
@@ -1440,7 +1444,10 @@ END_FOR]]></ST>
       <LineId Id="68" Count="0" />
       <LineId Id="55" Count="4" />
       <LineId Id="94" Count="0" />
-      <LineId Id="78" Count="2" />
+      <LineId Id="78" Count="1" />
+      <LineId Id="137" Count="1" />
+      <LineId Id="140" Count="1" />
+      <LineId Id="139" Count="0" />
       <LineId Id="76" Count="1" />
       <LineId Id="60" Count="0" />
       <LineId Id="119" Count="1" />

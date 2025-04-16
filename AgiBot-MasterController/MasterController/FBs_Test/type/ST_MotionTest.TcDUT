@@ -127,7 +127,7 @@ STRUCT
 	m_goHomeCar:Vec4b;
 	
 	//m_jntEnable
-	m_jntEnableCar:Vec4b;
+	m_jntEnableCar:Vec4b:=[TRUE,TRUE,TRUE,TRUE];
 	
 	//car target joint position
 	m_targetJntPosCar:Vec4d;
