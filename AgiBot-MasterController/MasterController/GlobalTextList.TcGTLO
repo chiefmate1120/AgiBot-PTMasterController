@@ -201,6 +201,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"575"</v>
+              <v n="TextDefault">"主从测试-缩放空间"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"1371"</v>
               <v n="TextDefault">"主从测试中是否回原点"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -988,6 +993,11 @@
             <o>
               <v n="TextID">"258"</v>
               <v n="TextDefault">"结束关节ID"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"983"</v>
+              <v n="TextDefault">"缩放系数"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
