@@ -105,6 +105,9 @@ VAR
 	//joint position gap---监视器升降  监视器旋转  扶手升降  脚踏伸缩
 	m_jntDist:Vec4d:=[0,0,0,0];	
 	
+	//motion distance
+	m_motDist:Vec7d;
+	
 	//planner
 	m_Planner: FB_TrajMoveJ;
 	
@@ -233,7 +236,8 @@ END_VAR
 VAR
 	i:INT;
 	homeDHPos,startDHPos,endDHPos :Vec4d;
-	cmdJntPos,cmdJntVel,cmdJntAcc:Vec7d;	
+	cmdJntPos,cmdJntVel,cmdJntAcc:Vec7d;
+	tmpVel:Vec4d;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[//init parameters flag
@@ -256,7 +260,7 @@ CASE m_testStep OF
 		m_pointNum:=1;
 		m_testStep:=10;
 		
-		//target DH joint position
+		//target DH joint position for esd test
 		FOR i:=1 TO 4 BY 1 DO
 			m_homeDHJntPos[i]:=(GVL_CartJointParameters.g_minJntPos[i]+GVL_CartJointParameters.g_maxJntPos[i])/2;
 			m_jntDist[i]:=(GVL_CartJointParameters.g_maxJntPos[i]-GVL_CartJointParameters.g_minJntPos[i])*0.1;
@@ -264,32 +268,66 @@ CASE m_testStep OF
 			m_endDHJntPos[i]:=m_homeDHJntPos[i]+m_jntDist[i];
 		END_FOR
 		
-		//velocity and acceleration
-		vecMultiNum(m_jntCtrlMotionVel,0.3,m_maxjntVel);
-		vecMultiNum(m_maxjntVel,5,m_maxjntAcc);
-		vecMultiNum(m_maxjntAcc,5,m_maxjntJerk);
+		//copy the position to esd test
+		IF (g_cycleTest.m_carEnterESDTest=TRUE) THEN
+			m_pointSum:=3;
+			m_targetCycleNum:=30000;
+			m_targetJntPos[1]:=m_startDHJntPos; 	m_targetJntPos[2]:=m_homeDHJntPos;	m_targetJntPos[3]:=m_endDHJntPos;
+		END_IF
 		
+		//cycle motion test for normal test
 		IF (g_cycleTest.m_carEnterESDTest=FALSE) THEN
 			m_pointSum:=g_cycleTest.m_pointSumCar;
 			m_targetCycleNum:=g_cycleTest.m_targetCycleNumCar;
 			FOR i:=1 TO 10 BY 1 DO
 				m_targetJntPos[i]:=m_unitFun.carUnit2System(i_dataTest:= g_cycleTest.m_targetJntPosCar[i]);
-			END_FOR			
-		ELSE
-			m_pointSum:=3;
-			m_targetCycleNum:=30000;
-			m_targetJntPos[1]:=m_startDHJntPos; 	m_targetJntPos[2]:=m_homeDHJntPos;	m_targetJntPos[3]:=m_endDHJntPos;			
+			END_FOR
 		END_IF
-								
+		
+		//get target joint velocity
+		tmpVel:=m_unitFun.carUnit2System(i_dataTest:= g_cycleTest.m_targetJntVelCar);	
+		FOR i:=1 TO 4 BY 1 DO
+			IF ABS(tmpVel[i])<g_smallNum THEN
+				tmpVel[i]:=1;
+			END_IF
+			tmpVel[i]:=LIMIT(-GVL_CartJointParameters.g_jntCtrlMotionVel[i],tmpVel[i],GVL_CartJointParameters.g_jntCtrlMotionVel[i]);
+		END_FOR
+		
+		//transform to vec7d
+		FOR i:=4 TO 7 BY 1 DO
+			m_maxjntVel[i]:=tmpVel[i-3];
+			IF ABS(m_maxjntVel[i])<g_smallNum THEN
+				m_maxjntVel[i]:=1;
+			END_IF
+		END_FOR
+		
+		//velocity and acceleration
+		vecMultiNum(m_maxjntVel,5,m_maxjntAcc);
+		vecMultiNum(m_maxjntAcc,5,m_maxjntJerk);
+		
 		
 	10: //Trajectory parameter initialization
 		startDHPos:=m_curJntPos;
 		endDHPos:=m_targetJntPos[m_pointNum];				
 		
+		//limit the joint position
+		FOR i:=1 TO 4 BY 1 DO
+			startDHPos[i]:=LIMIT(GVL_CartJointParameters.g_minJntPos[i],startDHPos[i],GVL_CartJointParameters.g_maxJntPos[i]);
+			endDHPos[i]:=LIMIT(GVL_CartJointParameters.g_minJntPos[i],endDHPos[i],GVL_CartJointParameters.g_maxJntPos[i]);
+		END_FOR
+		
+		//transform to vec7d
 		FOR i:=4 TO 7 BY 1 DO
 			m_startJntPos[i]:=startDHPos[i-3];
 			m_endJntPos[i]:=endDHPos[i-3];
 		END_FOR		
+		
+		//motion distance judgement
+		vecSub(m_endJntPos,m_startJntPos,m_motDist);
+		IF (norm(m_motDist)<g_smallNum) THEN
+			m_testStep:=25;
+			RETURN;
+		END_IF
 		
 		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
 		IF (m_Planner.isGene=FALSE) THEN
@@ -297,7 +335,7 @@ CASE m_testStep OF
 		ELSE
 			m_time:=0; m_testStep:=20;
 		END_IF
-	
+		
 		
 	20: //start motion
 		IF (g_cycleTest.m_pauseCar=TRUE) THEN
@@ -342,11 +380,11 @@ CASE m_testStep OF
 			m_testStep:=10;
 		END_IF		
 		
-	
+		
 	30: //end the motion
 		m_testStep:=-1;	
-	
-	
+		
+		
 	-1: //
 END_CASE
 
@@ -359,11 +397,19 @@ FOR i:=1 TO 4 BY 1 DO
 END_FOR
 
 //update the joint position
-//g_cycleTest.m_carJntPos:=m_curJntPos;
 g_cycleTest.m_carJntPos:=m_unitFun.carArmUnit2User(i_dataSystem:= m_curJntPos);
-
 GVL_Monitor.carTestStep:=m_testStep;
 GVL_Monitor.carTestPoint:=m_pointNum;
+
+//cover the target joint position
+IF (g_cycleTest.m_coverCmdPosCar=TRUE) THEN
+	i:=g_cycleTest.m_pntIdForCoverCmdCar;
+	IF (i>=1) AND (i<=10) THEN
+		g_cycleTest.m_targetJntPosCar[i]:=g_cycleTest.m_carJntPos;
+		m_targetJntPos[i]:=m_curJntPos;
+	END_IF
+END_IF
+
 ]]></ST>
       </Implementation>
     </Method>
@@ -376,7 +422,9 @@ END_VAR
 VAR
 	i:INT;
 	homeDHPos,startDHPos,endDHPos :Vec4d;
-	cmdJntPos,cmdJntVel,cmdJntAcc:Vec7d;	
+	cmdJntPos,cmdJntVel,cmdJntAcc:Vec7d;
+	inc_pos,tgtJntPos:Vec4d;
+	tmpVel:Vec4d;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[//init parameters flag
@@ -390,15 +438,66 @@ m_jntTestStartMotionLast:=m_jntTestStartMotion;
 CASE m_testStepJntPos OF 
 	0: //Trajectory parameter initialization		 
 		startDHPos:=m_curJntPos;
+		
+		//incresement control
 		IF (g_motionTest.m_jntPosIncModeCar=FALSE) THEN
-			FOR i:=4 TO 7 BY 1 DO
-				m_maxjntVel[i]:=g_motionTest.m_targetJntVelCar[i-3];
-			END_FOR
-			endDHPos:=g_motionTest.m_targetJntPosCar;
+			endDHPos:=m_unitFun.carUnit2System(i_dataTest:= g_motionTest.m_targetJntPosCar);
 		ELSE
-			vecMultiNum(m_jntCtrlMotionVel,0.3,m_maxjntVel);
-			vecAdd(startDHPos,g_motionTest.m_targetJntPosIncCar,endDHPos);
+			inc_pos:=m_unitFun.carUnit2System(i_dataTest:= g_motionTest.m_targetJntPosIncCar);			
+			vecAdd(startDHPos,inc_pos,endDHPos);
 		END_IF
+		tgtJntPos:=endDHPos;
+		
+		//go home
+		FOR i:=1 TO 4 BY 1 DO
+			IF (g_motionTest.m_goHomeCar[i]=TRUE) THEN
+				endDHPos:=startDHPos;
+				endDHPos[i]:=GVL_CartJointCaliData.g_linkEncCaliJntPos[i];
+				EXIT; //exit for cycle
+			END_IF
+		END_FOR
+		
+		//single motor target joint position
+		FOR i:=1 TO 4 BY 1 DO
+			IF (g_motionTest.m_singleMotorStartMotion_Car[i]=TRUE) THEN
+				endDHPos:=startDHPos;
+				endDHPos[i]:=tgtJntPos[i];
+				EXIT; //exit for cycle
+			END_IF
+		END_FOR
+		
+		//single motor incresement control
+		FOR i:=1 TO 4 BY 1 DO
+			IF (g_motionTest.m_singleMotorStartIncMotion_Car[i]=TRUE) THEN
+				inc_pos:=m_unitFun.carUnit2System(i_dataTest:= g_motionTest.m_targetJntPosIncCar);
+				endDHPos:=startDHPos;
+				endDHPos[i]:=startDHPos[i]+inc_pos[i];
+				EXIT; //exit for cycle
+			END_IF
+		END_FOR		
+		
+		//limit the joint position
+		FOR i:=1 TO 4 BY 1 DO
+			startDHPos[i]:=LIMIT(GVL_CartJointParameters.g_minJntPos[i],startDHPos[i],GVL_CartJointParameters.g_maxJntPos[i]);
+			endDHPos[i]:=LIMIT(GVL_CartJointParameters.g_minJntPos[i],endDHPos[i],GVL_CartJointParameters.g_maxJntPos[i]);
+		END_FOR
+		
+		//get target joint velocity
+		tmpVel:=m_unitFun.carUnit2System(i_dataTest:= g_motionTest.m_targetJntVelCar);	
+		FOR i:=1 TO 4 BY 1 DO
+			IF ABS(tmpVel[i])<g_smallNum THEN
+				tmpVel[i]:=1;
+			END_IF
+			tmpVel[i]:=LIMIT(-GVL_CartJointParameters.g_jntCtrlMotionVel[i],tmpVel[i],GVL_CartJointParameters.g_jntCtrlMotionVel[i]);
+		END_FOR
+		
+		//transform to vec7d
+		FOR i:=4 TO 7 BY 1 DO
+			m_maxjntVel[i]:=tmpVel[i-3];
+			IF ABS(m_maxjntVel[i])<g_smallNum THEN
+				m_maxjntVel[i]:=1;
+			END_IF
+		END_FOR		
 		
 		//velocity and acceleration
 		vecMultiNum(m_maxjntVel,5,m_maxjntAcc);
@@ -411,6 +510,13 @@ CASE m_testStepJntPos OF
 			m_startJntPos[i]:=startDHPos[i-3];
 			m_endJntPos[i]:=endDHPos[i-3];
 		END_FOR		
+		
+		//motion distance judgement
+		vecSub(m_endJntPos,m_startJntPos,m_motDist);
+		IF (norm(m_motDist)<g_smallNum) THEN
+			m_testStep:=30;
+			RETURN;
+		END_IF		
 		
 		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
 		IF (m_Planner.isGene=FALSE) THEN
@@ -435,6 +541,7 @@ CASE m_testStepJntPos OF
 		
 	30: //end the motion
 		m_testStepJntPos:=-1;	
+		g_motionTest.m_startMotionCar:=FALSE;
 		//g_motionTest.m_enterJntTestCar:=FALSE;
 		
 		
@@ -442,8 +549,14 @@ CASE m_testStepJntPos OF
 END_CASE
 
 //update the joint position
-g_motionTest.m_carJntPos:=m_curJntPos;
+g_motionTest.m_carJntPos:=m_unitFun.carArmUnit2User(i_dataSystem:= m_curJntPos);
 g_motionTest.m_carJntCurrent:=m_filtJntCurrent;
+
+//cover the command joint position
+IF (g_motionTest.m_coverCmdPosCar) THEN
+	g_motionTest.m_targetJntPosCar:=g_motionTest.m_carJntPos;
+END_IF
+
 ]]></ST>
       </Implementation>
     </Method>
@@ -1145,20 +1258,88 @@ END_FOR]]></ST>
       <LineId Id="456" Count="0" />
       <LineId Id="459" Count="0" />
       <LineId Id="450" Count="0" />
-      <LineId Id="321" Count="27" />
+      <LineId Id="321" Count="19" />
+      <LineId Id="501" Count="0" />
+      <LineId Id="493" Count="0" />
+      <LineId Id="499" Count="1" />
+      <LineId Id="497" Count="1" />
+      <LineId Id="494" Count="1" />
+      <LineId Id="346" Count="2" />
       <LineId Id="470" Count="2" />
-      <LineId Id="350" Count="81" />
+      <LineId Id="354" Count="1" />
+      <LineId Id="507" Count="14" />
+      <LineId Id="505" Count="1" />
+      <LineId Id="502" Count="0" />
+      <LineId Id="504" Count="0" />
+      <LineId Id="489" Count="1" />
+      <LineId Id="492" Count="0" />
+      <LineId Id="357" Count="3" />
+      <LineId Id="525" Count="3" />
+      <LineId Id="523" Count="1" />
+      <LineId Id="529" Count="0" />
+      <LineId Id="361" Count="4" />
+      <LineId Id="484" Count="4" />
+      <LineId Id="482" Count="1" />
+      <LineId Id="366" Count="65" />
       <LineId Id="448" Count="0" />
       <LineId Id="447" Count="0" />
-      <LineId Id="444" Count="0" />
       <LineId Id="469" Count="0" />
-      <LineId Id="445" Count="0" />
       <LineId Id="433" Count="1" />
+      <LineId Id="532" Count="0" />
+      <LineId Id="537" Count="6" />
+      <LineId Id="533" Count="0" />
+      <LineId Id="544" Count="0" />
       <LineId Id="49" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.cartTestJnt">
-      <LineId Id="127" Count="60" />
-      <LineId Id="197" Count="3" />
+      <LineId Id="127" Count="10" />
+      <LineId Id="212" Count="1" />
+      <LineId Id="217" Count="1" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="214" Count="0" />
+      <LineId Id="233" Count="1" />
+      <LineId Id="246" Count="0" />
+      <LineId Id="249" Count="1" />
+      <LineId Id="252" Count="0" />
+      <LineId Id="251" Count="0" />
+      <LineId Id="247" Count="1" />
+      <LineId Id="244" Count="0" />
+      <LineId Id="255" Count="6" />
+      <LineId Id="235" Count="0" />
+      <LineId Id="253" Count="1" />
+      <LineId Id="265" Count="1" />
+      <LineId Id="271" Count="0" />
+      <LineId Id="267" Count="3" />
+      <LineId Id="262" Count="0" />
+      <LineId Id="236" Count="0" />
+      <LineId Id="238" Count="3" />
+      <LineId Id="237" Count="0" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="146" Count="1" />
+      <LineId Id="283" Count="4" />
+      <LineId Id="280" Count="1" />
+      <LineId Id="279" Count="0" />
+      <LineId Id="229" Count="1" />
+      <LineId Id="291" Count="1" />
+      <LineId Id="290" Count="0" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="228" Count="0" />
+      <LineId Id="148" Count="11" />
+      <LineId Id="295" Count="4" />
+      <LineId Id="293" Count="1" />
+      <LineId Id="160" Count="22" />
+      <LineId Id="211" Count="0" />
+      <LineId Id="183" Count="4" />
+      <LineId Id="197" Count="1" />
+      <LineId Id="210" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="305" Count="0" />
+      <LineId Id="300" Count="1" />
+      <LineId Id="303" Count="1" />
+      <LineId Id="302" Count="0" />
       <LineId Id="27" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.cartTestJntCurrent">

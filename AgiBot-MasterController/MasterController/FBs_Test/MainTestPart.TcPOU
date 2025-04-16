@@ -196,8 +196,7 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[(*
-//go home signal
+        <ST><![CDATA[//go home signal
 FOR m_armId:=1 TO g_mArmNum BY 1 DO
 	FOR i:=1 TO g_mJntNum BY 1 DO
 		IF (g_motionTest.m_goHome[m_armId][i]=TRUE) THEN
@@ -219,10 +218,10 @@ FOR m_armId:=1 TO g_mArmNum BY 1 DO
 		END_IF
 	END_FOR
 END_FOR
-*)
 
 
-//go home signal
+
+//go home signal---m_singleMotorStartMotion---m_singleMotorStartIncMotion
 FOR m_armId:=1 TO g_mArmNum BY 1 DO
 	FOR i:=1 TO g_mJntNum BY 1 DO
 		IF (g_motionTest.m_goHome[m_armId][i]) OR (g_motionTest.m_singleMotorStartMotion[m_armId][i]) OR (g_motionTest.m_singleMotorStartIncMotion[m_armId][i]) THEN
@@ -234,6 +233,14 @@ FOR m_armId:=1 TO g_mArmNum BY 1 DO
 END_FOR
 
 
+
+//cart joint go home---//监视器升降  监视器旋转  扶手升降  脚踏伸缩
+FOR i:=1 TO 4 BY 1 DO
+	IF (g_motionTest.m_goHomeCar[i]=TRUE) OR (g_motionTest.m_singleMotorStartMotion_Car[i]) OR (g_motionTest.m_singleMotorStartIncMotion_Car[i]) THEN
+			g_motionTest.m_startMotionCar:=TRUE; //after motion finish,we should set the signal to false
+			EXIT; //exit for cycle
+	END_IF
+END_FOR
 
 ]]></ST>
       </Implementation>
@@ -615,7 +622,7 @@ END_CASE
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.controlSignalAnalysis">
-      <LineId Id="6" Count="1" />
+      <LineId Id="7" Count="0" />
       <LineId Id="57" Count="0" />
       <LineId Id="61" Count="3" />
       <LineId Id="80" Count="0" />
@@ -631,7 +638,12 @@ END_CASE
       <LineId Id="181" Count="2" />
       <LineId Id="158" Count="0" />
       <LineId Id="161" Count="0" />
-      <LineId Id="184" Count="1" />
+      <LineId Id="207" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="200" Count="3" />
+      <LineId Id="205" Count="1" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="185" Count="0" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.dataWriteExp">

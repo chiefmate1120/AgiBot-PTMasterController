@@ -129,7 +129,7 @@ VAR
 		 0.0, -PI/2, 0.0, 0.0, pi, PI/2, 0.0];
 		 
 	//home joint position
-	m_homeJntPos,m_homeJntPos_UnitUser:Vec7d;
+	m_homeJntPos:Vec7d;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -547,9 +547,8 @@ END_FOR
 
 //home position
 FOR i:=1 TO g_mJntNum BY 1 DO
-	m_homeJntPos[i]:=gvl_const.g_jntDHInitPos[m_armId,i];
+	//m_homeJntPos[i]:=gvl_const.g_jntDHInitPos[m_armId,i];
 END_FOR
-m_homeJntPos_UnitUser:=m_unitFun.masterArmUnit2User(m_homeJntPos);
 
 ]]></ST>
       </Implementation>
@@ -700,7 +699,7 @@ CASE m_testStep OF
 		FOR i:=1 TO 7 BY 1 DO
 			IF (g_motionTest.m_goHome[m_armId][i]=TRUE) THEN					
 					m_endDHPos:=m_startDHPos;
-					m_endDHPos[i]:=m_homeJntPos[i];
+					m_endDHPos[i]:=m_originJntPos[i];
 				EXIT; //exit for cycle
 			END_IF
 		END_FOR
@@ -1168,7 +1167,7 @@ END_CASE]]></ST>
       <LineId Id="84" Count="0" />
       <LineId Id="143" Count="1" />
       <LineId Id="142" Count="0" />
-      <LineId Id="146" Count="1" />
+      <LineId Id="147" Count="0" />
       <LineId Id="145" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMotionTest.jntContinuousPoint">
@@ -1222,7 +1221,8 @@ END_CASE]]></ST>
       <LineId Id="206" Count="0" />
       <LineId Id="215" Count="0" />
       <LineId Id="218" Count="0" />
-      <LineId Id="222" Count="1" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="247" Count="0" />
       <LineId Id="220" Count="0" />
       <LineId Id="216" Count="1" />
       <LineId Id="208" Count="1" />
