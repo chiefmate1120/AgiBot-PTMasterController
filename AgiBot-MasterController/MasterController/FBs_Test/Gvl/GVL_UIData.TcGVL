@@ -23,6 +23,9 @@ VAR_GLOBAL
 	
 	//response test
 	g_responseTest:ST_ResponseTest;
+	
+	//Device ID number
+	g_deviceID:INT:=1; //1:doctor   2:patient
 END_VAR
 
 
