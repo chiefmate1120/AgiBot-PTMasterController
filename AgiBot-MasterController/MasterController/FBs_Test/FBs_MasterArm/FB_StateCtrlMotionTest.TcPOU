@@ -185,7 +185,12 @@ CASE m_testStep OF
 			g_motionTest.m_nextStep[m_armId]:=FALSE;
 			m_testStep:=30;
 		END_IF
-	
+		
+		//New requirement: Before officially testing accuracy, there need to be two cycles of motion without waiting for confirmation signals
+		IF (m_motionCycleNum<=2) THEN
+			m_testStep:=30;
+		END_IF
+		
 		//exit
 		IF (g_motionTest.m_uiArmMode[m_armId,5]=FALSE) THEN
 			m_testStep:=100;
@@ -1026,6 +1031,8 @@ END_CASE]]></ST>
       <LineId Id="70" Count="0" />
       <LineId Id="69" Count="0" />
       <LineId Id="66" Count="0" />
+      <LineId Id="147" Count="2" />
+      <LineId Id="145" Count="1" />
       <LineId Id="138" Count="2" />
       <LineId Id="136" Count="1" />
       <LineId Id="76" Count="0" />

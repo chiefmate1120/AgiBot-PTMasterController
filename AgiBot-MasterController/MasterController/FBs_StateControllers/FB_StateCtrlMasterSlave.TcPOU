@@ -275,6 +275,11 @@ CASE m_testStep OF
 			m_testStep:=30;
 		END_IF
 		
+		//New requirement: Before officially testing accuracy, there need to be two cycles of motion without waiting for confirmation signals
+		IF (m_motionCycleNum<=2) THEN
+			m_testStep:=30;
+		END_IF
+		
 		//for esd test
 		IF (g_motionTest.m_esdTest[m_armId]=TRUE) THEN
 			m_testStep:=30;
@@ -624,6 +629,11 @@ CASE m_testStep OF
 			IF (g_motionTest.m_goHomeFlag=FALSE) THEN
 				m_testStep:=50;
 			END_IF
+		END_IF
+		
+		//New requirement: Before officially testing accuracy, there need to be two cycles of motion without waiting for confirmation signals
+		IF (m_motionCycleNum<=2) THEN
+			m_testStep:=30;
 		END_IF
 		
 		//for esd test
@@ -1118,6 +1128,8 @@ END_FOR
       <LineId Id="469" Count="0" />
       <LineId Id="366" Count="45" />
       <LineId Id="481" Count="0" />
+      <LineId Id="513" Count="2" />
+      <LineId Id="510" Count="1" />
       <LineId Id="483" Count="2" />
       <LineId Id="482" Count="0" />
       <LineId Id="412" Count="38" />
@@ -1160,6 +1172,8 @@ END_FOR
       <LineId Id="568" Count="0" />
       <LineId Id="411" Count="0" />
       <LineId Id="481" Count="0" />
+      <LineId Id="589" Count="2" />
+      <LineId Id="586" Count="1" />
       <LineId Id="483" Count="2" />
       <LineId Id="482" Count="0" />
       <LineId Id="412" Count="0" />
