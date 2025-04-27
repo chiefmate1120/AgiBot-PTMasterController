@@ -566,6 +566,11 @@
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>
+              <v n="TextID">"1159"</v>
+              <v n="TextDefault">"启动重力配平测试"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
               <v n="TextID">"523"</v>
               <v n="TextDefault">"回到零点位置"</v>
               <l n="LanguageTexts" t="ArrayList" />
@@ -833,6 +838,26 @@
             <o>
               <v n="TextID">"203"</v>
               <v n="TextDefault">"数据正在导出"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1001"</v>
+              <v n="TextDefault">"数据添加顺序：指令位置"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"486"</v>
+              <v n="TextDefault">"数据添加顺序：指令关节位置、当前关节位置、当前关节扭矩"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"1359"</v>
+              <v n="TextDefault">"数据添加顺序：指令关节位置、当前关节位置、当前关节扭矩。1号臂在前，2号臂在后，每条臂21个数据"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
+            <o>
+              <v n="TextID">"2201"</v>
+              <v n="TextDefault">"数据添加顺序：指令关节位置、当前关节位置、当前关节扭矩，每条臂21个数据"</v>
               <l n="LanguageTexts" t="ArrayList" />
             </o>
             <o>

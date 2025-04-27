@@ -7,7 +7,7 @@ VAR_GLOBAL
 	g_motionTest:ST_MotionTest;
 	
 	//cycle test
-	g_cycleTest:ST_CycleTest;	
+	g_cycleTest:ST_CycleTest;
 	
 	//friction test for slave arm
 	g_frictionTest:ST_FrictionTest;
@@ -26,6 +26,9 @@ VAR_GLOBAL
 	
 	//Device ID number
 	g_deviceID:INT:=1; //1:doctor   2:patient
+	
+	//other test related variables
+	g_otherTest:ST_OtherTest;
 END_VAR
 
 

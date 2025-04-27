@@ -523,6 +523,9 @@
     <Compile Include="FBs_Test\type\ST_MotionTest.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FBs_Test\type\ST_OtherTest.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="FBs_Test\type\ST_ResponseTest.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -563,6 +566,10 @@
       <DependentUpon>视图管理器.TcVMO</DependentUpon>
     </Compile>
     <Compile Include="FBs_Test\UI\frictionTest\friction_a2.TcVIS">
+      <SubType>Code</SubType>
+      <DependentUpon>视图管理器.TcVMO</DependentUpon>
+    </Compile>
+    <Compile Include="FBs_Test\UI\gravity\gravityTest.TcVIS">
       <SubType>Code</SubType>
       <DependentUpon>视图管理器.TcVMO</DependentUpon>
     </Compile>
@@ -834,6 +841,7 @@
     <Folder Include="FBs_Test\UI\manipulateTest" />
     <Folder Include="FBs_Test\UI\motionTest" />
     <Folder Include="FBs_Test\UI\motRangeTest" />
+    <Folder Include="FBs_Test\UI\gravity" />
     <Folder Include="FBs_Test\UI\precision" />
     <Folder Include="FBs_Test\UI\responseTest" />
     <Folder Include="FBs_TrajectoryPlanning" />

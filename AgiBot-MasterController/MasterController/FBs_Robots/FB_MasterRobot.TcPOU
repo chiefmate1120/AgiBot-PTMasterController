@@ -806,6 +806,18 @@ FOR i:=1 TO g_mArmNum DO
 		m_nextMasterArmState[i] := MasterArmState_Init;
 	END_IF	
 	
+	// to gravity balance test
+	IF (g_otherTest.g_gravityBalanceTest[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_GravityCali) THEN
+		m_nextMasterArmState[i] := MasterArmState_GravityCali;
+	END_IF
+	
+	//during motion flag
+	IF (m_masterArmState[i]=MasterArmState_GravityCali) THEN
+		g_otherTest.g_duringMotion[i]:=TRUE;
+	ELSE
+		g_otherTest.g_duringMotion[i]:=FALSE;
+	END_IF
+	
 	//fault mask
 	IF (g_specialSignal.m_faultMask[i]) THEN
 		CONTINUE;
@@ -1015,6 +1027,14 @@ END_FOR]]></ST>
       <LineId Id="1787" Count="4" />
       <LineId Id="1786" Count="0" />
       <LineId Id="1769" Count="0" />
+      <LineId Id="1907" Count="2" />
+      <LineId Id="1904" Count="0" />
+      <LineId Id="1906" Count="0" />
+      <LineId Id="1910" Count="0" />
+      <LineId Id="1912" Count="1" />
+      <LineId Id="1915" Count="1" />
+      <LineId Id="1914" Count="0" />
+      <LineId Id="1911" Count="0" />
       <LineId Id="1727" Count="2" />
       <LineId Id="1708" Count="2" />
       <LineId Id="1676" Count="22" />
