@@ -269,7 +269,7 @@
         </Node>
         <Node>
           <Title>LeftArm</Title>
-          <Expanded>True</Expanded>
+          <Expanded>False</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
@@ -409,7 +409,7 @@
         </Node>
         <Node>
           <Title>RightArm</Title>
-          <Expanded>True</Expanded>
+          <Expanded>False</Expanded>
           <FileName></FileName>
           <Children>
             <Node>

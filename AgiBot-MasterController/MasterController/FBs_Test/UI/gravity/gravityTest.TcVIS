@@ -24,20 +24,6 @@
                     <v n="Name">"Tap"</v>
                     <v n="Description">"Configure the tapping of a Boolean variable"</v>
                   </o>
-                  <o>
-                    <n n="DescriptionTree" />
-                    <o n="VisualElemMemberList" t="VisualElemMemberList">
-                      <l n="VisualElemMemberList" t="VisualElemMemberCollection" cet="VisualElemMember">
-                        <o>
-                          <v n="Id">1186196937L</v>
-                          <v n="Value">"g_maniTest.m_testStart[1]"</v>
-                        </o>
-                      </l>
-                    </o>
-                    <v n="SignatureName">"Visu_ToggleInput"</v>
-                    <v n="Name">"Toggle"</v>
-                    <v n="Description">"Configure the toggling of a Boolean variable"</v>
-                  </o>
                 </a>
                 <l n="Elements" t="ArrayList" />
                 <n n="VisualElementDescription" />
@@ -352,20 +338,6 @@
                     <v n="SignatureName">"Visu_TapInput"</v>
                     <v n="Name">"Tap"</v>
                     <v n="Description">"Configure the tapping of a Boolean variable"</v>
-                  </o>
-                  <o>
-                    <n n="DescriptionTree" />
-                    <o n="VisualElemMemberList" t="VisualElemMemberList">
-                      <l n="VisualElemMemberList" t="VisualElemMemberCollection" cet="VisualElemMember">
-                        <o>
-                          <v n="Id">1186196937L</v>
-                          <v n="Value">"g_maniTest.m_testStart[1]"</v>
-                        </o>
-                      </l>
-                    </o>
-                    <v n="SignatureName">"Visu_ToggleInput"</v>
-                    <v n="Name">"Toggle"</v>
-                    <v n="Description">"Configure the toggling of a Boolean variable"</v>
                   </o>
                 </a>
                 <l n="Elements" t="ArrayList" />
@@ -897,10 +869,10 @@
               <d n="FbMethods" t="CaseInsensitiveHashtable" ckt="String" cvt="Guid">
                 <v>FB_Init</v>
                 <v>5d1405b8-7518-436a-99c9-2d678f9cdc4a</v>
-                <v>FB_Reinit</v>
-                <v>6da190db-57bd-4eba-a6fc-5ff071f8331e</v>
                 <v>FB_Exit</v>
                 <v>983c4566-7184-4f95-841f-e8a2c7963a83</v>
+                <v>FB_Reinit</v>
+                <v>6da190db-57bd-4eba-a6fc-5ff071f8331e</v>
               </d>
               <v n="FbName">"NotImportant"</v>
               <v n="FbGuid">{a02d9d4b-c8e8-4a51-9d66-ac2d43cc1c55}</v>
