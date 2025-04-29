@@ -134,6 +134,12 @@ g_systemInfo.m_armInfo[k].m_curJntPos:=i_masterArm.curJntPos;
 g_systemInfo.m_armInfo[k].m_curLinkPos:=i_masterArm.curLinkPos;
 g_systemInfo.m_armInfo[k].m_curJntPosDegMM:=m_unitFun.masterArmUnit2User(i_dataSystem:= i_masterArm.curJntPos);
 g_systemInfo.m_armInfo[k].m_curJntVelDegMM:=m_unitFun.masterArmUnit2User(i_dataSystem:= i_masterArm.curJntVel);
+
+//state machine
+g_systemInfo.m_armInfo[k].m_stateMachine:=MasterArmControl.m_masterRobot.m_masterArmState[k];
+
+//IP Address
+g_systemInfo.m_armInfo[k].m_IPAddress:=GVL_SafetyParameters.g_ArmNetID[k];
 ]]></ST>
       </Implementation>
     </Method>
@@ -174,9 +180,15 @@ g_systemInfo.m_cartInfo.m_curLinkPos:=m_masterCart.m_curLinkPos;
 g_systemInfo.m_cartInfo.m_curJntPosDegMM:=m_unitFun.carArmUnit2User(i_dataSystem:= m_masterCart.m_curJntPos);
 g_systemInfo.m_cartInfo.m_curJntVelDegMM:=m_unitFun.carArmUnit2User(i_dataSystem:= m_masterCart.m_curJntVel);
 
-
 g_systemInfo.m_cartInfo.m_jntMax:=GVL_CartJointParameters.g_maxJntPos;
 g_systemInfo.m_cartInfo.m_jntMin:=GVL_CartJointParameters.g_minJntPos;
+
+//state machine
+//g_systemInfo.m_cartInfo.m_stateMachine:=CartControl.m_masterCart
+
+//IP Address
+g_systemInfo.m_cartInfo.m_IPAddress:=GVL_SafetyParameters.g_cartNetID;
+
 
 ]]></ST>
       </Implementation>
@@ -593,6 +605,8 @@ END_CASE
       <LineId Id="94" Count="1" />
       <LineId Id="97" Count="1" />
       <LineId Id="96" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="112" Count="4" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.carInfoUpdate">
@@ -615,10 +629,11 @@ END_CASE
       <LineId Id="85" Count="0" />
       <LineId Id="84" Count="0" />
       <LineId Id="94" Count="0" />
-      <LineId Id="93" Count="0" />
       <LineId Id="82" Count="0" />
       <LineId Id="80" Count="0" />
       <LineId Id="75" Count="1" />
+      <LineId Id="104" Count="4" />
+      <LineId Id="102" Count="1" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="MainTestPart.controlSignalAnalysis">
