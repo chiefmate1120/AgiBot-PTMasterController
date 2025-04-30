@@ -33,7 +33,7 @@ VAR
 	m_gravityBias :Vec7d;
 	m_validDataNum:INT;
 	m_transitDataNum :INT :=200;
-	m_gravityMaxBias :Vec7d := [7(0.025)];
+	m_gravityMaxBias :Vec7d := [4(0.025),3(0.01)];
 
 END_VAR
 ]]></Declaration>

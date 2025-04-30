@@ -37,6 +37,7 @@
 	g_zeroVec4d: Vec4d:=[4(0)];
 	g_onesVec4d: Vec4d:=[4(1.0)];
 	g_zeroVec4i: Vec4i:=[4(0)];
+	g_zeroVec4b: Vec4b:=[4(false)];
 	g_onesVec4i: Vec4i:=[4(1)];
 	
 	g_zeroVec7d: Vec7d:=[7(0)];

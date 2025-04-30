@@ -1,16 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
-  <POU Name="FB_RedunJntControl" Id="{37b286e5-bc24-4f0b-8ee5-459813960fda}" SpecialFunc="None">
+  <POU Name="FB_RedunJntControl_202504" Id="{2da14c1b-ef6b-4c54-8597-76647219be88}" SpecialFunc="None">
     <Declaration><![CDATA[// Author: Feijian Ni
 // Date: 2024.11.26
-FUNCTION_BLOCK FB_RedunJntControl
+FUNCTION_BLOCK FB_RedunJntControl_202504
 
 VAR
 	// joint 6 deviation from center
 	m_jnt6Bias :LREAL;
 	
 	// static velocity threshold
-	m_staticWVelThres :LREAL := 60*g_deg2Rad;
+	m_staticWVelThres :LREAL := 10 *g_deg2Rad;
 	m_staticVelThres :LREAL := 0.02;
 	m_staticTime:LREAL:=0;
 	m_staticTimeThres:LREAL:=0.5;
@@ -52,8 +52,8 @@ VAR
 	m_maxDeadband:LREAL:=20*g_deg2rad;
 	m_maxCmdPosErr:LREAL:=5*g_deg2rad;
 	m_maxCmdVel :LREAL := 15;
-	m_maxJntAcc :LREAL := 15;
-	m_targetJntVel:LREAL;	
+	m_maxJntAcc :LREAL := 30;
+	m_targetJntVel:LREAL;
 	
 	// command joint4 position and veloicty in motor for next cycle
 	m_cmdJntPos: LREAL;
@@ -73,7 +73,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
-    <Method Name="calcDynaLimit" Id="{517b99e7-4531-4f19-8583-0402b1708b64}">
+    <Method Name="calcDynaLimit" Id="{90e0b621-165c-4a1a-93c3-1fdb42db1d7e}">
       <Declaration><![CDATA[METHOD calcDynaLimit : BOOL
 VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
@@ -104,7 +104,7 @@ m_targetVelLb:= MAX(-m_maxCmdVel, -SQRT(2*m_maxJntAcc* ABS(m_jntPosLb-m_cmdJntPo
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcJnt6Bias" Id="{68b27b82-124b-4f1a-bd1d-2edb5f51bb26}">
+    <Method Name="calcJnt6Bias" Id="{4f19ec43-caf1-43d1-8297-5cc8aee7dd76}">
       <Declaration><![CDATA[METHOD PROTECTED calcJnt6Bias : LREAL
 VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
@@ -117,7 +117,7 @@ ELSE
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcManipVel" Id="{bb7eb50a-f66e-4f62-804f-4f7088909c44}">
+    <Method Name="calcManipVel" Id="{ab8f8c50-76d8-4070-aeb0-40f16d9ade59}">
       <Declaration><![CDATA[// calculate orientation manipulation velocity(in local coordinate)
 METHOD calcManipVel : BOOL
 VAR_IN_OUT CONSTANT
@@ -145,7 +145,7 @@ wVelLocal[3]:=0;
 m_curManipWVel:=norm(wVelLocal);]]></ST>
       </Implementation>
     </Method>
-    <Method Name="calcNullJaco" Id="{c6e14663-5511-49c6-9219-88a5073286c6}">
+    <Method Name="calcNullJaco" Id="{7b66e0fa-0d62-4f5d-b303-077cc17d9b4d}">
       <Declaration><![CDATA[METHOD PROTECTED calcNullJaco : Mat4d;
 VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
@@ -178,7 +178,7 @@ matMultiply(oriJPinv, oriJaco, JpinvJ);
 matSub(eye4d , JpinvJ, calcNullJaco);]]></ST>
       </Implementation>
     </Method>
-    <Method Name="cmdReduntJntVel" Id="{2fd991d4-386e-4878-8418-3b3ca124be07}">
+    <Method Name="cmdReduntJntVel" Id="{1a06e4a7-636c-4122-967e-2c3678acbb33}">
       <Declaration><![CDATA[METHOD cmdReduntJntVel : LREAL
 VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
@@ -200,10 +200,15 @@ END_IF
 m_deadband:=abs(COS(i_masterArm.curJntPos[5]-pi));
 m_deadband := m_maxDeadband-(m_maxDeadband-m_minDeadband)*m_deadband;
 
-cmdReduntJntVel:=-m_jnt6Bias*m_redunKp*ABS(m_singScale);]]></ST>
+IF ABS(m_jnt6Bias)>m_deadband THEN
+	cmdReduntJntVel:=-1*(m_jnt6Bias-sign(m_jnt6Bias)*m_deadband)*m_redunKp*ABS(m_singScale);
+ELSE
+	cmdReduntJntVel :=0;
+END_IF
+]]></ST>
       </Implementation>
     </Method>
-    <Method Name="init" Id="{cb17a605-fa56-4121-9a65-f80dc96a20aa}">
+    <Method Name="init" Id="{bedc279c-107c-48ba-8160-b8ed00ba098f}">
       <Declaration><![CDATA[METHOD init : BOOL
 VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
@@ -232,11 +237,11 @@ END_IF
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="run" Id="{d8042a90-18c2-4767-bdb7-fbc7b91a9fb4}">
+    <Method Name="run" Id="{69800672-31dd-4dd3-afe5-ecd9f2cc2c4c}">
       <Declaration><![CDATA[METHOD run : LREAL
 VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
-END_VAR	
+END_VAR
 VAR_INPUT
 	i_followEnable :BOOL;
 END_VAR
@@ -258,7 +263,7 @@ m_oriNullJaco := calcNullJaco(i_masterArm);
  calcManipVel(i_masterArm);
 
 // check if arm is static
-m_trackFlag:=(startTrackCheck(i_masterArm) and i_followEnable);
+m_trackFlag:=startTrackCheck(i_masterArm);
 
 // redundant tracking velocity
 IF m_trackFlag THEN
@@ -300,7 +305,7 @@ run:=m_jntCtrlTrq;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="startTrackCheck" Id="{a1bf9092-beb2-41f4-a07f-012eb1275972}">
+    <Method Name="startTrackCheck" Id="{5a32f58f-1006-41c3-85cb-4b82e3a95bfa}">
       <Declaration><![CDATA[METHOD startTrackCheck : BOOL
 VAR_IN_OUT CONSTANT
 	i_masterArm :FB_MasterArm;
@@ -310,46 +315,32 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[//IF NOT m_trackFlag THEN
-//	m_curStaticDuration := m_curStaticDuration + g_armCtrlCycleTime;
-//	IF m_curStaticDuration < m_staticDurationThres THEN
-//		startTrackCheck:=FALSE;
-//		RETURN;
-//	END_IF
-//ELSE
-//	m_curStaticDuration := 0;
-//END_IF
-
-//jntVelCheck[1] := i_masterArm.curJntVel[5];
-//jntVelCheck[2] := i_masterArm.curJntVel[6];
-//jntVelCheck[3] := i_masterArm.curJntVel[7];
-
-//IF m_curManipWVel<m_staticWVelThres OR norm(jntVelCheck)< m_staticWVelThres THEN
-//	m_staticTime:=m_staticTime+g_armCtrlCycleTime;
-//ELSE
-//	m_staticTime:=0;
-//END_IF
-//startTrackCheck:=m_staticTime<m_staticTimeThres;
-
-IF m_trackFlag THEN
-	startTrackCheck:=TRUE;
-	//IF m_curManipWVel<m_staticWVelThres*0.5 OR norm(jntVelCheck)< m_staticVelThres THEN
-	IF m_curManipWVel<m_staticWVelThres*0.5 THEN
-	
-		startTrackCheck := FALSE;
+        <ST><![CDATA[IF NOT m_trackFlag THEN
+	m_curStaticDuration := m_curStaticDuration + g_armCtrlCycleTime;
+	IF m_curStaticDuration < m_staticDurationThres THEN
+		startTrackCheck:=FALSE;
+		RETURN;
 	END_IF
 ELSE
-	startTrackCheck:=false;
-	IF m_curManipWVel>m_staticWVelThres AND m_jnt6Bias*i_masterArm.curJntVel[6] >0 THEN
-		startTrackCheck := TRUE;
-	END_IF
-END_IF]]></ST>
+	m_curStaticDuration := 0;
+END_IF
+
+jntVelCheck[1] := i_masterArm.curJntVel[5];
+jntVelCheck[2] := i_masterArm.curJntVel[6];
+jntVelCheck[3] := i_masterArm.curJntVel[7];
+
+IF (m_curManipWVel<m_staticWVelThres OR norm(jntVelCheck)< m_staticWVelThres) and m_curManipVel<m_staticVelThres THEN
+	m_staticTime:=m_staticTime+g_armCtrlCycleTime;
+ELSE
+	m_staticTime:=0;
+END_IF
+startTrackCheck:=m_staticTime<m_staticTimeThres;]]></ST>
       </Implementation>
     </Method>
-    <LineIds Name="FB_RedunJntControl">
+    <LineIds Name="FB_RedunJntControl_202504">
       <LineId Id="9" Count="0" />
     </LineIds>
-    <LineIds Name="FB_RedunJntControl.calcDynaLimit">
+    <LineIds Name="FB_RedunJntControl_202504.calcDynaLimit">
       <LineId Id="54" Count="8" />
       <LineId Id="76" Count="0" />
       <LineId Id="75" Count="0" />
@@ -357,36 +348,36 @@ END_IF]]></ST>
       <LineId Id="63" Count="3" />
       <LineId Id="5" Count="0" />
     </LineIds>
-    <LineIds Name="FB_RedunJntControl.calcJnt6Bias">
+    <LineIds Name="FB_RedunJntControl_202504.calcJnt6Bias">
       <LineId Id="13" Count="3" />
       <LineId Id="5" Count="0" />
     </LineIds>
-    <LineIds Name="FB_RedunJntControl.calcManipVel">
+    <LineIds Name="FB_RedunJntControl_202504.calcManipVel">
       <LineId Id="27" Count="1" />
       <LineId Id="26" Count="0" />
       <LineId Id="29" Count="1" />
       <LineId Id="9" Count="7" />
       <LineId Id="5" Count="0" />
     </LineIds>
-    <LineIds Name="FB_RedunJntControl.calcNullJaco">
+    <LineIds Name="FB_RedunJntControl_202504.calcNullJaco">
       <LineId Id="6" Count="9" />
       <LineId Id="17" Count="2" />
       <LineId Id="5" Count="0" />
     </LineIds>
-    <LineIds Name="FB_RedunJntControl.cmdReduntJntVel">
-      <LineId Id="222" Count="9" />
+    <LineIds Name="FB_RedunJntControl_202504.cmdReduntJntVel">
+      <LineId Id="198" Count="14" />
       <LineId Id="14" Count="0" />
     </LineIds>
-    <LineIds Name="FB_RedunJntControl.init">
+    <LineIds Name="FB_RedunJntControl_202504.init">
       <LineId Id="115" Count="16" />
       <LineId Id="85" Count="0" />
     </LineIds>
-    <LineIds Name="FB_RedunJntControl.run">
+    <LineIds Name="FB_RedunJntControl_202504.run">
       <LineId Id="843" Count="48" />
       <LineId Id="125" Count="0" />
     </LineIds>
-    <LineIds Name="FB_RedunJntControl.startTrackCheck">
-      <LineId Id="171" Count="32" />
+    <LineIds Name="FB_RedunJntControl_202504.startTrackCheck">
+      <LineId Id="145" Count="18" />
       <LineId Id="115" Count="0" />
     </LineIds>
   </POU>

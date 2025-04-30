@@ -17,6 +17,7 @@ VAR
 	m_homeMaxjntAcc:Vec7d:=[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0];
 	m_homeMaxjntJerk:Vec7d:=[7(4.0)];
 	
+	m_endJntPos : Vec7d;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -34,6 +35,8 @@ END_VAR
 VAR 
 	i :INT;
 	curJntVel :Vec7d;
+	curJntPos :Vec7d;
+	posErr:Vec7d;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[// check if planner is ready
@@ -47,7 +50,9 @@ calcCmdJntPos :=m_homePlanner.evaluate(m_timePeriod, jntPos=> m_cmdJntPos, jntVe
 
 // check if to terminate
 curJntVel :=i_masterArm.curJntVel;
-m_isFinished :=m_timePeriod > m_homePlanner.duration  AND norm(curJntVel)<7*g_jntStaticVelThres;]]></ST>
+curJntPos := i_masterArm.curJntPos;
+vecSub(curJntPos,m_endJntPos,posErr);
+m_isFinished :=m_timePeriod > m_homePlanner.duration  AND norm(curJntVel)<7*g_jntStaticVelThres AND norm(posErr)<7*g_jntCtrlAngTolLow;]]></ST>
       </Implementation>
     </Method>
     <Method Name="init" Id="{c6523e12-84cb-49f8-843e-9a168bb4ce28}">
@@ -61,7 +66,7 @@ END_VAR
 
 VAR
 	i,j :INT;
-	startJntPos,endJntPos :Vec7d;
+	startJntPos :Vec7d;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -70,9 +75,9 @@ END_VAR
 // traj plan
 startJntPos:=i_masterArm.curJntPos;
 FOR j:=1 TO 7 DO 
-endJntPos[j]:=m_homePosture[i_masterArm.armIdx,j];
+m_endJntPos[j]:=m_homePosture[i_masterArm.armIdx,j];
 END_FOR
-m_homePlanner.init(startJntPos,endJntPos,m_homeMaxjntVel,m_homeMaxjntAcc,m_homeMaxjntJerk);
+m_homePlanner.init(startJntPos,m_endJntPos,m_homeMaxjntVel,m_homeMaxjntAcc,m_homeMaxjntJerk);
 
 // update commands to arm
 copyCmds(r_masterArmCtrlCmd);]]></ST>
@@ -92,6 +97,8 @@ copyCmds(r_masterArmCtrlCmd);]]></ST>
       <LineId Id="28" Count="0" />
       <LineId Id="27" Count="0" />
       <LineId Id="44" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="79" Count="0" />
       <LineId Id="32" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlHome.init">

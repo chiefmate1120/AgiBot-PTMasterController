@@ -15,12 +15,26 @@ VAR
 	m_crcError : ST_EcCrcError;
 	
 	m_EtherCATVerify : ST_EtherCATState;
+	m_clearCRCError : FB_EcMasterFrameStatisticClearCRC;
 	m_setSlaveState : FB_EcSetSlaveState;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
+    <Method Name="clearCRCError" Id="{4f0edc7d-de27-450a-ae29-6fd12dd64097}">
+      <Declaration><![CDATA[METHOD clearCRCError : BOOL
+VAR_INPUT
+	armsNetID:T_AmsNetID;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_clearCRCError(sNetId:= armsNetID, bExecute:= TRUE, tTimeout:= T#5S, bBusy=> , bError=> , nErrId=> );
+IF NOT m_clearCRCError.bBusy THEN
+	m_clearCRCError.bExecute:=FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="EtherCATVerify" Id="{700221e4-3451-4ebe-a364-9420b7ed5cfc}">
       <Declaration><![CDATA[METHOD EtherCATVerify : ST_EtherCATState
 VAR_INPUT
@@ -66,6 +80,10 @@ END_VAR
     </Method>
     <LineIds Name="FB_EtherCATCheck">
       <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_EtherCATCheck.clearCRCError">
+      <LineId Id="9" Count="0" />
+      <LineId Id="12" Count="2" />
     </LineIds>
     <LineIds Name="FB_EtherCATCheck.EtherCATVerify">
       <LineId Id="7" Count="1" />

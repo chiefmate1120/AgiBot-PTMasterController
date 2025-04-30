@@ -121,22 +121,26 @@ END_IF
 m_timePeriod := m_timePeriod + m_timeCycle;
 
 gripState := gripActionCheck(i_gripAngle);
-// detect one grip action
-IF  2 = gripState THEN 
-	m_gripActionCounts:=1;
-	m_firstGripTime := m_timePeriod;
-END_IF
 
-// finger close
-IF m_gripActionCounts >=1 AND 1 = gripState THEN
-	IF m_timePeriod - m_firstGripTime < m_checkDuration THEN
-		m_MSCtrlTrigger :=TRUE;
-	ELSE
-	// set second grip as new first one
-		m_gripActionCounts:=0;
-		m_firstGripTime:=m_timePeriod;
-	END_IF
-END_IF
+// trigger if gripper is closed from open status
+m_MSCtrlTrigger := (gripState=1);
+
+//// detect one grip action
+//IF  2 = gripState THEN 
+//	m_gripActionCounts:=1;
+//	m_firstGripTime := m_timePeriod;
+//END_IF
+
+//// finger close
+//IF m_gripActionCounts >=1 AND 1 = gripState THEN
+//	IF m_timePeriod - m_firstGripTime < m_checkDuration THEN
+//		m_MSCtrlTrigger :=TRUE;
+//	ELSE
+//	// set second grip as new first one
+//		m_gripActionCounts:=0;
+//		m_firstGripTime:=m_timePeriod;
+//	END_IF
+//END_IF
 
 
 run :=FALSE;]]></ST>
@@ -159,7 +163,12 @@ run :=FALSE;]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MSCtrlTriggerCheck.run">
-      <LineId Id="60" Count="25" />
+      <LineId Id="60" Count="7" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="68" Count="17" />
       <LineId Id="31" Count="0" />
     </LineIds>
   </POU>

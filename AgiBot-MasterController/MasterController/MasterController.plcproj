@@ -160,6 +160,9 @@
     <Compile Include="DUTs\Enum\E_SlaveArmState.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\Enum\E_SystemVoice.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\Structure\MasterSlaveCommunication\ST_MasterStatus.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -227,6 +230,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\Structure\UICommunication\ST_instrument_info.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Structure\UICommunication\ST_InstruTypeInfo.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\Structure\UICommunication\ST_scope_info.TcDUT">
@@ -298,10 +304,16 @@
     <Compile Include="DUTs\Type\Vec8d.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FBs_Auxiliary\FB_cycleOutputHZ.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="FBs_Auxiliary\FB_GripAngleCalc.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_Auxiliary\FB_HandClutchCheck.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_Auxiliary\FB_HeartbeatDetect.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_Auxiliary\FB_IOCheck.TcPOU">
@@ -311,6 +323,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_Auxiliary\FB_MSCtrlTriggerCheck.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_Auxiliary\FB_MSGripMatchCheck.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_Auxiliary\FB_RiseEdgeCheck.TcPOU">
@@ -323,6 +338,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_BasicControllers\FB_boundaryForceFeedback.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_BasicControllers\FB_dither.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_BasicControllers\FB_Jnt6SWLimit.TcPOU">
@@ -723,6 +741,14 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
+    <Compile Include="GVLs\Instrument\GVL_InstruCtrlParams.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="GVLs\Instrument\GVL_InstruTypeDefine.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
     <Compile Include="GVLs\robotCail\GVL_armCali.TcGVL">
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
@@ -731,6 +757,22 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
+    <Compile Include="Logger\AGILOG_DEBUG.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Logger\AGILOG_INFO.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Logger\GVL_RunTimeLogger.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="Logger\LogDataType.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Logger\LogDataUnion.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Mains\CartControl.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -738,6 +780,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Mains\RobotDynamics.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Mains\runTimeLogger.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Mains\SafetyCheck.TcPOU">
@@ -783,6 +828,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Sandbox\FB_MasterArmCheck.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Sandbox\FB_RedunJntControl_202504.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Sandbox\FB_RedunJntControl_bak.TcPOU">
@@ -854,7 +902,9 @@
     <Folder Include="GVLs\Configs\Robot4" />
     <Folder Include="GVLs\Configs\Robot5" />
     <Folder Include="GVLs\Configs\Robot6" />
+    <Folder Include="GVLs\Instrument" />
     <Folder Include="GVLs\robotCail" />
+    <Folder Include="Logger" />
     <Folder Include="Mains" />
     <Folder Include="Recipe" />
     <Folder Include="SafetyCheck" />

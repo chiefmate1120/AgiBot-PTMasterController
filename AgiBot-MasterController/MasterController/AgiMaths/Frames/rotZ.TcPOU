@@ -17,8 +17,9 @@ rot[1,2]:=-rot[2,1];
 rotZ:=rot;]]></ST>
     </Implementation>
     <LineIds Name="rotZ">
-      <LineId Id="23" Count="3" />
-      <LineId Id="15" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="11" Count="1" />
+      <LineId Id="14" Count="1" />
     </LineIds>
   </POU>
 </TcPlcObject>

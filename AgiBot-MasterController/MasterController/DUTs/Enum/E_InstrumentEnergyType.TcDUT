@@ -6,7 +6,8 @@
 	InstruType_isNull := 0,
 	InstruType_isMonopole := 1,
 	InstruType_isBipolar := 2,
-	InstruType_isUltraKnife := 3
+	InstruType_isUltraKnife := 3,
+	InstruType_isForceBipolar := 5
 );
 END_TYPE
 ]]></Declaration>

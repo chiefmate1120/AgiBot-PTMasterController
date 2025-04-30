@@ -71,7 +71,7 @@ VAR_GLOBAL CONSTANT
 	// spring3 [L0, b1, b2, l1, r0,d]
 	g_spring3Param :ARRAY[1..6] OF LREAL :=[127.5E-3, 20E-3, 23E-3, 200E-3, 32E-3, 23E-3];
 	// spring5 [L0, s1, L1, r0, beta]
-	g_spring5Param :ARRAY[1..5] OF LREAL :=[70E-3, 17E-3, 121E-3, 7.5E-3, 32.02*g_deg2rad];
+	g_spring5Param :ARRAY[1..5] OF LREAL :=[70E-3, 17E-3, 128E-3, 7.5E-3, 28*g_deg2rad];
 	
 END_VAR]]></Declaration>
   </GVL>

@@ -22,14 +22,14 @@
 	g_cartCtrlFreq :LREAL := 1.0/g_cartCtrlCycleTime;
 	
 	// wait time before robot init  for ethercat to stablize 
-	g_robotInitWaitTime : LREAL := 1.0;
-	g_robotSafetyCheckWaitTime : LREAL :=30.0;
+	g_robotInitWaitTime : LREAL := 2.0;
+	g_robotSafetyCheckWaitTime : LREAL :=3.0;
+	
 	
 	//RECIPE
 	RecipeDefinitionName : STRING := 'MatserArmLinkENCValue';
 	RecipeDefinitionNameCart : STRING := 'MasterCartLinkENCValue';
-END_VAR
-
-]]></Declaration>
+	
+END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>

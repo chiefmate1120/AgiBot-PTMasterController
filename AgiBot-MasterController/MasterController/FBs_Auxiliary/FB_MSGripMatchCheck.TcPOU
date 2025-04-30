@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_MSGripMatchCheck" Id="{a06bc5dd-8dc6-49a8-9bb0-95aeb72e6092}" SpecialFunc="None">
+    <Declaration><![CDATA[//NOTE：this block would stop checking once a trigger is detected. 
+//	re-init this block if want to start another check
+FUNCTION_BLOCK FB_MSGripMatchCheck
+VAR
+	m_matchedSlaveGripAngle :LREAL;
+	m_maxMasterGripAngle :LREAL := 30*g_deg2Rad;
+	m_minMasterGripAngle : LREAL :=0.0;
+	m_masterGripForceStartAng :LREAL :=3*g_deg2Rad;
+	m_minSlaveGripAngle :LREAL := -15 * g_deg2Rad; 
+	m_gripperMatchAngThres :LREAL := 2*g_deg2Rad;
+	m_gripperMatchAngMin :LREAL := g_largeNum;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="reset" Id="{e9e163d0-3fd4-4414-84a0-13e44a9eaf80}">
+      <Declaration><![CDATA[METHOD reset : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_gripperMatchAngMin := g_largeNum;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="run" Id="{44e98fef-c71d-4149-aed9-cf213d32b00b}">
+      <Declaration><![CDATA[METHOD run : BOOL
+VAR_INput
+	i_masterGripAngle :LREAL;
+	i_instruData :ST_InstruStatus;
+END_VAR
+
+VAR
+	i:INT;
+	instrTypeInfo :ST_InstruTypeInfo;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// return if instrument is not ready
+IF NOT(i_instruData.m_ready) THEN
+	run:=FALSE;
+	RETURN;
+END_IF
+
+// get instrument type info
+FOR i:=1 TO g_instruTypeNum DO 
+	IF g_instruTypePool[i].m_InstruID = i_instruData.m_type THEN
+		instrTypeInfo := g_instruTypePool[i];
+		EXIT;
+	END_IF
+END_FOR
+
+// no need to check if instrument is single finger
+IF  instrTypeInfo.m_isSingleFinger THEN
+	run:= TRUE;
+	RETURN;
+END_IF 
+
+// compute matched slave grip angle and force
+// finger closed and force applied
+IF i_masterGripAngle < m_masterGripForceStartAng THEN
+	m_matchedSlaveGripAngle := m_minSlaveGripAngle;
+// finger open
+ELSE
+	m_matchedSlaveGripAngle := (m_maxMasterGripAngle - i_masterGripAngle)/(m_maxMasterGripAngle - m_masterGripForceStartAng);
+	m_matchedSlaveGripAngle :=instrTypeInfo.m_maxGripAngle - m_matchedSlaveGripAngle * (instrTypeInfo.m_maxGripAngle - g_minSlaveGripAngle);
+	m_matchedSlaveGripAngle := LIMIT(m_minSlaveGripAngle, m_matchedSlaveGripAngle, instrTypeInfo.m_maxGripAngle );
+END_IF
+
+// check if grip match
+m_gripperMatchAngMin := MIN(m_gripperMatchAngMin, ABS(m_matchedSlaveGripAngle-i_instruData.m_fingerAngle));
+run := ABS(m_matchedSlaveGripAngle-i_instruData.m_fingerAngle)<m_gripperMatchAngThres OR 
+	 (m_matchedSlaveGripAngle>=instrTypeInfo.m_maxGripAngle - m_gripperMatchAngThres AND i_instruData.m_fingerAngle>=m_matchedSlaveGripAngle) OR 
+	(m_matchedSlaveGripAngle<=g_minSlaveGripAngle + m_gripperMatchAngThres AND i_instruData.m_fingerAngle<=m_matchedSlaveGripAngle) OR
+	ABS(ABS(m_matchedSlaveGripAngle-i_instruData.m_fingerAngle) - m_gripperMatchAngMin) > 10 * g_deg2Rad ;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_MSGripMatchCheck">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MSGripMatchCheck.reset">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MSGripMatchCheck.run">
+      <LineId Id="98" Count="1" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="100" Count="33" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

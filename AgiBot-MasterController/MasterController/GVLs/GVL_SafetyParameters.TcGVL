@@ -26,7 +26,7 @@ VAR_GLOBAL CONSTANT
 	g_minLinkEnc : DINT:=0;
 	
 	//drive error word
-	g_driveErrWord : UDINT:=32;
+	g_driveErrWord : UDINT:=16#80000000;
 	
 	// master arm cartesion control safety error 
 	g_maxCartPosErr :LREAL := 0.005;
@@ -37,11 +37,10 @@ VAR_GLOBAL CONSTANT
 	g_maxJntCtrlErr :LREAL := 15.0*g_deg2Rad;
 	g_maxJntEncErr :LREAL := 30.0*g_deg2Rad;
 	
-	g_minJntPos: ARRAY[1..2,1..7] OF LREAL:=[-60*g_deg2Rad,	-45*g_deg2Rad-pi/2,		-45*g_deg2Rad, 	0, 	-135*g_deg2Rad+pi,		-60*g_deg2Rad-pi/2,		-g_largeNum,
-											 -60*g_deg2Rad,	-45*g_deg2Rad-pi/2,		-45*g_deg2Rad,	0,		-135*g_deg2Rad+pi,		-60*g_deg2Rad+pi/2-pi,	-g_largeNum];
-	g_maxJntPos: ARRAY[1..2,1..7] OF LREAL:=[60*g_deg2Rad,	60*g_deg2Rad-pi/2,		60*g_deg2Rad,		2*pi,			135*g_deg2Rad+pi,		60*g_deg2Rad-pi/2+pi,		g_largeNum,
-								             60*g_deg2Rad,	60*g_deg2Rad-pi/2,		60*g_deg2Rad,		2*pi,			135*g_deg2Rad+pi,		60*g_deg2Rad+pi/2,		g_largeNum];
-
+	g_minJntPos: ARRAY[1..2,1..7] OF LREAL:=[-60*g_deg2Rad,	-45*g_deg2Rad-pi/2,		-45*g_deg2Rad, 	-pi/2-220*g_deg2Rad, 	-135*g_deg2Rad+pi,		-2.7,		-g_largeNum,
+											 -60*g_deg2Rad,	-45*g_deg2Rad-pi/2,		-45*g_deg2Rad,	-pi/2+5*g_deg2Rad,		-135*g_deg2Rad+pi,		-2.7,	-g_largeNum];
+	g_maxJntPos: ARRAY[1..2,1..7] OF LREAL:=[60*g_deg2Rad,	60*g_deg2Rad-pi/2,		60*g_deg2Rad,		-pi/2-5*g_deg2Rad,			135*g_deg2Rad+pi,		2.7,		g_largeNum,
+								             60*g_deg2Rad,	60*g_deg2Rad-pi/2,		60*g_deg2Rad,		-pi/2+220*g_deg2Rad,			135*g_deg2Rad+pi,		2.7,		g_largeNum];
 	
 	// cart joint safety error
 	g_cartMaxJntCtrlErr :Vec4d := [0.005, 5*g_deg2Rad,0.005, 0.005];
@@ -54,9 +53,11 @@ VAR_GLOBAL CONSTANT
 	g_cartMaxJntVel :Vec4d :=[0.03, 4*g_deg2Rad,0.02,0.015];
 	
 	// cart joint limit
-	g_cartMinJntLimit : Vec4d :=[0-0.1, -(59+5)*g_deg2Rad, 0-0.1, 0-0.1];
-	g_cartMaxJntLimit : Vec4d :=[0.4+0.1, (5+5)*g_deg2Rad, 0.3+0.1, 0.2+0.1];
+	g_cartMinJntLimit : Vec4d :=[0-0.1, -(59+10)*g_deg2Rad, 0-0.1, 0-0.1];
+	g_cartMaxJntLimit : Vec4d :=[0.4+0.1, (5+10)*g_deg2Rad, 0.3+0.1, 0.2+0.1];
 	
+	//EtherCAT CRC frame Loss
+	m_minLossFrame :DINT := 10;
 	
 	//cart joint follow error
 	g_cartMaxJntFollowErr : Vec4d :=[0.01, 5*g_deg2rad, 0.01, 0.01];
@@ -86,12 +87,12 @@ VAR_GLOBAL CONSTANT
 	MAX_CSV_COLUMNS 		: UDINT := 130;(*最大列数*)
 	MAX_CSV_FIELD_LENGTH	: UDINT := 35;(*每个字段的字符长度*)
 	MAX_CSV_RING_BUFFER		: UDINT := 3;
-	g_ArmNetID: ARRAY[1..g_maxArmNum] OF T_AmsNetId:=['169.254.79.95.2.1','169.254.219.236.5.1'];
+	g_ArmNetID: ARRAY[1..g_maxArmNum] OF T_AmsNetId:=['169.254.219.236.2.1','169.254.219.236.5.1'];
 	g_JointNetPort:ARRAY[1..g_maxArmNum,1..g_maxArmJoint] OF UINT :=[
 											1001,    1001,	1002,	1003,	1004,	1005,	1006,
 											1011,    1011,	1012,	1013,	1014,	1015,	1016	];
 	g_cartNetID : T_AmsNetId := '169.254.219.236.5.1';
-	g_cartJointNetPort:ARRAY[1..g_maxCartJoint] OF UINT :=[1007,    1008,	1009,	1010];
+	g_cartJointNetPort:ARRAY[1..g_maxCartJoint] OF UINT :=[1008,  1010,	1007,	1009];
 	
 END_VAR]]></Declaration>
   </GVL>

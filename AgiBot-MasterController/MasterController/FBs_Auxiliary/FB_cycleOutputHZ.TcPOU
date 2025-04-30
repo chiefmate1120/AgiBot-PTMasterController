@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_cycleOutputHZ" Id="{e2d7720e-b6bd-4f29-af28-6199418cfecc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_cycleOutputHZ
+VAR
+	// last value
+	m_Ton : FB_TON;
+	m_Time : LREAL;
+	m_bEnable :BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="run" Id="{905a3f5d-1781-45d0-9242-f6dfaf4fb169}">
+      <Declaration><![CDATA[METHOD run : BOOL
+VAR_INPUT
+	bEnable : BOOL;
+	input :LREAL;
+END_VAR
+
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_bEnable:=bEnable;
+IF bEnable AND input>0 THEN
+	m_Time := 1.0/input;
+	m_Ton(IN:= bEnable, PT:= LREAL_TO_TIME(m_Time*1000), Q=> , ET=> );
+	IF m_Ton.Q THEN
+		m_Ton.reset();
+		run := TRUE;
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_cycleOutputHZ">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_cycleOutputHZ.run">
+      <LineId Id="46" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="47" Count="1" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="49" Count="1" />
+      <LineId Id="44" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

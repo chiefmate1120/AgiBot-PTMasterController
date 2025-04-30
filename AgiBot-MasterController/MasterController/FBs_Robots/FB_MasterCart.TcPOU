@@ -56,11 +56,13 @@ VAR
 	m_jntEnableCounts:Vec4i ;
 	m_jntDisableCounts:Vec4i ;
 	m_jntEnableCountsThres:INT:=500;
+	m_jntEnableThres :Vec4i:=[0,10,20,30];
 	m_jntCmdMotionDir :Vec4i;
 	m_cmdJntTrq :Vec4d;
 	m_cmdJntPos :Vec4d;
 	m_cmdJntVel :Vec4d;
 	m_jntEnableFlag :Vec4b;
+	m_jntEnableCondition:Vec4b;
 	
 	//cart ergonomic adjust data
 	m_UIData : ST_CartUIData;
@@ -102,11 +104,11 @@ VAR
 	//startJntPos,endJntPos
 	m_initJntPos,m_startJntPos,m_endJntPos :Vec7d;
 	
-	//joint position gap---监视器升降  监视器旋转  扶手升降  脚踏伸缩
-	m_jntDist:Vec4d:=[0,0,0,0];	
-	
 	//motion distance
 	m_motDist:Vec7d;
+	
+	//joint position gap---监视器升降  监视器旋转  扶手升降  脚踏伸缩
+	m_jntDist:Vec4d:=[0,0,0,0];	
 	
 	//planner
 	m_Planner: FB_TrajMoveJ;
@@ -643,6 +645,8 @@ IF m_eleCtrlState = 1 THEN
 		eleKnifeCtrl := EnergyCtrlWord_isMonopoleCoagul;
 	ELSIF (m_electricCoagulLeftOn AND m_energyType[1] = InstruType_isBipolar) OR (m_electricCoagulRightOn AND  m_energyType[2] = InstruType_isBipolar) THEN
 		eleKnifeCtrl := EnergyCtrlWord_isBipolarCoagul;
+	ELSIF (m_electricCoagulLeftOn AND m_energyType[1] = InstruType_isForceBipolar) OR (m_electricCoagulRightOn AND  m_energyType[2] = InstruType_isForceBipolar) THEN
+		eleKnifeCtrl := EnergyCtrlWord_isBipolarCoagul;
 	ELSIF (m_electricCutLeftOn AND m_energyType[1] = InstruType_isUltraKnife) OR (m_electricCutRightOn AND  m_energyType[2] = InstruType_isUltraKnife) THEN
 		eleKnifeCtrl := EnergyCtrlWord_isUltraMin;
 	ELSIF (m_electricCoagulLeftOn AND m_energyType[1] = InstruType_isUltraKnife) OR (m_electricCoagulRightOn AND  m_energyType[2] = InstruType_isUltraKnife) THEN
@@ -670,57 +674,7 @@ ergonomicAdjust := 2;
 //only update command after joints is truly enabled
 FOR i := 1 TO 4 DO
 	IF m_jntEnableFlag[i] AND m_cartJoints[i].isEnabled() AND m_jntEnableCounts[i]>= m_jntEnableCountsThres THEN
-		m_cmdJntVel[i]:=sign(m_UIData.m_cmdJntPos[i]-m_cartJoints[i].jntPos)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*(GVL_CartJointParameters.g_jntCtrlMotionVel[i]);
+		m_cmdJntVel[i]:=sign(m_UIData.m_cmdJntPos[i]-m_cartJoints[i].jntPos)*(GVL_CartJointParameters.g_jntCtrlMotionVel[i]);
 		IF ABS(err[i]) < m_jntSoftwareLimit[i]/3 THEN
 			m_cmdJntVel[i]:=0;
 		END_IF
@@ -759,7 +713,7 @@ r_cartJointData.m_curMotorPos:=m_curMotorPos;
 r_cartJointData.m_curLinkPos:=m_curLinkPos;
 r_cartJointData.m_curJntPos:=m_curJntPos;
 r_cartJointData.m_curJntVel:=m_curJntVel;
-r_cartJointData.m_curJntTrq:=m_curJntVel;
+r_cartJointData.m_curJntTrq:=m_curJntTrq;
 r_cartJointData.m_rawJntCurrent:=m_rawJntCurrent;
 r_cartJointData.m_filtJntCurrent:=m_filtJntCurrent;
 
@@ -801,7 +755,6 @@ FOR i:=1 TO 4 DO
 	m_cmdJntTrq[i]:=0;
 	m_cmdJntVel[i]:=0;
 	m_cmdJntPos[i]:=m_cartJoints[i].jntPos;
-	m_lastLinkEncoder[i] := m_cartJoints[i].m_motorInputs.m_linkEncoder;
 END_FOR
 
 m_cartStatus.m_initFlag :=true;
@@ -884,7 +837,7 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[X0:=i_linkPos;  //监视器旋转
+        <ST><![CDATA[X0:=LIMIT(51.9455*g_deg2rad, i_linkPos,119.92525482*g_deg2rad);  //监视器旋转
 
 A:=222; B:=177; C:=291.7852; D:=286.0173; E:=170.5; F:=131.5; G:=366; H:=-30; I:=280;
 X4:=ATAN(H/I); X5:=ATAN(F/G);
@@ -915,7 +868,7 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[X0:=i_linkPos;  //监视器旋转
+        <ST><![CDATA[X0:=LIMIT(51.9455*g_deg2rad, i_linkPos,119.92525482*g_deg2rad);  //监视器旋转
 
 A:=222; B:=177; C:=291.7852; D:=286.0173; E:=170.5; F:=131.5; G:=366; H:=-30; I:=280;
 X4:=ATAN(H/I); X5:=ATAN(F/G);
@@ -1092,6 +1045,7 @@ END_VAR
 VAR
 	i:INT;
 	idxOffset:INT;
+	jntMotionNum:INT;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[// updata IO signals
@@ -1139,11 +1093,17 @@ IF  GVL_armCali.g_cartEnterCaliMode THEN
 	calcCartLinkEncCali();
 END_IF
 
+FOR i := 1 TO 4 DO
+	IF m_jntCmdMotionDir[i] <> 0 THEN
+		jntMotionNum := i;
+		EXIT;
+	END_IF
+END_FOR
 
 // if console is already in motion, only check the currently moving joint
 IF m_cartStatus.m_consoleInAdjust THEN
 	FOR i:=1 TO 4 DO
-		IF NOT(m_cartJoints[i].isEnabled()) THEN
+		IF NOT(m_cartJoints[i].isEnabled()) OR jntMotionNum <> i THEN
 			m_jntCmdMotionDir[i] := 0;
 		END_IF
 	END_FOR
@@ -1152,10 +1112,10 @@ END_IF
 
 // update joint enable flag
 FOR i:= 1 TO 4 DO
-	IF m_jntCmdMotionDir[i] <> 0 OR m_UIData.m_ergonomicCrl.m_recovErgonEnable OR m_UIData.m_ergonomicCrl.m_cancelRecovErgonEnable THEN
-		m_jntEnableFlag[i] := TRUE;
+	IF (m_jntCmdMotionDir[i] <> 0 AND m_jntEnableCondition[i]) OR m_UIData.m_ergonomicCrl.m_recovErgonEnable OR m_UIData.m_ergonomicCrl.m_cancelRecovErgonEnable THEN
 		m_jntEnableCounts[i]:= LIMIT(0, m_jntEnableCounts[i]+1, m_jntEnableCountsThres);
 		m_jntDisableCounts[i]:=m_jntEnableCountsThres;
+		m_jntEnableFlag[i] := m_jntEnableCounts[i]>=m_jntEnableThres[i];
 	ELSE
 		m_jntEnableCounts[i]:=0;
 		m_jntDisableCounts[i]:= LIMIT(0, m_jntDisableCounts[i]-1, m_jntEnableCountsThres);
@@ -1196,10 +1156,13 @@ FOR i:=1 TO 4 DO
 END_FOR 
 
 // transfer monitor angle from link side to motor side
-//m_curLinkPos[2]:= monitorAngLink2Motor(m_cartJoints[2].linkPos);
+m_curLinkPos[2]:= monitorAngLink2Motor(m_cartJoints[2].linkPos);
 
 // get monitor angle
-//m_cartStatus.m_monitorAngle:= monitorAngLink2Image(m_cartJoints[2].linkPos);
+m_cartStatus.m_monitorAngle:= monitorAngLink2Image(m_cartJoints[2].linkPos);
+
+// check if monitor in motion
+m_cartStatus.m_monitorInAdjust:=m_cartJoints[2].isEnabled();
 
 // check if cart in motion
 m_cartStatus.m_consoleInAdjust:=FALSE;
@@ -1209,9 +1172,6 @@ FOR i:=1 TO 4 DO
 		EXIT;
 	END_IF
 END_FOR
-
-// check if monitor in motion
-m_cartStatus.m_monitorInAdjust:=m_cartJoints[2].isEnabled();
 
 // check if cart in manual adjustment
 m_cartStatus.m_consoleInManualAdjust := FALSE;
@@ -1227,32 +1187,8 @@ END_FOR]]></ST>
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.calcCartLinkEncCali">
-      <LineId Id="113" Count="0" />
-      <LineId Id="180" Count="3" />
-      <LineId Id="179" Count="0" />
-      <LineId Id="178" Count="0" />
-      <LineId Id="161" Count="0" />
-      <LineId Id="138" Count="0" />
-      <LineId Id="162" Count="1" />
-      <LineId Id="139" Count="0" />
-      <LineId Id="200" Count="0" />
-      <LineId Id="207" Count="5" />
-      <LineId Id="206" Count="0" />
-      <LineId Id="150" Count="0" />
-      <LineId Id="201" Count="0" />
-      <LineId Id="184" Count="0" />
-      <LineId Id="186" Count="0" />
-      <LineId Id="202" Count="3" />
-      <LineId Id="187" Count="0" />
-      <LineId Id="185" Count="0" />
-      <LineId Id="152" Count="1" />
-      <LineId Id="141" Count="0" />
-      <LineId Id="158" Count="0" />
-      <LineId Id="115" Count="0" />
-      <LineId Id="129" Count="0" />
-      <LineId Id="131" Count="0" />
-      <LineId Id="137" Count="0" />
-      <LineId Id="136" Count="0" />
+      <LineId Id="3" Count="37" />
+      <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.cartTestCycle">
       <LineId Id="318" Count="0" />
@@ -1369,14 +1305,11 @@ END_FOR]]></ST>
       <LineId Id="25" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.eleKnifeCtrl">
-      <LineId Id="131" Count="31" />
+      <LineId Id="169" Count="33" />
       <LineId Id="18" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.ergonomicAdjust">
-      <LineId Id="59" Count="5" />
-      <LineId Id="86" Count="48" />
-      <LineId Id="85" Count="0" />
-      <LineId Id="65" Count="13" />
+      <LineId Id="59" Count="19" />
       <LineId Id="13" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.getStatus">
@@ -1394,9 +1327,7 @@ END_FOR]]></ST>
       <LineId Id="21" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.init">
-      <LineId Id="90" Count="19" />
-      <LineId Id="121" Count="0" />
-      <LineId Id="110" Count="3" />
+      <LineId Id="90" Count="23" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.manualAdjust">
@@ -1406,17 +1337,15 @@ END_FOR]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.manualAdjustCali">
-      <LineId Id="72" Count="8" />
-      <LineId Id="98" Count="2" />
-      <LineId Id="84" Count="8" />
-      <LineId Id="5" Count="0" />
+      <LineId Id="3" Count="20" />
+      <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.monitorAngLink2Image">
-      <LineId Id="32" Count="16" />
+      <LineId Id="57" Count="16" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.monitorAngLink2Motor">
-      <LineId Id="32" Count="16" />
+      <LineId Id="57" Count="16" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.monitorAngMotor2Link">
@@ -1431,61 +1360,33 @@ END_FOR]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.run">
-      <LineId Id="42" Count="7" />
-      <LineId Id="88" Count="2" />
-      <LineId Id="110" Count="1" />
-      <LineId Id="113" Count="1" />
-      <LineId Id="112" Count="0" />
-      <LineId Id="115" Count="0" />
-      <LineId Id="50" Count="2" />
-      <LineId Id="95" Count="0" />
-      <LineId Id="91" Count="0" />
-      <LineId Id="54" Count="0" />
-      <LineId Id="68" Count="0" />
-      <LineId Id="55" Count="4" />
-      <LineId Id="94" Count="0" />
-      <LineId Id="78" Count="1" />
-      <LineId Id="137" Count="1" />
-      <LineId Id="140" Count="1" />
-      <LineId Id="139" Count="0" />
-      <LineId Id="76" Count="1" />
-      <LineId Id="60" Count="0" />
-      <LineId Id="119" Count="1" />
-      <LineId Id="122" Count="1" />
-      <LineId Id="121" Count="0" />
-      <LineId Id="19" Count="0" />
-      <LineId Id="130" Count="0" />
+      <LineId Id="145" Count="29" />
+      <LineId Id="194" Count="6" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="180" Count="7" />
+      <LineId Id="102" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.status.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.updateCmds">
-      <LineId Id="139" Count="0" />
-      <LineId Id="178" Count="1" />
-      <LineId Id="181" Count="1" />
-      <LineId Id="180" Count="0" />
-      <LineId Id="140" Count="9" />
-      <LineId Id="167" Count="0" />
-      <LineId Id="150" Count="2" />
-      <LineId Id="168" Count="0" />
-      <LineId Id="153" Count="2" />
-      <LineId Id="169" Count="2" />
-      <LineId Id="156" Count="0" />
+      <LineId Id="178" Count="27" />
       <LineId Id="119" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.updateIO">
-      <LineId Id="154" Count="29" />
-      <LineId Id="234" Count="8" />
-      <LineId Id="232" Count="0" />
-      <LineId Id="245" Count="0" />
-      <LineId Id="193" Count="0" />
-      <LineId Id="243" Count="1" />
-      <LineId Id="194" Count="23" />
-      <LineId Id="219" Count="4" />
+      <LineId Id="282" Count="39" />
+      <LineId Id="365" Count="2" />
+      <LineId Id="322" Count="0" />
+      <LineId Id="368" Count="0" />
+      <LineId Id="323" Count="33" />
       <LineId Id="91" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.updateStatus">
-      <LineId Id="131" Count="41" />
+      <LineId Id="131" Count="21" />
+      <LineId Id="162" Count="2" />
+      <LineId Id="179" Count="7" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="165" Count="7" />
       <LineId Id="59" Count="0" />
     </LineIds>
   </POU>

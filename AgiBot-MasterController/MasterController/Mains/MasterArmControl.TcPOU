@@ -33,6 +33,7 @@ VAR
 	
 	// code execute time measure
 	m_codeTime : Profiler;
+	
 
 END_VAR
 ]]></Declaration>
@@ -40,13 +41,13 @@ END_VAR
       <ST><![CDATA[m_codeTime(START:=TRUE, RESET:=TRUE);
 
 //wait arm drive EtherCAT into OP state
-IF NOT m_masterInputDataPool.m_safetyData.m_armEtherCATAllOP THEN
+IF NOT m_masterInputDataPool.m_safetyData.m_armEtherCATAllOP AND NOT m_robotInit THEN
 	m_armEtherCATOPTime := m_armEtherCATOPTime + g_armCtrlCycleTime;
-//	RETURN;
+	RETURN;
 END_IF
 
 // wait communication to be stable
-IF(m_robotInitWaitTime<g_robotInitWaitTime) THEN
+IF(m_robotInitWaitTime<g_robotInitWaitTime) OR NOT(SafetyCheck.m_loadConfigFileOK) THEN
 	m_robotInitWaitTime := m_robotInitWaitTime+g_armCtrlCycleTime;
 	RETURN;
 END_IF
@@ -158,6 +159,7 @@ slaveStatus.m_endoscopePose.m_pos :=slaveInputData.m_endoscopePose.m_pos;
 slaveStatus.m_endoscopePose.m_rot :=slaveInputData.m_endoscopePose.m_rot;
 slaveStatus.m_slaveAllowInMS := slaveInputData.m_slaveAllowInMS;
 slaveStatus.m_slaveStopButton := slaveInputData.m_slaveStopButton;
+//slaveStatus.m_trocarOnFlag := slaveInputData.m_trocarOnFlag;
 FOR i:= 1 TO g_sArmNum DO
 	slaveStatus.m_armState[i] := slaveInputData.m_armState[i];
 	slaveStatus.m_instruStauts[i].m_fingerAngle := slaveInputData.m_instruStauts[i].m_fingerAngle;
@@ -178,8 +180,7 @@ END_FOR
       <Declaration><![CDATA[// tranform data from UI(global variable write by ADS) to ST_UIData
 METHOD UIInputProcess : BOOL
 VAR_INPUT
-END_VAR
-]]></Declaration>
+END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[// master-slave control scale
 IF 2 = GVL_interactUI.g_masterSlaveScaling THEN
@@ -200,11 +201,8 @@ m_masterInputDataPool.m_UIData.m_enableHandClutch := GVL_interactUI.g_fingerClut
 m_masterInputDataPool.m_UIData.m_masterArmDisableFlag[1]:=FALSE;
 m_masterInputDataPool.m_UIData.m_masterArmDisableFlag[2]:=FALSE;
 IF 1=GVL_interactUI.g_armIsDisbale OR 2=GVL_interactUI.g_armIsDisbale THEN
-	m_masterInputDataPool.m_UIData.m_masterArmDisableFlag[GVL_interactUI.g_armIsDisbale] := TRUE;
-END_IF
-
-
-]]></ST>
+       m_masterInputDataPool.m_UIData.m_masterArmDisableFlag[GVL_interactUI.g_armIsDisbale] := TRUE;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="UIOutputProcess" Id="{d0fa8c54-c1d5-4f7b-80a8-06c5ca1c6dd6}">
@@ -245,14 +243,12 @@ ELSE
 	GVL_interactUI.g_scopeTurnOverEnable := FALSE;
 END_IF
 
-//update testing software to UI
-GVL_IO.g_clutchSingle[1] := m_masterRobot.m_masterArms[1].m_handClutchSwitch;
-GVL_IO.g_clutchSingle[2] := m_masterRobot.m_masterArms[2].m_handClutchSwitch;]]></ST>
+]]></ST>
       </Implementation>
     </Method>
     <LineIds Name="MasterArmControl">
       <LineId Id="278" Count="0" />
-      <LineId Id="400" Count="0" />
+      <LineId Id="442" Count="0" />
       <LineId Id="359" Count="0" />
       <LineId Id="279" Count="5" />
       <LineId Id="397" Count="0" />
@@ -264,17 +260,18 @@ GVL_IO.g_clutchSingle[2] := m_masterRobot.m_masterArms[2].m_handClutchSwitch;]]>
       <LineId Id="17" Count="0" />
     </LineIds>
     <LineIds Name="MasterArmControl.slaveInputDataCast">
-      <LineId Id="102" Count="19" />
+      <LineId Id="102" Count="6" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="109" Count="12" />
       <LineId Id="8" Count="0" />
     </LineIds>
     <LineIds Name="MasterArmControl.UIInputProcess">
-      <LineId Id="101" Count="22" />
-      <LineId Id="17" Count="0" />
+      <LineId Id="128" Count="17" />
+      <LineId Id="158" Count="2" />
     </LineIds>
     <LineIds Name="MasterArmControl.UIOutputProcess">
       <LineId Id="79" Count="28" />
       <LineId Id="19" Count="0" />
-      <LineId Id="114" Count="1" />
     </LineIds>
   </POU>
 </TcPlcObject>

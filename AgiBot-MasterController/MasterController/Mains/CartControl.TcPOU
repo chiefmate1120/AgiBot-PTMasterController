@@ -22,22 +22,23 @@ VAR
 	// cart init flag
 	m_cartInit :BOOL :=FALSE;
 	
+	m_workHeartTon0 : TON;
+	m_workHeartTon1 : TON;
 	m_ergonInfoHeightF : F_TRIG;
 	m_userLoggedR : R_TRIG;
 	m_ergonInfoHeight : BOOL;
-	
 	
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[//wait cart drive EtherCAT into OP state
-IF NOT SafetyCheck.m_safetyCheckData.m_cartEtherCATAllOP THEN
+IF NOT SafetyCheck.m_safetyCheckData.m_cartEtherCATAllOP AND NOT m_cartInit THEN
 	m_cartEtherCATOPTime := m_cartEtherCATOPTime + g_cartCtrlCycleTime;
 	RETURN;
 END_IF
 
 // wait communication to be stable
-IF(m_cartInitWaitTime<g_robotInitWaitTime) THEN
+IF(m_cartInitWaitTime<g_robotInitWaitTime) OR NOT(SafetyCheck.m_loadConfigFileOK) THEN
 	m_cartInitWaitTime := m_cartInitWaitTime+g_armCtrlCycleTime;
 	RETURN;
 END_IF
@@ -129,8 +130,6 @@ Gvl_IO.g_surgonHeadIn := m_masterCart.m_surgonHeadInIO;
 Gvl_IO.g_cartLockSignalLeft := SafetyCheck.m_cartLockSignalLeft;
 Gvl_IO.g_cartLockSignalRight := SafetyCheck.m_cartLockSignalRight;
 Gvl_IO.g_cartJointCtrl := m_masterCart.m_cartJointCtrlIO;
-
-
 ]]></ST>
       </Implementation>
     </Method>
@@ -142,24 +141,8 @@ Gvl_IO.g_cartJointCtrl := m_masterCart.m_cartJointCtrlIO;
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="CartControl.UIInputProcess">
-      <LineId Id="95" Count="3" />
-      <LineId Id="160" Count="0" />
-      <LineId Id="99" Count="7" />
-      <LineId Id="152" Count="0" />
-      <LineId Id="157" Count="2" />
-      <LineId Id="107" Count="29" />
-      <LineId Id="146" Count="0" />
+      <LineId Id="217" Count="63" />
       <LineId Id="66" Count="0" />
-      <LineId Id="166" Count="1" />
-      <LineId Id="165" Count="0" />
-      <LineId Id="168" Count="6" />
-      <LineId Id="178" Count="0" />
-      <LineId Id="176" Count="0" />
-      <LineId Id="179" Count="0" />
-      <LineId Id="181" Count="1" />
-      <LineId Id="180" Count="0" />
-      <LineId Id="177" Count="0" />
-      <LineId Id="175" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

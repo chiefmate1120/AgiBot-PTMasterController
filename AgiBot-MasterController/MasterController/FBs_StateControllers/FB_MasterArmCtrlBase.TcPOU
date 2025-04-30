@@ -189,7 +189,6 @@ copyCmds(r_masterArmCtrlCmd);
 
 // update time period
 m_timePeriod := m_timePeriod+g_armCtrlCycleTime;
-
 ]]></ST>
       </Implementation>
     </Method>
@@ -262,7 +261,6 @@ END_VAR
       <LineId Id="27" Count="0" />
       <LineId Id="61" Count="0" />
       <LineId Id="84" Count="1" />
-      <LineId Id="161" Count="0" />
       <LineId Id="10" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterArmCtrlBase.timePeriod.Get">

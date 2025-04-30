@@ -50,6 +50,7 @@ IF m_testJntIdx >=1 AND m_testJntIdx <=7 THEN
 		m_cmdJntVel[m_testJntIdx]:=0;
 	ELSE
 		m_timePeriod:=0;
+		m_initJntPos[m_testJntIdx]:= i_masterArm.curJntPos[m_testJntIdx];
 	END_IF
 	
 END_IF
@@ -108,10 +109,8 @@ SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
 
 m_initJntPos := i_masterArm.curJntPos;
 
-m_jntOPMode := g_allPosTrqMode;
-m_jntOPMode[5]:=DriverOPMode_Trq;
-m_jntOPMode[6]:=DriverOPMode_Trq;
-m_jntOPMode[7]:=DriverOPMode_Trq;
+m_jntOPMode := g_allTrqMode;
+//m_jntOPMode[4] := DriverOPMode_PosTrq;
 
 // update commands to arm
 copyCmds(r_masterArmCtrlCmd);]]></ST>
@@ -129,6 +128,7 @@ copyCmds(r_masterArmCtrlCmd);]]></ST>
       <LineId Id="208" Count="0" />
       <LineId Id="231" Count="0" />
       <LineId Id="209" Count="1" />
+      <LineId Id="264" Count="0" />
       <LineId Id="207" Count="0" />
       <LineId Id="139" Count="0" />
       <LineId Id="134" Count="0" />
@@ -148,8 +148,7 @@ copyCmds(r_masterArmCtrlCmd);]]></ST>
       <LineId Id="80" Count="0" />
       <LineId Id="102" Count="0" />
       <LineId Id="106" Count="0" />
-      <LineId Id="91" Count="1" />
-      <LineId Id="90" Count="0" />
+      <LineId Id="115" Count="0" />
       <LineId Id="15" Count="1" />
       <LineId Id="2" Count="0" />
     </LineIds>
