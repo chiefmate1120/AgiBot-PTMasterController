@@ -1836,6 +1836,91 @@
 							<Type GUID="{EFC31606-5620-EF9E-1B71-A4D1735F6933}">ST_MasterDynaData</Type>
 						</Var>
 						<Var>
+							<Name>SafetyCheck.m_stopButton</Name>
+							<Comment><![CDATA[stop botton]]></Comment>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>GVL_UIData.g_RobotToPlc</Name>
+							<Comment><![CDATA[start signal]]></Comment>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_endoScopePedalIO</Name>
+							<Comment><![CDATA[  IO and check]]></Comment>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_clutchPedalIO</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_surgonHeadInIO</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_armSwitchIO</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_electricCutLeft</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_electricCutLeftAllow</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_electricCutRight</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_electricCutRightAllow</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_electricCoagulLeft</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_electricCoagulLeftAllow</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_electricCoagulRight</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_electricCoagulRightAllow</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJoints[1].m_motorInputs</Name>
+							<Comment><![CDATA[ motor IO]]></Comment>
+							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJoints[2].m_motorInputs</Name>
+							<Comment><![CDATA[ motor IO]]></Comment>
+							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJoints[3].m_motorInputs</Name>
+							<Comment><![CDATA[ motor IO]]></Comment>
+							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJoints[4].m_motorInputs</Name>
+							<Comment><![CDATA[ motor IO]]></Comment>
+							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJointCtrlIO</Name>
+							<Comment><![CDATA[ cart joint motion control IO
+[monitor_up, monitor_down, monitor_cwRotate, monitor_ccwRotate, armset_up, armset_down, pedal_in, pedal_out]]]></Comment>
+							<Type GUID="{71B58F72-0E49-50EB-B8E4-1CCD027538EC}">ARRAY [1..8] OF BOOL</Type>
+						</Var>
+						<Var>
 							<Name>MasterArmControl.m_masterRobot.m_masterArms[1].m_gripHallSensorIO</Name>
 							<Comment><![CDATA[ grip angle calculator]]></Comment>
 							<Type>UDINT</Type>
@@ -1925,91 +2010,6 @@
 							<Comment><![CDATA[ motor IO]]></Comment>
 							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
 						</Var>
-						<Var>
-							<Name>SafetyCheck.m_stopButton</Name>
-							<Comment><![CDATA[stop botton]]></Comment>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>GVL_UIData.g_RobotToPlc</Name>
-							<Comment><![CDATA[start signal]]></Comment>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_endoScopePedalIO</Name>
-							<Comment><![CDATA[  IO and check]]></Comment>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_clutchPedalIO</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_surgonHeadInIO</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_armSwitchIO</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_electricCutLeft</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_electricCutLeftAllow</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_electricCutRight</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_electricCutRightAllow</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_electricCoagulLeft</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_electricCoagulLeftAllow</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_electricCoagulRight</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_electricCoagulRightAllow</Name>
-							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJoints[1].m_motorInputs</Name>
-							<Comment><![CDATA[ motor IO]]></Comment>
-							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJoints[2].m_motorInputs</Name>
-							<Comment><![CDATA[ motor IO]]></Comment>
-							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJoints[3].m_motorInputs</Name>
-							<Comment><![CDATA[ motor IO]]></Comment>
-							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJoints[4].m_motorInputs</Name>
-							<Comment><![CDATA[ motor IO]]></Comment>
-							<Type GUID="{58C13267-EFF0-F132-4178-89293D154230}">ST_MotorInputs</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJointCtrlIO</Name>
-							<Comment><![CDATA[ cart joint motion control IO
-[monitor_up, monitor_down, monitor_cwRotate, monitor_ccwRotate, armset_up, armset_down, pedal_in, pedal_out]]]></Comment>
-							<Type GUID="{71B58F72-0E49-50EB-B8E4-1CCD027538EC}">ARRAY [1..8] OF BOOL</Type>
-						</Var>
 					</Vars>
 					<Vars VarGrpType="2" AreaNo="1">
 						<Name>TaskArmControl Outputs</Name>
@@ -2032,6 +2032,31 @@
 							<Name>MasterArmControl.m_armMotorData</Name>
 							<Comment><![CDATA[master motor in_output to safety check]]></Comment>
 							<Type GUID="{1DC44C89-5C40-7594-394E-0B864F382ED4}">ST_armMotorData</Type>
+						</Var>
+						<Var>
+							<Name>SafetyCheck.m_safetyCheckData</Name>
+							<Comment><![CDATA[ error check result]]></Comment>
+							<Type GUID="{276A188E-ED54-D0EE-8D17-D05AFB2AA6B2}">ST_SafetyData</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_elecKnifeCtrlWord</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJoints[1].m_motorOutputs</Name>
+							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJoints[2].m_motorOutputs</Name>
+							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJoints[3].m_motorOutputs</Name>
+							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_cartJoints[4].m_motorOutputs</Name>
+							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
 						</Var>
 						<Var>
 							<Name>MasterArmControl.m_masterRobot.m_masterArms[1].m_joints[1].m_motorOutputs</Name>
@@ -2087,31 +2112,6 @@
 						</Var>
 						<Var>
 							<Name>MasterArmControl.m_masterRobot.m_masterArms[2].m_joints[7].m_motorOutputs</Name>
-							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
-						</Var>
-						<Var>
-							<Name>SafetyCheck.m_safetyCheckData</Name>
-							<Comment><![CDATA[ error check result]]></Comment>
-							<Type GUID="{276A188E-ED54-D0EE-8D17-D05AFB2AA6B2}">ST_SafetyData</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_elecKnifeCtrlWord</Name>
-							<Type>DINT</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJoints[1].m_motorOutputs</Name>
-							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJoints[2].m_motorOutputs</Name>
-							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJoints[3].m_motorOutputs</Name>
-							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_cartJoints[4].m_motorOutputs</Name>
 							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
 						</Var>
 					</Vars>

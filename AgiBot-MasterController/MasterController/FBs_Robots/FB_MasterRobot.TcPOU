@@ -842,6 +842,16 @@ FOR i:=1 TO g_mArmNum DO
 		m_nextMasterArmState[i]:=MasterArmState_Standby;
 	END_IF
 	
+	//MasterArmState_ResponseTest
+	IF (g_responseTest.m_testMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_ResponseTest) THEN
+		m_nextMasterArmState[i]:=MasterArmState_ResponseTest;
+	END_IF
+	
+	//MasterArmState_ResponseTest exit
+	IF (g_responseTest.m_testMode[i]=FALSE) AND (m_masterArmState[i]=MasterArmState_ResponseTest) THEN
+		m_nextMasterArmState[i]:=MasterArmState_Standby;
+	END_IF	
+	
 	//robot calibration 
 	IF GVL_armCali.g_armEnterCaliMode[i] AND (m_masterArmState[i]<=MasterArmState_Standby) THEN
 		m_nextMasterArmState[i] := MasterArmState_armCali;
@@ -1024,7 +1034,11 @@ END_FOR]]></ST>
       <LineId Id="1384" Count="173" />
       <LineId Id="1566" Count="3" />
       <LineId Id="1735" Count="5" />
-      <LineId Id="1570" Count="156" />
+      <LineId Id="1570" Count="120" />
+      <LineId Id="1753" Count="7" />
+      <LineId Id="1749" Count="0" />
+      <LineId Id="1752" Count="0" />
+      <LineId Id="1691" Count="35" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.updateShoulderPose">
