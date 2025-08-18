@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <DUT Name="ST_armMotorData" Id="{39d89d65-286b-4cb1-bec4-315017611e36}">
+    <Declaration><![CDATA[TYPE ST_armMotorData :
+STRUCT
+	m_armMotorInput : ARRAY[1..g_mArmNum, 1..g_mJntNum] OF ST_MotorInputs;
+	m_armMotorOutput : ARRAY[1..g_mArmNum, 1..g_mJntNum] OF ST_MotorOutputs;
+	m_motorEncSalta :ARRAY[1..g_mArmNum] OF Vec7di;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

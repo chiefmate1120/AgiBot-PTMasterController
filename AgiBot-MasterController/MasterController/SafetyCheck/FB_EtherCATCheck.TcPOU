@@ -15,11 +15,26 @@ VAR
 	m_crcError : ST_EcCrcError;
 	
 	m_EtherCATVerify : ST_EtherCATState;
+	m_clearCRCError : FB_EcMasterFrameStatisticClearCRC;
+	m_setSlaveState : FB_EcSetSlaveState;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
+    <Method Name="clearCRCError" Id="{4f0edc7d-de27-450a-ae29-6fd12dd64097}">
+      <Declaration><![CDATA[METHOD clearCRCError : BOOL
+VAR_INPUT
+	armsNetID:T_AmsNetID;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_clearCRCError(sNetId:= armsNetID, bExecute:= TRUE, tTimeout:= T#5S, bBusy=> , bError=> , nErrId=> );
+IF NOT m_clearCRCError.bBusy THEN
+	m_clearCRCError.bExecute:=FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="EtherCATVerify" Id="{700221e4-3451-4ebe-a364-9420b7ed5cfc}">
       <Declaration><![CDATA[METHOD EtherCATVerify : ST_EtherCATState
 VAR_INPUT
@@ -33,6 +48,7 @@ m_commuEtherCATState(sNetId:= armsNetID, nSlaveAddr:= jntAddr, bExecute:= TRUE, 
 
 IF NOT m_commuEtherCATState.bBusy THEN
 	m_commuEtherCATState(bExecute:=FALSE);
+	m_EtherCATVerify.EtherCATDeviceState := m_EcSlaveState.deviceState;
 	IF m_EcSlaveState.deviceState = EC_DEVICE_STATE_OP THEN
 		m_EtherCATVerify.EtherCATState := TRUE;
 	ELSE
@@ -52,14 +68,30 @@ END_IF
 EtherCATVerify := m_EtherCATVerify;]]></ST>
       </Implementation>
     </Method>
+    <Method Name="setSlaveStatus" Id="{7c770756-e79f-4aa9-9319-7935ec5d023d}">
+      <Declaration><![CDATA[METHOD setSlaveStatus : BOOL
+VAR_INPUT
+	armsNetID:T_AmsNetID;
+	jntAddr:UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_setSlaveState(sNetId:=armsNetID , nSlaveAddr:= jntAddr, bExecute:= TRUE, tTimeout:= T#5S, reqState:= EC_DEVICE_STATE_OP, currState=> );]]></ST>
+      </Implementation>
+    </Method>
     <LineIds Name="FB_EtherCATCheck">
       <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_EtherCATCheck.clearCRCError">
+      <LineId Id="9" Count="0" />
+      <LineId Id="12" Count="2" />
     </LineIds>
     <LineIds Name="FB_EtherCATCheck.EtherCATVerify">
       <LineId Id="7" Count="1" />
       <LineId Id="11" Count="0" />
       <LineId Id="10" Count="0" />
       <LineId Id="12" Count="0" />
+      <LineId Id="57" Count="0" />
       <LineId Id="48" Count="3" />
       <LineId Id="47" Count="0" />
       <LineId Id="13" Count="0" />
@@ -71,6 +103,9 @@ EtherCATVerify := m_EtherCATVerify;]]></ST>
       <LineId Id="26" Count="0" />
       <LineId Id="23" Count="0" />
       <LineId Id="22" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_EtherCATCheck.setSlaveStatus">
+      <LineId Id="2" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

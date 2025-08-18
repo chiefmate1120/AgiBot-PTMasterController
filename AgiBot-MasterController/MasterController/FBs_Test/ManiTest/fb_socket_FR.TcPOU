@@ -1,0 +1,530 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fb_socket_FR" Id="{2a0952d1-0a3c-48dd-b43b-8a26f4307613}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK fb_socket_FR
+VAR_INPUT
+	
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+dataconverter:ARRAY[0..20]OF FRRecData;
+datalreal:ARRAY[0..20]OF LREAL;
+dataTorqueForce:ARRAY[0..5]OF LREAL;
+datastr:STRING:='00 00 00 23 78 81 59 c0';
+num:INT;
+INTjAxisCurPos:INT;
+INTjAxisCurPos2:INT;
+INTjAxisCurPos3:INT;
+
+INTjAxisCurTOR:INT;
+INTjAxisCurTOR2:INT;
+INTjAxisCurTOR3:INT;
+
+
+
+
+
+
+
+fbSocketGetLinkStatus:FB_SocketGetLinkStatus;
+fbSocketConnect      :FB_SocketConnect;
+fbSocketSend         :FB_SocketSend;;;
+fbSocketReceive      :FB_SocketReceive;
+
+bExecute: BOOL := TRUE;
+bSend   :BOOL;
+bReceive:BOOL;
+bDecorticate:BOOL; //去皮
+bDecorticateDown:BOOL;
+bCancelDecorticate:BOOL;//取消去皮
+bCancelDecorticateDown:BOOL;
+bReadData:BOOL;
+
+hSocket:T_hSocket;
+arrSendData: ARRAY [0..7] OF BYTE := [16#01, 16#03, 16#00, 16#00, 16#00, 16#01, 16#84, 16#0A];
+arrReadData: ARRAY [0..7] OF BYTE := [16#01, 16#03, 16#00, 16#00, 16#00, 16#01, 16#84, 16#0A];//read
+arrDecorticateSendData: ARRAY [0..7] OF BYTE := [16#01, 16#06, 16#00, 16#11, 16#00, 16#01, 16#18, 16#0F];//去皮
+arrDecorticateRecData: ARRAY [0..7] OF BYTE := [16#01, 16#06, 16#00, 16#11, 16#00, 16#01, 16#18, 16#0F];//去皮验证
+arrCancelDecorticateSendData: ARRAY [0..7] OF BYTE := [16#01, 16#06, 16#00, 16#11, 16#00, 16#02, 16#58, 16#0E];//取消去皮
+arrCancelDecorticateRecData: ARRAY [0..7] OF BYTE := [16#01, 16#06, 16#00, 16#11, 16#00, 16#02, 16#58, 16#0E];//取消去皮验证
+
+arrRecData: ARRAY [0..240] OF BYTE;
+arrRecDataZero: ARRAY [0..240] OF BYTE;
+t50Hz : ARRAY [0..3] OF ton;
+tonDecorticate:ARRAY [0..11] OF ton;
+tonCancelDecorticate:ARRAY [0..11] OF ton;
+//tonCancelDecorticate:ARRAY [0..11] OF ton;
+iDecorticateStep:INT;
+iCancelDecorticateStep:INT;
+lrPressureValue:LREAL;
+arrToolPos:ARRAY [0..5] OF LREAL;
+arrJ1CurrentData:ARRAY [0..7] OF BYTE;//J1当前位置  对应Recdata【8-15】
+arrbinJ1CurrentData:ARRAY [0..7] OF STRING[8];
+arrstrJ1CurrentData :ARRAY [0..7] OF STRING[32];
+binstrJ1CurrentData:STRING[64];
+ibinJ1:INT;
+//字符换拆分
+FirstbinstrJ1CurrentData:STRING[1];
+midbinstrJ1CurrentData:STRING[11];
+floatbinstrJ1CurrentData:STRING[52];
+//字符串组合成二进制
+FirstbinstrJ1CurrentData2:STRING[1];
+(*11位指数*)
+midbinstrJ1CurrentData2:STRING[11];
+arrmidbinstrJ1CurrentData2:ARRAY [0..11] OF STRING[1];
+arrintmidbinstrJ1CurrentData:ARRAY [0..11] OF UINT;
+(*52位尾数*)
+floatbinstrJ1CurrentData2:STRING[52];//初始52位二进制
+addfloatbinstrJ1CurrentData2:STRING;//52位首位插入1
+rightaddfloatbinstrJ1CurrentData2:STRING;//小数点右移七位
+arrrightaddfloatbinstrJ1CurrentData2:ARRAY [0..20] OF UINT;
+
+arrfloatbinstrJ1CurrentData2:ARRAY [0..52] OF STRING[1];//
+arrfloatbinstrJ1CurrentData:ARRAY [0..52] OF UINT;//
+//二进制字符串变换为十进制
+intFirstbinstrJ1CurrentData:UINT;//首位正负
+intmidbinstrJ1CurrentData:UINT;//指数  未减去1023
+intExpt:UINT;//2的指数 参与最终计算
+intfloatbinstrJ1CurrentData:LREAL;//尾数
+intFirstInt:INT;//首位 表-1或1
+intstrtoExpt:INT;
+intMantissa:INT;
+intAdd:INT;
+
+
+lrFinalValue:ARRAY [0..52] OF LREAL;
+lrFinalValue2:ARRAY [0..52] OF LREAL;
+intReciprocal: INT;//倒数计算  次方为负数 系统识别不了 改求倒数
+lrFinalValue3: LREAL;
+
+
+
+pJ1CurrentPos:POINTER TO BYTE;
+strpJ1CurrentPos:T_MaxString;
+binpJ1CurrentPos:STRING[64];
+lrJ1CurrentPos:LREAL;
+arrJ2CurrentPos:ARRAY [0..7] OF BYTE;//J1当前位置  对应Recdata【16-23】
+arrJ3CurrentPos:ARRAY [0..7] OF BYTE;//J1当前位置  对应Recdata【24-31】
+arrJ4CurrentPos:ARRAY [0..7] OF BYTE;//J1当前位置  对应Recdata【32-39】
+arrJ5CurrentPos:ARRAY [0..7] OF BYTE;//J1当前位置  对应Recdata【40-47】
+arrJ6CurrentPos:ARRAY [0..7] OF BYTE;//J1当前位置  对应Recdata【48-55】
+
+arrXToolCurrentPos:ARRAY [0..7] OF BYTE;//56-63 工具当前位置
+arrYToolCurrentPos:ARRAY [0..7] OF BYTE;//64-71
+arrZToolCurrentPos:ARRAY [0..7] OF BYTE;//72-79
+arrAToolCurrentPos:ARRAY [0..7] OF BYTE;//80-87
+arrBToolCurrentPos:ARRAY [0..7] OF BYTE;//88-95
+arrCToolCurrentPos:ARRAY [0..7] OF BYTE;//96-103
+
+arrFTSensordataFX:ARRAY [0..7] OF BYTE;//184-191  力扭矩传感器FX
+arrFTSensordataFY:ARRAY [0..7] OF BYTE;//184-191
+arrFTSensordataFZ:ARRAY [0..7] OF BYTE;//184-191
+arrFTSensordataTX:ARRAY [0..7] OF BYTE;//184-191
+arrFTSensordataTY:ARRAY [0..7] OF BYTE;//184-191
+arrFTSensordataTZ:ARRAY [0..7] OF BYTE;//184-191
+
+
+
+	//cc: BYTEARR_TO_MAXSTRING;
+	//fbmid: MID;
+	rightaddfloatbinstrJ1CurrentPos2: STRING(255);
+	addfloatbinstrJ1CurrentPos2: STRING(255);
+	floatbinstrJ1CurrentPos: STRING(255);
+	binstrJ1CurrentPos: STRING(255);
+	Data: INT;
+	intmidbinstrJ1CurrentPos: UINT;
+	arrintmidbinstrJ1CurrentPos: INT;
+	arrmidbinstrJ1CurrentPos2: INT;
+	midbinstrJ1CurrentPos: STRING(255);
+	FirstbinstrJ1CurrentPos: STRING(255);
+	arrstrJ1CurrentPos: INT;
+	arrbinJ1CurrentPos: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+//bReadData:=gvl_hmi.bStart;
+
+call(); 
+ 
+//transceiver	(); 
+	
+contect();	
+status();	
+converter();]]></ST>
+    </Implementation>
+    <Action Name="call" Id="{fae7a6a8-9b50-4c6d-a51b-ec52d2a2fbd9}">
+      <Implementation>
+        <ST><![CDATA[fbSocketConnect(
+	sSrvNetId:= , 
+	sRemoteHost:='192.168.58.2' , 
+	nRemotePort:= 8083, 
+	bExecute:= bExecute, 
+	tTimeout:=T#3S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hSocket=>hSocket );
+	
+	fbSocketSend(
+	sSrvNetId:= , 
+	hSocket:= hSocket, 
+	cbLen:= SIZEOF(arrSendData), 
+	pSrc:= ADR(arrSendData), 
+	bExecute:= bSend, 
+	tTimeout:= T#3S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+	
+	
+	fbSocketReceive(
+	sSrvNetId:= , 
+	hSocket:=hSocket , 
+	cbLen:= SIZEOF(arrRecData), 
+	pDest:= ADR(arrRecData), 
+	bExecute:= bReceive, 
+	tTimeout:= T#3S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	nRecBytes=> );
+	
+	
+	
+	]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="contect" Id="{23bedf7f-f2d5-488c-8beb-c995695f5c74}">
+      <Implementation>
+        <ST><![CDATA[IF arrRecData[3]=16#FF  THEN
+IF ( arrRecData[4] <=16#FF AND arrRecData[4] >16#d0 ) THEN
+lrPressureValue:=0.0;	
+ELSE 
+lrPressureValue:=BYTE_TO_LREAL(arrRecData[4]);	
+END_IF
+ELSIF arrRecData[3]>=16#00  THEN
+
+lrPressureValue:=BYTE_TO_LREAL(arrRecData[3])*256+BYTE_TO_LREAL(arrRecData[4])	;;	
+
+END_IF
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="converter" Id="{cea4795a-ddee-4a04-b05a-9d4d44cc2e16}">
+      <Implementation>
+        <ST><![CDATA[IF arrRecData[0]=16#5A AND arrRecData[0]=16#5A THEN
+	
+
+
+//J 当前位置
+FOR INTjAxisCurPos:=0 TO 7 BY 1 DO
+dataconverter[0].dataByte[INTjAxisCurPos]:=arrRecData[INTjAxisCurPos+8];
+dataconverter[1].dataByte[INTjAxisCurPos]:=arrRecData[INTjAxisCurPos+16];
+dataconverter[2].dataByte[INTjAxisCurPos]:=arrRecData[INTjAxisCurPos+24];
+dataconverter[3].dataByte[INTjAxisCurPos]:=arrRecData[INTjAxisCurPos+32];
+dataconverter[4].dataByte[INTjAxisCurPos]:=arrRecData[INTjAxisCurPos+40];
+dataconverter[5].dataByte[INTjAxisCurPos]:=arrRecData[INTjAxisCurPos+48];
+datalreal[0]:=dataconverter[0].dataLreal;
+datalreal[1]:=dataconverter[1].dataLreal;
+datalreal[2]:=dataconverter[2].dataLreal;
+datalreal[3]:=dataconverter[3].dataLreal;
+datalreal[4]:=dataconverter[4].dataLreal;
+datalreal[5]:=dataconverter[5].dataLreal;
+
+END_FOR
+
+
+
+
+
+
+
+
+
+////力矩
+
+FOR INTjAxisCurTOR:=0 TO 7 BY 1 DO 
+
+	dataconverter[10].dataByte[INTjAxisCurTOR]:=arrRecData[INTjAxisCurTOR+184];
+	dataconverter[11].dataByte[INTjAxisCurTOR]:=arrRecData[INTjAxisCurTOR+192];
+	dataconverter[12].dataByte[INTjAxisCurTOR]:=arrRecData[INTjAxisCurTOR+200];
+	dataconverter[13].dataByte[INTjAxisCurTOR]:=arrRecData[INTjAxisCurTOR+208];
+	dataconverter[14].dataByte[INTjAxisCurTOR]:=arrRecData[INTjAxisCurTOR+216];
+	dataconverter[15].dataByte[INTjAxisCurTOR]:=arrRecData[INTjAxisCurTOR+224];
+	
+    dataTorqueForce[0]:=dataconverter[10].dataLreal;
+    dataTorqueForce[1]:=dataconverter[11].dataLreal;
+	dataTorqueForce[2]:=dataconverter[12].dataLreal;
+	dataTorqueForce[3]:=dataconverter[13].dataLreal;
+	dataTorqueForce[4]:=dataconverter[14].dataLreal;
+	dataTorqueForce[5]:=dataconverter[15].dataLreal;
+
+END_FOR
+
+
+END_IF
+(*
+dataconverter[0].dataByte[0]:=16#00;
+dataconverter[0].dataByte[1]:=16#00;
+dataconverter[0].dataByte[2]:=16#00;
+dataconverter[0].dataByte[3]:=16#23;
+dataconverter[0].dataByte[4]:=16#78;
+dataconverter[0].dataByte[5]:=16#81;
+dataconverter[0].dataByte[6]:=16#59;
+dataconverter[0].dataByte[7]:=16#C0;
+datalreal[0]:=dataconverter[0].dataLreal;
+
+datastr:='00 00 00 23 78 81 59 c0';
+HEXSTR_TO_DATA(datastr,ADR(dataconverter[1].dataByte),SIZEOF(dataconverter[1].dataByte));
+datalreal[1]:=dataconverter[1].dataLreal;*)]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="status" Id="{8c12fc92-a652-43ac-8f9e-cbbe25bc68ad}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+//IF bReaddata THEN
+	//bDecorticate:= FALSE;
+    //bCancelDecorticate:= FALSE;
+t50Hz[0](IN:=bReceive , PT:=T#0.0005S , Q=> , ET=> );
+t50Hz[1](IN:=NOT bReceive , PT:=T#0.0005S , Q=> , ET=> );
+IF t50Hz[0].Q THEN
+	//bSend:= FALSE;
+	bReceive:= FALSE;
+END_IF
+IF t50Hz[1].Q THEN
+	//arrSendData:=arrReadData;
+	//bSend:= TRUE;
+	bReceive:= TRUE;
+END_IF
+//END_IF
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="transceiver" Id="{489c70ff-ef02-4448-af66-56db198e8541}">
+      <Implementation>
+        <ST><![CDATA[
+//IF arrRecData[0]=16#5A AND arrRecData[1]=16#5A THEN
+
+arrJ1CurrentData[0]:=(arrRecData[15]);
+arrJ1CurrentData[1]:=(arrRecData[14]);
+arrJ1CurrentData[2]:=(arrRecData[13]);
+arrJ1CurrentData[3]:=(arrRecData[12]);
+arrJ1CurrentData[4]:=(arrRecData[11]);
+arrJ1CurrentData[5]:=(arrRecData[10]);
+arrJ1CurrentData[6]:=(arrRecData[9]);
+arrJ1CurrentData[7]:=(arrRecData[8]);
+//16进制zhuanhuan二进制字符串
+FOR ibinJ1:=0 TO 7 BY 1 DO
+	arrbinJ1CurrentData[ibinJ1]:=BYTE_TO_BINSTR(in:=arrJ1CurrentData[ibinJ1],iPrecision:=8);
+END_FOR
+//分别组合 再汇总 concat指令限制 只能二合一
+arrstrJ1CurrentData[0]:=concat(arrbinJ1CurrentData[0],arrbinJ1CurrentData[1]);
+arrstrJ1CurrentData[1]:=concat(arrbinJ1CurrentData[2],arrbinJ1CurrentData[3]);
+arrstrJ1CurrentData[2]:=concat(arrbinJ1CurrentData[4],arrbinJ1CurrentData[5]);
+arrstrJ1CurrentData[3]:=concat(arrbinJ1CurrentData[6],arrbinJ1CurrentData[7]);
+arrstrJ1CurrentData[4]:=concat(arrstrJ1CurrentData[0],arrstrJ1CurrentData[1]);
+arrstrJ1CurrentData[5]:=concat(arrstrJ1CurrentData[2],arrstrJ1CurrentData[3]);
+//汇总
+binstrJ1CurrentData:=concat(arrstrJ1CurrentData[4],arrstrJ1CurrentData[5]);
+
+//取字符串第0位 0为正 1为负
+FirstbinstrJ1CurrentData:=LEFT(STR:=binstrJ1CurrentData, SIZE:=1 );
+intFirstbinstrJ1CurrentData:=STRING_TO_UINT(FirstbinstrJ1CurrentData);
+IF intFirstbinstrJ1CurrentData>0 THEN
+	intFirstInt:=-1;
+	ELSE
+		intFirstInt:=1;	
+END_IF
+//取字符串第1到第11位  转换成10进制 再减去1023 结果为指数
+midbinstrJ1CurrentData:=mid(STR:=binstrJ1CurrentData , LEN:=11 , pos:=2 );
+FOR intstrtoExpt:=0 TO 11 BY 1 DO 
+	arrmidbinstrJ1CurrentData2[intstrtoExpt]:=mid(STR:=midbinstrJ1CurrentData , LEN:=1 , pos:=intstrtoExpt );
+    arrintmidbinstrJ1CurrentData[intstrtoExpt]:=STRING_TO_UINT(arrmidbinstrJ1CurrentData2[intstrtoExpt]); 
+END_FOR
+intmidbinstrJ1CurrentData:=LREAL_TO_UINT(arrintmidbinstrJ1CurrentData[1]*1024+arrintmidbinstrJ1CurrentData[2]*512+arrintmidbinstrJ1CurrentData[3]*256+
+                                            arrintmidbinstrJ1CurrentData[4]*128+arrintmidbinstrJ1CurrentData[5]*64+arrintmidbinstrJ1CurrentData[6]*32+
+                                            arrintmidbinstrJ1CurrentData[7]*16+arrintmidbinstrJ1CurrentData[8]*8+arrintmidbinstrJ1CurrentData[9]*4+
+                                            arrintmidbinstrJ1CurrentData[10]*2+arrintmidbinstrJ1CurrentData[11]*1);
+//小数点右移intExpt位
+intExpt:=intmidbinstrJ1CurrentData-1023;
+(*取剩下52位在尾数前面加上“1.”：
+1.110001101001101010101000000000000000000000000000
+二进制点必须向右移动 6 位：实际是七位 因为先加1位 后移动小数点
+1110001.101001101101010100000000000000000
+*)
+//取剩下52位
+floatbinstrJ1CurrentData:=mid(STR:=binstrJ1CurrentData , LEN:=51 , pos:=13 );
+//52位首位插入1
+addfloatbinstrJ1CurrentData2:=concat('1',floatbinstrJ1CurrentData);
+//小数点右移intExpt+1位
+rightaddfloatbinstrJ1CurrentData2 := INSERT(addfloatbinstrJ1CurrentData2,'.',intExpt+1); 
+//根据双精度 取小数点左右各intExpt位
+FOR intMantissa:=0 TO (intExpt*3) BY 1 DO 
+	arrfloatbinstrJ1CurrentData2[intMantissa]:=mid(STR:=rightaddfloatbinstrJ1CurrentData2 , LEN:=1 , pos:=intMantissa );
+    arrfloatbinstrJ1CurrentData[intMantissa]:=STRING_TO_UINT(arrfloatbinstrJ1CurrentData2[intMantissa]); 
+END_FOR
+//第intExpt+2位是小数点
+//又有EXPT不能运算负数次幂 所以小数点右边要算倒数
+//小数点右边取10位 即intExpt+2 +10     左边从第1 位开始
+IF intExpt<>-1023 THEN
+
+FOR intReciprocal:=0 TO intExpt+12 BY 1 DO 
+	//小数点左边
+	IF intReciprocal<= intExpt+1 THEN
+		 lrFinalValue[intReciprocal]:=EXPT(2,(intExpt)-intReciprocal)*arrfloatbinstrJ1CurrentData[intReciprocal+1];
+
+    //小数点右边
+	ELSIF intReciprocal<= intExpt+12  AND intReciprocal>intExpt+1 THEN
+		IF EXPT(2,(intReciprocal-(intReciprocal+1)))*arrfloatbinstrJ1CurrentData[intReciprocal+1]<>0 THEN			
+		lrFinalValue[intReciprocal]:=1/(EXPT(2,(intReciprocal-intExpt-2))*arrfloatbinstrJ1CurrentData[intReciprocal+1]);
+	   
+         END_IF
+	END_IF
+
+
+
+END_FOR
+END_IF
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="fb_socket_FR">
+      <LineId Id="88" Count="1" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="38" Count="2" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="257" Count="0" />
+    </LineIds>
+    <LineIds Name="fb_socket_FR.call">
+      <LineId Id="2" Count="8" />
+      <LineId Id="1" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="14" Count="8" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="26" Count="9" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="36" Count="2" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="fb_socket_FR.contect">
+      <LineId Id="11" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="32" Count="1" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="28" Count="1" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="10" Count="0" />
+    </LineIds>
+    <LineIds Name="fb_socket_FR.converter">
+      <LineId Id="76" Count="0" />
+      <LineId Id="78" Count="1" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="71" Count="4" />
+      <LineId Id="49" Count="1" />
+      <LineId Id="80" Count="3" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="51" Count="8" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="39" Count="3" />
+      <LineId Id="89" Count="4" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="84" Count="3" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="17" Count="4" />
+      <LineId Id="1" Count="0" />
+      <LineId Id="3" Count="6" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="12" Count="1" />
+    </LineIds>
+    <LineIds Name="fb_socket_FR.status">
+      <LineId Id="27" Count="0" />
+      <LineId Id="36" Count="16" />
+      <LineId Id="35" Count="0" />
+    </LineIds>
+    <LineIds Name="fb_socket_FR.transceiver">
+      <LineId Id="142" Count="0" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="165" Count="0" />
+      <LineId Id="169" Count="6" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="189" Count="2" />
+      <LineId Id="202" Count="0" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="194" Count="2" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="197" Count="0" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="179" Count="1" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="248" Count="1" />
+      <LineId Id="251" Count="1" />
+      <LineId Id="250" Count="0" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="206" Count="0" />
+      <LineId Id="227" Count="0" />
+      <LineId Id="235" Count="0" />
+      <LineId Id="234" Count="0" />
+      <LineId Id="229" Count="1" />
+      <LineId Id="237" Count="2" />
+      <LineId Id="246" Count="0" />
+      <LineId Id="225" Count="0" />
+      <LineId Id="207" Count="1" />
+      <LineId Id="210" Count="0" />
+      <LineId Id="204" Count="1" />
+      <LineId Id="243" Count="0" />
+      <LineId Id="216" Count="0" />
+      <LineId Id="244" Count="0" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="218" Count="1" />
+      <LineId Id="240" Count="2" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="328" Count="1" />
+      <LineId Id="343" Count="0" />
+      <LineId Id="345" Count="0" />
+      <LineId Id="148" Count="0" />
+      <LineId Id="338" Count="0" />
+      <LineId Id="330" Count="0" />
+      <LineId Id="336" Count="1" />
+      <LineId Id="339" Count="1" />
+      <LineId Id="347" Count="0" />
+      <LineId Id="341" Count="0" />
+      <LineId Id="333" Count="0" />
+      <LineId Id="342" Count="0" />
+      <LineId Id="346" Count="0" />
+      <LineId Id="351" Count="0" />
+      <LineId Id="335" Count="0" />
+      <LineId Id="332" Count="0" />
+      <LineId Id="331" Count="0" />
+      <LineId Id="149" Count="3" />
+      <LineId Id="80" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

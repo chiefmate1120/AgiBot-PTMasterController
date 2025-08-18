@@ -19,6 +19,9 @@ VAR
 	// error check result
 	m_safetyCheckData AT %Q* :ST_SafetyData;
 	
+	//motor data
+	m_armMotorData AT %I* : ST_armMotorData;
+	
 	//stop botton
 	m_stopButton AT %I*: BOOL;
 	
@@ -31,7 +34,6 @@ VAR
 	m_checkVariable : ARRAY[1..g_maxNum] OF checkInputVariable;
 	m_EtherCATCheck :ARRAY [1..g_maxNum,1..g_maxArmJoint] OF Fb_EtherCATCheck;
 	m_errCode :ARRAY [1..3] OF UDINT;
-	m_motorEncoderLast : ARRAY[1..g_maxNum,1..g_maxArmJoint] OF DINT;
 	
 	
 	m_armsRS:ARRAY [1..g_maxArmNum,1..10] OF RS;//复位优先双稳态器
@@ -39,12 +41,72 @@ VAR
 	
 	// wait time before robot init  for ethercat to be statble 
 	m_safetyCheckInitWaitTime : LREAL:=0;
+	m_safetyCheckDriveOPWaitTime : LREAL:=0;
+	m_safetyCheckReadFileWaitTime : LREAL:=0;
 	//error robot data record
 	m_dataRecord : Fb_dataRecord;
+	
+	m_EtherCATAllOP : BOOL:=FALSE;
+	m_armEtherCATInOP : vec2b;
+	m_robotEtherCATInOP : ARRAY [1..3] OF BOOL ;
+	
+	//recipe read-write commands
+	RecipeManCommands:  RecipeManCommands;	
+	m_bReadRecipe:   BOOL := TRUE;
+	m_bWriteRecipe:   BOOL := FALSE;
+	m_bCartReadRecipe:   BOOL := TRUE;
+	m_loadConfigFileOK :BOOL := FALSE;
+	
+	m_workHeartTon0 : TON;
+	m_workHeartTon1 : TON;
+	m_slaveOnLine : BOOL;
+	m_slaveOnLineCheck :FB_slaveConnectionCheck;
+	
+	m_caliFileWriteTon : TON ;
+	m_caliFileWriteTonOfCart : TON ;
+	m_linkPosWriteCaliData:ARRAY [1..g_mArmNum] OF ARRAY [1..g_mJntNum] OF TON ;
+	m_linkPosWriteCaliDataOfCart:ARRAY [1..4] OF TON ;
+	
+	//robot system operates sound 
+	m_systemVoiceR:ARRAY [1..15] OF R_TRIG;
+	m_systemVoiceF:ARRAY [1..15] OF F_TRIG;
+	m_systemVoiceRS:ARRAY [1..15] OF RS;
+	m_systemVoiceTon:ARRAY [1..15] OF FB_TON;
+	m_lastTeleSlaveArmIdx :ARRAY[1..g_mArmNum] OF E_MatchedSlaveArmIdx;
+	m_armSwitchFlag : BOOL:=FALSE;
+	m_systemVoiceTriggerTime :TIME:=T#100MS;
+	m_cycleOutput :ARRAY [1..g_sArmNum] OF ARRAY [1..2] OF FB_cycleOutputHZ;
+	
+	//read Net ID and Net port
+	m_deviceNetIdReadOK : BOOL;
+	m_bReadNetIdStep : INT := 1;
+	m_bReadNetIdNum : INT := 1;
+	m_bReadJntPortNum : INT := 1;
+	m_getDeviceId :ARRAY [1..3] OF IOF_GetDeviceIDByName;
+	m_getNetId :ARRAY [1..3] OF IOF_GetDeviceNetId;
+	m_getBoxAddr:ARRAY [1..3,1..7] OF IOF_GetBoxAddrByName;
+	m_readNetID: ARRAY[1..3] OF T_AmsNetId;
+	m_readDeviceID : ARRAY [1..3]  OF UDINT;
+	m_readJointNetPort:ARRAY[1..7] OF UINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// reset data
+      <ST><![CDATA[//check UI and drive communication
+communicationCheck();
+// load config file
+m_deviceNetIdReadOK:=readDeviceNetId();
+m_loadConfigFileOK:=loadConfigFile();
+IF NOT(m_loadConfigFileOK) OR NOT m_deviceNetIdReadOK THEN
+	m_safetyCheckReadFileWaitTime := m_safetyCheckReadFileWaitTime + g_safetyCheckCycleTime;
+	IF m_safetyCheckReadFileWaitTime > g_robotSafetyReadFileWaitTime THEN
+		GVL_interactUI.g_errIdType3:=checkFileAndNetId(m_loadConfigFileOK , m_deviceNetIdReadOK );
+	END_IF
+	RETURN;
+END_IF
+GVL_interactUI.g_systemVoice := systemVoice();
+
+
+// reset data
 IF FALSE = m_initFlag  THEN
 	FOR i:=1  TO g_mArmNum DO 
 		m_safetyCheckData.m_masterErrFlag[i]:=FALSE;
@@ -55,16 +117,25 @@ IF FALSE = m_initFlag  THEN
 	m_initFlag:=TRUE;
 END_IF
 
-
 armSafetyCheckInputCast();
 
 armSafetyCheckAllowed();
 
 robotPromptMassageCast();
 
+//check EtherCAT status of arm and cart , if All EtherCAT is OP then start system safty check
+IF (NOT m_safetyCheckData.m_armEtherCATAllOP OR NOT m_safetyCheckData.m_cartEtherCATAllOP) AND NOT m_EtherCATAllOP THEN
+	m_safetyCheckDriveOPWaitTime := m_safetyCheckDriveOPWaitTime+g_safetyCheckCycleTime;
+	IF g_safetyCheckCycleTime > g_robotSafetyDriveOPWaitTime THEN
+		GVL_interactUI.g_errIdType2:= m_SafetyCheck.checkOPStatus(m_armEtherCATInOP, m_safetyCheckData.m_cartEtherCATAllOP);
+	END_IF
+	RETURN;
+END_IF
+m_EtherCATAllOP := TRUE;
+
 // wait communication to be stable
 IF(m_safetyCheckInitWaitTime<g_robotSafetyCheckWaitTime) THEN
-	m_safetyCheckInitWaitTime := m_safetyCheckInitWaitTime+g_cartCtrlCycleTime;
+	m_safetyCheckInitWaitTime := m_safetyCheckInitWaitTime+g_safetyCheckCycleTime;
 	RETURN;
 END_IF
 
@@ -101,21 +172,22 @@ VAR
 	i , j : INT; 
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-FOR i := 1 TO g_maxArmNum DO
+        <ST><![CDATA[FOR i := 1 TO g_maxArmNum DO
 	FOR j := 1 TO g_maxArmJoint DO
 		//fault code 16#3003 
 		m_SafetyCheck.checkPermit[i].m_linkEncErr[j] := m_checkVariable[i].m_masterDriverInput[j].m_statusWord<>0;
 		//fault code 16#3002 
 		m_SafetyCheck.checkPermit[i].m_currentIsNotUpdate[j] :=m_checkVariable[i].m_masterDriverInput[j].m_statusWord<>0 ;
 		//fault code 16#2002
-		m_SafetyCheck.checkPermit[i].m_armJntFollowErr[j] := TRUE;//m_masterStatus.m_armState[j] = MasterArmState_Home OR m_masterStatus.m_armState[j] = MasterArmState_MasterSlave;//m_checkVariable[i].m_masterDriverInput[j].m_statusWord = DriverStatusWord_OP ;
+		m_SafetyCheck.checkPermit[i].m_armJntFollowErr[j] := m_masterStatus.m_armState[i] = MasterArmState_Home;// OR m_masterStatus.m_armState[j] = MasterArmState_MasterSlave;//m_checkVariable[i].m_masterDriverInput[j].m_statusWord = DriverStatusWord_OP ;
 		//fault code 16#3002
 		m_SafetyCheck.checkPermit[i].m_jntStatusErr[j] := TRUE;
 		//fault code 16#3004
 		m_SafetyCheck.checkPermit[i].m_driveErr[j] := TRUE;
 		//fault code 16#3005
 		m_SafetyCheck.checkPermit[i].m_armJntEncErr[j] := TRUE;
+		//fault code 16#3006
+		m_SafetyCheck.checkPermit[i].m_outOfLimit[j] := TRUE;
 		//fault code 16#2003
 		m_SafetyCheck.checkPermit[i].m_jntVelErr[j] := TRUE;
 		//fault code 16#2004
@@ -136,19 +208,17 @@ VAR
 	i , j: INT; 
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-FOR i := 1 TO g_maxArmNum DO
+        <ST><![CDATA[FOR i := 1 TO g_maxArmNum DO
 	//stop button and ui stop 
 	m_checkVariable[i].PCStopButton := GVL_interactUI.g_masterStopButton;
 	m_checkVariable[i].SlaveStopButton := MasterArmControl.m_masterInputDataPool.m_slaveStatus.m_slaveStopButton;
 	m_checkVariable[i].MasterStopButton := m_stopButton;
 	m_checkVariable[i].m_spacePoseErr := m_SafetyCheck.poseErrCheck(m_masterStatus.m_cmdArmPose[i], m_masterStatus.m_curArmPose[i] );
 	FOR j:=1 TO  g_mJntNum DO 		
-		m_checkVariable[i].m_masterDriverInput[j] := MasterArmControl.m_masterRobot.m_masterArms[i].m_joints[j].m_motorInputs;
-		m_checkVariable[i].m_masterDriverOutput[j] := MasterArmControl.m_masterRobot.m_masterArms[i].m_joints[j].m_motorOutputs;
-		m_checkVariable[i].m_EtherCATState[j] := m_EtherCATCheck[i,j].EtherCATVerify(g_ArmNetID[i],g_JointNetPort[i,j]);
-		m_checkVariable[i].m_motorEncSaltaValue[j] := ABS(MasterArmControl.m_masterRobot.m_masterArms[i].m_joints[j].m_motorInputs.m_motorEncoder - m_motorEncoderLast[i,j]);
-		m_motorEncoderLast[i,j] := MasterArmControl.m_masterRobot.m_masterArms[i].m_joints[j].m_motorInputs.m_motorEncoder;
+		m_checkVariable[i].m_masterDriverInput[j] := m_armMotorData.m_armMotorInput[i,j];
+		m_checkVariable[i].m_masterDriverOutput[j] := m_armMotorData.m_armMotorOutput[i,j];
+		m_checkVariable[i].m_EtherCATState[j] := m_EtherCATCheck[i,j].EtherCATVerify(GVL_SystemParameters.g_masterArmNetID[i],GVL_SystemParameters.g_masterJointNetPort[i,j]);
+		m_checkVariable[i].m_motorEncSaltaValue[j] := m_armMotorData.m_motorEncSalta[i][j];
 		//The sum of the square of the motor current
 		g_motorCurrentLimit[j] := EXPT((GVL_ArmJointParameters.g_motorMaxCurrent[j]/1000),2)*15000;
 		IF ABS(m_checkVariable[i].m_masterDriverInput[j].m_current) > GVL_ArmJointParameters.g_motorMaxCurrent[j] THEN
@@ -164,8 +234,252 @@ FOR j:=1 TO  g_maxCartJoint DO
 	m_checkVariable[g_cartNum].MasterStopButton := m_stopButton;
 	m_checkVariable[g_cartNum].m_cartDriverInput[j] := CartControl.m_masterCart.m_cartJoints[j].m_motorInputs;
 	m_checkVariable[g_cartNum].m_cartDriverOutput[j] := CartControl.m_masterCart.m_cartJoints[j].m_motorOutputs;
-	m_checkVariable[g_cartNum].m_cartEtherCATState[j] := m_EtherCATCheck[g_cartNum,j].EtherCATVerify(g_cartNetID,g_cartJointNetPort[j]);
+	m_checkVariable[g_cartNum].m_cartEtherCATState[j] := m_EtherCATCheck[g_cartNum,j].EtherCATVerify(GVL_SystemParameters.g_masterCartNetID,GVL_SystemParameters.g_cartJointNetPort[j]);
 END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="checkEtherCATAll" Id="{a164738b-81a3-4c66-88e6-d907208d76aa}">
+      <Declaration><![CDATA[METHOD checkEtherCATAll : BOOL
+VAR_INPUT CONSTANT
+	i_EtherCATState: POINTER TO ARRAY [1..g_maxNum] OF checkInputVariable;
+END_VAR
+VAR_OUTPUT
+	o_EtherCATInOP : BOOL;
+	o_armEtherCATInOP : vec2b;
+	o_cartEtherCATAllOP : BOOL;
+END_VAR
+
+VAR
+	i , j :INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO g_mArmNum DO
+	FOR j := 1 TO g_maxArmJoint DO
+		//m_EtherCATCheck[i,j].setSlaveStatus(g_ArmNetID[i],g_JointNetPort[i,j]);
+	END_FOR
+END_FOR
+
+o_EtherCATInOP := TRUE;
+FOR i := 1 TO g_mArmNum DO
+	o_armEtherCATInOP[i] := TRUE;
+	FOR j := 1 TO g_maxArmJoint DO
+		IF FALSE = i_EtherCATState^[i].m_EtherCATState[j].EtherCATState AND i <> GVL_interactUI.g_armIsDisbale THEN
+			o_EtherCATInOP := FALSE;
+			o_armEtherCATInOP[i] := FALSE;
+			EXIT;
+		END_IF
+	END_FOR
+END_FOR
+
+FOR j := 1 TO g_maxCartJoint DO
+	//m_EtherCATCheck[3,j].setSlaveStatus(g_cartNetID,g_cartJointNetPort[j]);
+END_FOR
+
+o_cartEtherCATAllOP := TRUE;
+FOR j := 1 TO g_maxCartJoint DO
+	IF FALSE = i_EtherCATState^[3].m_cartEtherCATState[j].EtherCATState THEN
+		o_cartEtherCATAllOP := FALSE;
+		EXIT;
+	END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="checkFileAndNetId" Id="{8c537d8f-f839-471c-bd2e-5b10d7fe3d04}">
+      <Declaration><![CDATA[METHOD checkFileAndNetId : UDINT
+VAR_IN_OUT CONSTANT
+	i_readConfigFileStatus :BOOL;
+	i_readDeviceNetIdStatus :BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF NOT i_readConfigFileStatus OR NOT i_readDeviceNetIdStatus THEN
+	checkFileAndNetId:=SHL(16#0B,24)+SHL(0,16)+16#300A;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="communicationCheck" Id="{c0220be1-9d28-48b5-a4a1-f8e6fbfbd89c}">
+      <Declaration><![CDATA[METHOD communicationCheck : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[checkEtherCATAll(ADR(m_checkVariable),o_EtherCATInOP=>m_safetyCheckData.m_armEtherCATAllOP,o_armEtherCATInOP=>m_armEtherCATInOP,o_cartEtherCATAllOP=> m_safetyCheckData.m_cartEtherCATAllOP );
+m_robotEtherCATInOP[1] := m_armEtherCATInOP[1];
+m_robotEtherCATInOP[2] := m_armEtherCATInOP[2];
+m_robotEtherCATInOP[3] := m_safetyCheckData.m_cartEtherCATAllOP;
+
+//work heart
+m_workHeartTon0(IN:= GVL_interactUI.g_heartBeat = 1, PT:= T#1S, Q=> , ET=> );
+m_workHeartTon1(IN:= GVL_interactUI.g_heartBeat = 0, PT:= T#1S, Q=> , ET=> );
+IF m_workHeartTon0.Q THEN
+	GVL_interactUI.g_heartBeat :=0 ;
+ELSIF m_workHeartTon1.Q THEN
+	GVL_interactUI.g_heartBeat  :=1 ;
+END_IF
+
+// check slave connection
+m_slaveOnLine := m_slaveOnLineCheck.check(m_masterStatus.m_slaveHeartBeat);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="jointEncoderCaliCast" Id="{38e8df63-8a70-4816-82e7-e0e3cbf778d9}">
+      <Declaration><![CDATA[METHOD jointEncoderCaliCast : BOOL
+VAR_INPUT
+END_VAR
+VAR 
+	i,j : INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+FOR i := 1 TO g_mArmNum DO
+	FOR j := 1 TO g_mJntNum DO
+		m_linkPosWriteCaliData[i][j](IN:= GVL_armCali.g_linkPosWriteCaliData[i][j], PT:= T#3S, Q=> GVL_armCali.g_linkPosWriteCaliDataTrigger[i][j], ET=> );
+		IF GVL_armCali.g_linkPosWriteCaliDataTrigger[i][j] THEN
+			GVL_ArmJointCaliData.g_minLinkEncoder[i,j] := GVL_armCali.g_linkLimitFristPos[i][j];
+			GVL_ArmJointCaliData.g_maxLinkEncoder[i,j] := GVL_armCali.g_linkLimitSecondPos[i][j];
+			GVL_ArmJointCaliData.g_caliLinkEncoder[i,j] := GVL_armCali.g_linkHomePos[i][j];
+			GVL_ArmJointCaliData.g_linkEncZeroCross[i,j] := GVL_armCali.g_linkZeroCrossOrNot[i][j];
+		END_IF
+	END_FOR
+END_FOR
+
+FOR i := 1 TO 4 DO
+	m_linkPosWriteCaliDataOfCart[i](IN:=GVL_armCali.g_linkPosWriteCaliDataOfCart[i] , PT:= T#3S, Q=> GVL_armCali.g_linkPosWriteCaliDataTriggerOfCart[i], ET=> );
+	IF GVL_armCali.g_linkPosWriteCaliDataTriggerOfCart[i] THEN
+		GVL_CartJointCaliData.g_minLinkEncoder[i] := GVL_armCali.g_linkLimitFristPosOfCart[i];
+		GVL_CartJointCaliData.g_maxLinkEncoder[i] := GVL_armCali.g_linkLimitSecondPosOfCart[i];
+		GVL_CartJointCaliData.g_caliLinkEncoder[i] := GVL_armCali.g_linkHomePosOfCart[i];
+		GVL_CartJointCaliData.g_linkEncZeroCross[i] := GVL_armCali.g_linkZeroCrossOrNotOfCart[i];
+	END_IF
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="loadConfigFile" Id="{5c63924c-757a-4fbb-aaf9-c7598f387c5a}">
+      <Declaration><![CDATA[METHOD loadConfigFile : BOOL
+VAR
+	ReturnDwordRead:DWORD;
+	ReturnDwordWrite:DWORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//read recipe
+IF m_bReadRecipe THEN
+	//The method loads a recipe from the specified recipe file.  It subsequently writes the recipe into the PLC variables.
+     ReturnDwordRead:=RecipeManCommands.LoadAndWriteRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionName , RecipeName:='RecipeRecord');	 
+     m_bReadRecipe:=FALSE; 
+END_IF 
+loadConfigFile := ReturnDwordRead = ERR_OK;
+
+
+//write recipe
+jointEncoderCaliCast();
+m_caliFileWriteTon(IN:=GVL_armCali.g_caliDataWrite, PT:= T#3S, Q=> GVL_armCali.g_caliDataWriteTrigger, ET=> );
+//This method creates a new recipe in the specified recipe definition. It subsequently reads the current PLC values into the new recipe and saves it as a recipe file with a standard name.
+IF GVL_armCali.g_caliDataWriteTrigger THEN
+	RecipeManCommands.CreateRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionName , RecipeName:='RecipeRecord' );
+ 	ReturnDwordWrite:=RecipeManCommands.ReadAndSaveRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionName , RecipeName:='RecipeRecord' );
+END_IF
+
+// cart read Recipe 
+IF (m_bCartReadRecipe) THEN
+	//The method loads a recipe from the specified recipe file.  It subsequently writes the recipe into the PLC variables.
+     ReturnDwordRead:=RecipeManCommands.LoadAndWriteRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord');	 
+     m_bCartReadRecipe:=FALSE; 
+END_IF 
+loadConfigFile := loadConfigFile AND (ReturnDwordRead = ERR_OK);
+
+//write recipe
+m_caliFileWriteTonOfCart(IN:= GVL_armCali.g_caliDataWriteOfCart, PT:= T#3S, Q=> GVL_armCali.g_caliDataWriteTriggerOfCart, ET=> );
+//创建一个Recipe(命名为Initialization_Parameter)，用于存储变量Absolute_encoder_Parameters
+IF GVL_armCali.g_caliDataWriteTriggerOfCart THEN
+	//This method creates a new recipe in the specified recipe definition. It subsequently reads the current PLC values into the new recipe and saves it as a recipe file with a standard name.
+	 RecipeManCommands.CreateRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord' );
+	 ReturnDwordWrite:=RecipeManCommands.ReadAndSaveRecipe(RecipeDefinitionName:=GVL_SystemParameters.RecipeDefinitionNameCart , RecipeName:='RecipeRecord' );
+	 m_bWriteRecipe:=FALSE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="readDeviceNetId" Id="{0e6e0f21-760b-4ac7-b092-18d2817302c2}">
+      <Declaration><![CDATA[METHOD readDeviceNetId : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//read device NetId
+CASE m_bReadNetIdStep OF
+	1 ://read the device ID using the device name
+		m_getDeviceId[m_bReadNetIdNum](NETID:= , DEVICENAME:= GVL_SystemParameters.g_deviceName[m_bReadNetIdNum], START:= TRUE, TMOUT:= , BUSY=> , ERR=> , ERRID=> , DEVICEID=> m_readDeviceID[m_bReadNetIdNum]);
+		IF m_readDeviceID[m_bReadNetIdNum] <> 0 THEN
+			m_bReadNetIdNum := m_bReadNetIdNum + 1;
+			IF m_bReadNetIdNum > g_deviceNum THEN
+				m_bReadNetIdNum:=1;
+				m_bReadNetIdStep := 2;
+			END_IF
+		END_IF
+		
+	2://read the device NetId using the device ID
+		m_getNetId[m_bReadNetIdNum](NETID:= , DEVICEID:= m_readDeviceID[m_bReadNetIdNum], START:= TRUE, TMOUT:= , BUSY=> , ERR=> , ERRID=> , DeviceNetId=> m_readNetID[m_bReadNetIdNum]);
+		IF m_readNetID[m_bReadNetIdNum] <> '' THEN
+			IF m_bReadNetIdNum <= g_mArmNum - 1 THEN
+				GVL_SystemParameters.g_masterArmNetID [m_bReadNetIdNum] := m_readNetID[m_bReadNetIdNum];
+				IF GVL_SystemParameters.g_masterArmNetID [m_bReadNetIdNum] <> '' THEN
+					m_bReadNetIdNum := m_bReadNetIdNum + 1;
+				END_IF
+			ELSIF m_bReadNetIdNum = g_mArmNum THEN
+				GVL_SystemParameters.g_masterArmNetID [m_bReadNetIdNum] := m_readNetID[m_bReadNetIdNum];
+				GVL_SystemParameters.g_masterCartNetID := m_readNetID[m_bReadNetIdNum];	
+				IF GVL_SystemParameters.g_masterCartNetID<> '' AND GVL_SystemParameters.g_masterArmNetID [m_bReadNetIdNum] <> ''  THEN
+					m_bReadNetIdNum := m_bReadNetIdNum + 1;
+				END_IF
+			ELSIF m_bReadNetIdNum = g_deviceNum THEN
+				GVL_SystemParameters.g_masterMSComNetID := m_readNetID[m_bReadNetIdNum];	
+				IF GVL_SystemParameters.g_masterMSComNetID<> '' THEN
+					m_bReadNetIdNum := m_bReadNetIdNum + 1;
+				END_IF
+			END_IF
+			
+			IF m_bReadNetIdNum > g_deviceNum THEN
+				m_bReadNetIdNum:=1;
+				m_bReadJntPortNum := 1;
+				m_bReadNetIdStep := 3;
+			END_IF
+		END_IF
+		
+	3://read the device Net pory using the device NetID
+		IF m_bReadNetIdNum <= g_mArmNum THEN
+			m_getBoxAddr[m_bReadNetIdNum,m_bReadJntPortNum](NETID:= , DEVICEID:= m_readDeviceID[m_bReadNetIdNum], BOXNAME:=GVL_SystemParameters.g_armDeviceJntName[m_bReadJntPortNum] , START:= TRUE, TMOUT:= , BUSY=> , ERR=> , ERRID=> , BOXADDR=> m_readJointNetPort[m_bReadJntPortNum]);
+			GVL_SystemParameters.g_masterJointNetPort[m_bReadNetIdNum,m_bReadJntPortNum] := m_readJointNetPort[m_bReadJntPortNum];
+			IF GVL_SystemParameters.g_masterJointNetPort[m_bReadNetIdNum,m_bReadJntPortNum] <> 0 THEN
+				m_bReadJntPortNum := m_bReadJntPortNum +1;
+			END_IF
+			IF m_bReadJntPortNum > g_mJntNum THEN
+				m_bReadJntPortNum := 1;
+				m_bReadNetIdNum := m_bReadNetIdNum + 1;
+			END_IF
+		ELSIF m_bReadNetIdNum = g_mArmNum THEN
+			m_getBoxAddr[m_bReadNetIdNum,m_bReadJntPortNum](NETID:= , DEVICEID:= m_readDeviceID[m_bReadNetIdNum-1], BOXNAME:=GVL_SystemParameters.g_cartDeviceJntName[m_bReadJntPortNum] , START:= TRUE, TMOUT:= , BUSY=> , ERR=> , ERRID=> , BOXADDR=> m_readJointNetPort[m_bReadJntPortNum]);
+			GVL_SystemParameters.g_cartJointNetPort[m_bReadJntPortNum] := m_readJointNetPort[m_bReadJntPortNum];
+			IF GVL_SystemParameters.g_cartJointNetPort[m_bReadJntPortNum] <> 0 THEN
+				m_bReadJntPortNum := m_bReadJntPortNum +1;
+			END_IF
+			IF m_bReadJntPortNum > g_cJntNum THEN
+				m_bReadJntPortNum := 1;
+				m_bReadNetIdNum := m_bReadNetIdNum + 1;
+			END_IF
+		END_IF
+       
+		IF m_bReadNetIdNum >= g_deviceNum THEN
+			m_bReadNetIdNum:=1;
+			m_bReadNetIdStep := -1;
+		END_IF
+	
+	-1:
+		readDeviceNetId := TRUE;
+END_CASE
 ]]></ST>
       </Implementation>
     </Method>
@@ -197,8 +511,7 @@ VAR
 	m_joysticksTrigger : BOOL;
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-FOR i := 1 TO g_mArmNum DO					
+        <ST><![CDATA[FOR i := 1 TO g_mArmNum DO					
 	//0*1012		
 	m_armsRS[i,2](SET:=m_masterStatus.m_armState[i] = MasterArmState_Disable AND m_cartStatus.m_surgonReady, 
 							RESET1:= NOT m_armsRS[i,2].SET, 
@@ -226,7 +539,7 @@ m_cartRS[1](SET:= m_masterStatus.m_matchedMasterArmIdx.left1ArmIdx <> GVL_intera
 m_checkVariable[g_cartNum].m_promptLocation[1] := 16#0B;
 
 //0*1015
-m_cartRS[5](SET:=NOT m_masterStatus.m_slaveOnLine, 
+m_cartRS[5](SET:=NOT m_slaveOnLine, 
 						RESET1:= NOT m_cartRS[5].SET, 
 						Q1=> m_checkVariable[g_cartNum].m_promptStatus[5]);
 m_checkVariable[g_cartNum].m_promptLocation[5] := g_cartNum;
@@ -247,16 +560,289 @@ m_checkVariable[g_cartNum].m_promptLocation[7] := g_cartNum;
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="systemVoice" Id="{1acc2045-db42-420c-8757-38d389cdc385}">
+      <Declaration><![CDATA[METHOD systemVoice : INT
+VAR_INPUT
+END_VAR
+VAR_STAT
+	endoscopeCtrl : BOOL;
+	endoscopeReleaseCtrl : BOOL;
+	clutchCtrl : BOOL;
+	clutchReleaseCtrl : BOOL;
+	armSwitch : BOOL;
+	fingerClutchCtrl : BOOL;
+	fingerClutchReleaseCtrl : BOOL;
+	elecKnifeCtrlIsMonopoleCut : BOOL;
+	elecKnifeCtrlIsMonopoleCoagul : BOOL;
+	elecKnifeCtrlIsBipolarCoagul : BOOL;
+	elecKnifeCtrlIsUltraMax : BOOL;
+	elecKnifeCtrlIsUltraMin : BOOL;
+	posErrInScope, oriErrInScope:ARRAY [1..g_sArmNum] OF Vec3d;
+	oriErrNorm :Vec4d;
+	cycleOutput1HZ : BOOL;
+	cycleOutput2HZ : BOOL;
+	cycleOutput1HZEnable : Vec4b;
+	cycleOutput2HZEnable : BOOL;
+	slaveArmIsMS : Vec4b;
+	slaveForceMode,slaveForceModeLast :Vec4b;
+	slaveForce :LINT:= 30;
+	slaveForceModeActivate : BOOL;
+END_VAR
+VAR
+	i, j:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//init data
+IF FALSE = m_initFlag  THEN
+	FOR i:=1  TO g_mArmNum DO 
+		m_lastTeleSlaveArmIdx[i] := m_masterStatus.m_teleSlaveArmIdx[i];
+	END_FOR
+END_IF
+
+//endoscope pedal trigger and arm state in MasterArmState_Endoscope
+endoscopeCtrl := m_cartStatus.m_endoscopeSwitch AND MasterArmState_Endoscope = m_masterStatus.m_armState[1] AND MasterArmState_Endoscope = m_masterStatus.m_armState[2];
+m_systemVoiceTon[1](IN:= endoscopeCtrl, PT:= m_systemVoiceTriggerTime, Q=> , ET=> );
+m_systemVoiceRS[1](SET:= endoscopeCtrl, RESET1:= m_systemVoiceTon[1].Q , Q1=> );
+IF m_systemVoiceRS[1].Q1 THEN
+	systemVoice := systemVoice_du;
+	RETURN;
+END_IF
+
+//endoscope pedal release and arm state exit MasterArmState_Endoscope
+m_systemVoiceF[9](CLK:= endoscopeCtrl, Q=> );
+IF m_systemVoiceF[9].Q THEN
+	endoscopeReleaseCtrl := TRUE;
+END_IF
+m_systemVoiceTon[9](IN:= endoscopeReleaseCtrl, PT:= m_systemVoiceTriggerTime, Q=> , ET=> );
+m_systemVoiceRS[9](SET:= endoscopeReleaseCtrl, RESET1:= m_systemVoiceTon[9].Q , Q1=> );
+IF m_systemVoiceRS[9].Q1 THEN
+	systemVoice := systemVoice_release;
+	RETURN;
+ELSE
+	endoscopeReleaseCtrl := FALSE;
+END_IF
+
+//clutch pedal trigger and arm state in MasterArmState_Clutch
+//clutchCtrl := m_cartStatus.m_clutchSwitch AND MasterArmState_Clutch = m_masterStatus.m_armState[1] AND MasterArmState_Clutch = m_masterStatus.m_armState[2];
+m_systemVoiceR[2](CLK:= MasterArmState_Clutch = m_masterStatus.m_armState[1], Q=> );
+IF m_systemVoiceR[2].Q THEN
+	clutchCtrl := TRUE;
+END_IF
+//clutchCtrl := m_cartStatus.m_clutchSwitch AND MasterArmState_Clutch = m_masterStatus.m_armState[1] AND MasterArmState_Clutch = m_masterStatus.m_armState[2];
+m_systemVoiceTon[2](IN:= clutchCtrl, PT:= m_systemVoiceTriggerTime, Q=> , ET=> );
+m_systemVoiceRS[2](SET:= clutchCtrl, RESET1:= m_systemVoiceTon[2].Q , Q1=> );
+IF m_systemVoiceRS[2].Q1 THEN
+	systemVoice := systemVoice_triger5;
+	RETURN;
+ELSE
+	clutchCtrl := FALSE;
+END_IF
+
+//clutch pedal release and arm state exit MasterArmState_Clutch
+m_systemVoiceF[10](CLK:= clutchCtrl, Q=> );
+IF m_systemVoiceF[10].Q THEN
+	clutchReleaseCtrl := TRUE;
+END_IF
+m_systemVoiceTon[10](IN:= clutchReleaseCtrl, PT:= m_systemVoiceTriggerTime, Q=> , ET=> );
+m_systemVoiceRS[10](SET:= clutchReleaseCtrl, RESET1:= m_systemVoiceTon[10].Q , Q1=> );
+IF m_systemVoiceRS[10].Q1 THEN
+	systemVoice := systemVoice_release;
+	RETURN;
+ELSE
+	clutchReleaseCtrl := FALSE;
+END_IF
+
+//arm switch pedal trigger and arm switch secceed
+IF m_lastTeleSlaveArmIdx[1] <> m_masterStatus.m_teleSlaveArmIdx[1] OR m_lastTeleSlaveArmIdx[2] <> m_masterStatus.m_teleSlaveArmIdx[2] THEN
+	m_armSwitchFlag := TRUE;
+END_IF
+armSwitch := m_armSwitchFlag;// m_cartStatus.m_armSwitch AND
+m_lastTeleSlaveArmIdx[1] := m_masterStatus.m_teleSlaveArmIdx[1];
+m_lastTeleSlaveArmIdx[2] := m_masterStatus.m_teleSlaveArmIdx[2];
+m_systemVoiceTon[3](IN:= m_armSwitchFlag, PT:= T#100MS, Q=> , ET=> );
+m_systemVoiceRS[3](SET:= m_armSwitchFlag, RESET1:= m_systemVoiceTon[3].Q , Q1=> );
+IF m_systemVoiceRS[3].Q1 THEN
+	systemVoice := systemVoice_end7;
+	RETURN;
+ELSE
+	m_armSwitchFlag :=FALSE;
+END_IF
+
+//finger clutch trigger and arm state in MasterArmState_Clutch
+//fingerClutchCtrl := (MasterArmControl.m_masterRobot.m_masterArms[1].handClutchSwitch AND MasterArmState_Clutch = m_masterStatus.m_armState[1]) OR (MasterArmControl.m_masterRobot.m_masterArms[2].handClutchSwitch AND MasterArmState_Clutch = m_masterStatus.m_armState[2]);
+m_systemVoiceR[4](CLK:= MasterArmState_Clutch = m_masterStatus.m_armState[2], Q=> );
+IF m_systemVoiceR[4].Q THEN
+	fingerClutchCtrl := TRUE;
+END_IF
+m_systemVoiceTon[4](IN:= fingerClutchCtrl, PT:= m_systemVoiceTriggerTime, Q=> , ET=> );
+m_systemVoiceRS[4](SET:= fingerClutchCtrl, RESET1:= m_systemVoiceTon[4].Q , Q1=> );
+IF m_systemVoiceRS[4].Q1 THEN
+	systemVoice := systemVoice_triger5;
+	RETURN;
+ELSE
+	fingerClutchCtrl := FALSE;
+END_IF
+
+//finger clutch release and arm state exit MasterArmState_Clutch
+m_systemVoiceF[11](CLK:= fingerClutchCtrl, Q=> );
+IF m_systemVoiceF[11].Q THEN
+	fingerClutchReleaseCtrl := TRUE;
+END_IF
+m_systemVoiceTon[11](IN:= fingerClutchReleaseCtrl, PT:= m_systemVoiceTriggerTime, Q=> , ET=> );
+m_systemVoiceRS[11](SET:= fingerClutchReleaseCtrl, RESET1:= m_systemVoiceTon[11].Q , Q1=> );
+IF m_systemVoiceRS[11].Q1 THEN
+	systemVoice := systemVoice_release;
+	RETURN;
+ELSE
+	fingerClutchReleaseCtrl := FALSE;
+END_IF
+
+//energy instrument excitation state voice
+//cut voice
+elecKnifeCtrlIsMonopoleCut :=CartControl.m_masterCart.m_elecKnifeCtrlWord = EnergyCtrlWord_isMonopoleCut;
+m_systemVoiceRS[5](SET:= elecKnifeCtrlIsMonopoleCut , RESET1:= NOT m_systemVoiceRS[5].SET , Q1=> );
+IF m_systemVoiceRS[5].Q1 THEN
+	systemVoice := systemVoice_cut;
+	RETURN;
+END_IF
+
+//coagul voice
+elecKnifeCtrlIsMonopoleCoagul := CartControl.m_masterCart.m_elecKnifeCtrlWord = EnergyCtrlWord_isMonopoleCoagul;
+elecKnifeCtrlIsBipolarCoagul := CartControl.m_masterCart.m_elecKnifeCtrlWord = EnergyCtrlWord_isBipolarCoagul;
+m_systemVoiceRS[6](SET:= elecKnifeCtrlIsMonopoleCoagul OR elecKnifeCtrlIsBipolarCoagul , RESET1:= NOT m_systemVoiceRS[6].SET , Q1=> );
+IF m_systemVoiceRS[6].Q1 THEN
+	systemVoice := systemVoice_coag;
+	RETURN;
+END_IF
+
+//UltrasoundKnife MIN voice
+elecKnifeCtrlIsUltraMin := CartControl.m_masterCart.m_elecKnifeCtrlWord = EnergyCtrlWord_isUltraMin;
+m_systemVoiceRS[7](SET:= elecKnifeCtrlIsUltraMin , RESET1:= NOT m_systemVoiceRS[7].SET , Q1=> );
+IF m_systemVoiceRS[7].Q1 THEN
+	systemVoice := systemVoice_UltraKnifeMin;
+	RETURN;
+END_IF
+
+//UltrasoundKnife MAX voice
+elecKnifeCtrlIsUltraMax := CartControl.m_masterCart.m_elecKnifeCtrlWord = EnergyCtrlWord_isUltraMax;
+m_systemVoiceRS[8](SET:= elecKnifeCtrlIsUltraMax , RESET1:= NOT m_systemVoiceRS[8].SET , Q1=> );
+IF m_systemVoiceRS[8].Q1 THEN
+	systemVoice := systemVoice_UltraKnifeMax;
+	RETURN;
+END_IF
+
+//master-slave instrument out limit
+slaveArmIsMS := g_zeroVec4b;
+FOR i:=1 TO g_mArmNum DO
+	IF m_masterStatus.m_armState[i] = MasterArmState_MasterSlave THEN
+		slaveArmIsMS[m_masterStatus.m_teleSlaveArmIdx[i]]:= TRUE;
+	END_IF
+END_FOR
+
+FOR i := 1 TO g_sArmNum DO
+	FOR j := 1 TO 3 DO
+		oriErrInScope[i][j]:=m_masterStatus.m_masterSlavePoseError[i][j+3];
+	END_FOR
+
+	oriErrNorm[i] := norm(oriErrInScope[i]);
+	cycleOutput1HZEnable[i] := oriErrNorm[i]>0*g_deg2Rad AND oriErrNorm[i]<45*g_deg2Rad AND slaveArmIsMS[i];
+	IF m_cycleOutput[i][1].run(bEnable:=cycleOutput1HZEnable[i], input:=1) THEN
+		cycleOutput1HZ := TRUE;
+		EXIT;
+	END_IF
+	
+	cycleOutput2HZEnable := oriErrNorm[i]>=45*g_deg2Rad AND slaveArmIsMS[i];
+	IF m_cycleOutput[i][2].run(bEnable:=cycleOutput2HZEnable, input:=2) THEN
+		cycleOutput2HZ := TRUE;
+		EXIT;
+	END_IF
+END_FOR
+
+m_systemVoiceTon[12](IN:= cycleOutput1HZ, PT:= m_systemVoiceTriggerTime, Q=> , ET=> );
+m_systemVoiceRS[12](SET:= cycleOutput1HZ, RESET1:= m_systemVoiceTon[12].Q , Q1=> );
+IF m_systemVoiceRS[12].Q1 THEN
+	systemVoice := systemVoice_insOutLimit;
+	RETURN;
+ELSE
+	cycleOutput1HZ := FALSE;
+END_IF
+
+m_systemVoiceTon[13](IN:= cycleOutput2HZ, PT:= m_systemVoiceTriggerTime, Q=> , ET=> );
+m_systemVoiceRS[13](SET:= cycleOutput2HZ, RESET1:= m_systemVoiceTon[13].Q , Q1=> );
+IF m_systemVoiceRS[13].Q1 THEN
+	systemVoice := systemVoice_insOutLimit;
+	RETURN;
+ELSE
+	cycleOutput2HZ := FALSE;
+END_IF
+
+//slave force mode 
+slaveForceMode[1] := (MasterArmControl.slavePublicByte AND 16#01) = 16#01;
+slaveForceMode[2] := (MasterArmControl.slavePublicByte AND 16#02) = 16#02;
+slaveForceMode[3] := (MasterArmControl.slavePublicByte AND 16#04) = 16#04;
+slaveForceMode[4] := (MasterArmControl.slavePublicByte AND 16#08) = 16#08;
+
+FOR i := 1 TO g_sArmNum DO
+	IF slaveForceMode[i] <> slaveForceModeLast[i] THEN
+		slaveForceModeActivate := TRUE;
+		EXIT;
+	END_IF
+END_FOR
+slaveForceModeLast:= slaveForceMode;
+m_systemVoiceTon[14](IN:= slaveForceModeActivate, PT:= T#100MS, Q=> , ET=> );
+m_systemVoiceRS[14](SET:= slaveForceModeActivate, RESET1:= m_systemVoiceTon[14].Q , Q1=> );
+IF m_systemVoiceRS[14].Q1 THEN
+	systemVoice := systemVoice_end7;
+	RETURN;
+ELSE
+	slaveForceModeActivate :=FALSE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
     <LineIds Name="SafetyCheck">
-      <LineId Id="132" Count="46" />
+      <LineId Id="894" Count="70" />
       <LineId Id="59" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.armSafetyCheckAllowed">
-      <LineId Id="3" Count="22" />
+      <LineId Id="85" Count="23" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.armSafetyCheckInputCast">
-      <LineId Id="3" Count="29" />
+      <LineId Id="83" Count="27" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.checkEtherCATAll">
+      <LineId Id="3" Count="7" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="11" Count="2" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="14" Count="15" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.checkFileAndNetId">
+      <LineId Id="53" Count="0" />
+      <LineId Id="15" Count="2" />
+      <LineId Id="52" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.communicationCheck">
+      <LineId Id="19" Count="15" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.jointEncoderCaliCast">
+      <LineId Id="3" Count="20" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.loadConfigFile">
+      <LineId Id="60" Count="34" />
+      <LineId Id="52" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.readDeviceNetId">
+      <LineId Id="3" Count="20" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="24" Count="20" />
+      <LineId Id="46" Count="3" />
+      <LineId Id="56" Count="23" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.readErrFlag">
@@ -264,8 +850,33 @@ m_checkVariable[g_cartNum].m_promptLocation[7] := g_cartNum;
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="SafetyCheck.robotPromptMassageCast">
-      <LineId Id="3" Count="46" />
+      <LineId Id="59" Count="45" />
       <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SafetyCheck.systemVoice">
+      <LineId Id="202" Count="139" />
+      <LineId Id="404" Count="0" />
+      <LineId Id="408" Count="0" />
+      <LineId Id="411" Count="1" />
+      <LineId Id="409" Count="1" />
+      <LineId Id="407" Count="0" />
+      <LineId Id="342" Count="3" />
+      <LineId Id="347" Count="30" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="452" Count="0" />
+      <LineId Id="446" Count="0" />
+      <LineId Id="444" Count="0" />
+      <LineId Id="447" Count="2" />
+      <LineId Id="453" Count="0" />
+      <LineId Id="451" Count="0" />
+      <LineId Id="454" Count="0" />
+      <LineId Id="471" Count="0" />
+      <LineId Id="473" Count="0" />
+      <LineId Id="472" Count="0" />
+      <LineId Id="455" Count="0" />
+      <LineId Id="461" Count="7" />
+      <LineId Id="450" Count="0" />
+      <LineId Id="439" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

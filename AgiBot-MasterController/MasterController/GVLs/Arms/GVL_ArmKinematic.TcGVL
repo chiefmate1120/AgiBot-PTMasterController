@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
   <GVL Name="GVL_ArmKinematic" Id="{fa1bdebf-5188-4d48-a57d-03bec0a3a2f4}">
     <Declaration><![CDATA[// use slot attribute larger than 49990, which is the default one, if it depends on variable in other file
 {attribute 'global_init_slot' := '49991'} 
@@ -50,15 +50,15 @@ g_a4:LREAL:=0.365;
 g_a9:LREAL:=0.06;
 
 //alpha,a,d,theta	
-g_masterArmDH:ARRAY[1..9,1..4] OF LREAL :=[0,	0,		g_d1,	0,      
-										-pi/2,	0,		0,		0,
-										0,		g_a3,	0,		0,
-										-pi/2,	g_a4,	g_d4,	0,       
-										pi/2,	0,		0,		0,
-										-pi/2,	0,		0,		0,
-										pi/2,	0,		0,		0,
-										-pi/2,	0,		0,		0,// joint 8
-										0,		g_a9, 	0,		0];
+g_masterArmDH:ARRAY[1..9,1..4] OF LREAL :=[0,	0,		0,	g_d1,     
+										-pi/2,	0,		0,	0,	
+										0,		g_a3,	0,	0,	
+										-pi/2,	g_a4,	0,	g_d4,      
+										pi/2,	0,		0,	0,	
+										-pi/2,	0,		0,	0,	
+										pi/2,	0,		0,	0,	
+										-pi/2,	0,		0,	0,	// joint 8
+										0,		g_a9, 	0,	0];
 											
 // master grip angle fitting coefficients(wrt normalized hall sensor value)
 g_masterGripAngleFitCoeff : ARRAY[1..6] OF LREAL :=

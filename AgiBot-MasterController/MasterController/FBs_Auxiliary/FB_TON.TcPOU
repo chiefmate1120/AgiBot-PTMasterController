@@ -27,6 +27,16 @@ ELSE
 	runTime := zeroTime;
 END_IF]]></ST>
     </Implementation>
+    <Method Name="reset" Id="{53d849a2-1dc3-4e78-be5b-7c716a068897}">
+      <Declaration><![CDATA[METHOD reset : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[runTime :=T#0S;
+]]></ST>
+      </Implementation>
+    </Method>
     <LineIds Name="FB_TON">
       <LineId Id="67" Count="0" />
       <LineId Id="59" Count="7" />

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <DUT Name="FRRecData" Id="{498f93ee-6573-44d5-96ab-dd04c5146e78}">
+    <Declaration><![CDATA[TYPE FRRecData :
+UNION
+	dataByte:ARRAY[0..7]OF BYTE;
+	dataLreal:LREAL;
+END_UNION
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

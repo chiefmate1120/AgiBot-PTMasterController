@@ -11,10 +11,17 @@ VAR
 	m_minHallSensorValue :LREAL;
 	m_maxHallSensorValue:LREAL;
 	m_hallSensorRange:LREAL;
+	m_minHallLowSensorValue :LREAL;
+	m_maxHallLowSensorValue:LREAL;
+	m_hallLowSensorRange:LREAL;
+	
 	
 	// grip angle from hall sensor IO
-	m_gripHallSenorValue :LREAL;
+	m_gripHighHallSenorValue :LREAL;
+	m_gripLowHallSenorValue :LREAL;
+	m_normLowHallSensorValue: LREAL;
 	m_normHallSensorValue: LREAL;
+	m_normHighHallSensorValue: LREAL;
 	m_gripAngle :LREAL;
 	m_gripAngLpf : FB_LowPassFilter;
 END_VAR
@@ -33,6 +40,9 @@ END_VAR
 m_minHallSensorValue:=(GVL_ArmJointCaliData.g_minHallSensorValue[i_armIdx]/65536) AND 16#0000FFFF; 
 m_maxHallSensorValue:=(GVL_ArmJointCaliData.g_maxHallSensorValue[i_armIdx]/65536) AND 16#0000FFFF; 
 m_hallSensorRange := m_maxHallSensorValue-m_minHallSensorValue;
+m_minHallLowSensorValue:=(GVL_ArmJointCaliData.g_minHallSensorValue[i_armIdx]) AND 16#0000FFFF; 
+m_maxHallLowSensorValue:=(GVL_ArmJointCaliData.g_maxHallSensorValue[i_armIdx]) AND 16#0000FFFF; 
+m_hallLowSensorRange := m_maxHallLowSensorValue-m_minHallLowSensorValue;
 
 // init filter
 m_gripAngLpf.init(1, g_gripAngLpfCutoffFreq, g_armCtrlFreq);]]></ST>
@@ -46,10 +56,20 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[// sensor io parse
-m_gripHallSenorValue:=(IOValue/65536) AND 16#0000FFFF; //high 16 bits
+m_gripHighHallSenorValue:=(IOValue/65536) AND 16#0000FFFF; //high 16 bits
+m_gripLowHallSenorValue:=(IOValue) AND 16#0000FFFF; //low 16 bits
 
 // normalize hall sensor value
-m_normHallSensorValue:=LIMIT(0, (m_gripHallSenorValue-m_minHallSensorValue)/m_hallSensorRange, 1);
+m_normHighHallSensorValue:=LIMIT(0, (m_gripHighHallSenorValue-m_minHallSensorValue)/m_hallSensorRange, 1);
+m_normLowHallSensorValue:=LIMIT(0, (m_gripLowHallSenorValue-m_minHallLowSensorValue)/m_hallLowSensorRange, 1);
+IF m_gripHighHallSenorValue = 0 THEN
+	m_normHallSensorValue := m_normLowHallSensorValue;
+ELSIF m_gripLowHallSenorValue = 0 THEN
+	m_normHallSensorValue := m_normHighHallSensorValue;
+ELSE
+	m_normHallSensorValue := (m_normHighHallSensorValue + m_normLowHallSensorValue)/2;
+END_IF
+
 
 // grip angle fitting
 m_gripAngle := g_masterGripAngleFitCoeff[1] * EXPT(m_normHallSensorValue,5)
@@ -58,9 +78,11 @@ m_gripAngle := g_masterGripAngleFitCoeff[1] * EXPT(m_normHallSensorValue,5)
 			+ g_masterGripAngleFitCoeff[4] * EXPT(m_normHallSensorValue,2)
 			+ g_masterGripAngleFitCoeff[5] * EXPT(m_normHallSensorValue,1)
 			+ g_masterGripAngleFitCoeff[6];
-	
+
+
 // filt and cap the result
 m_gripAngle := m_gripAngLpf.run(m_gripAngle);
+
 m_gripAngle := LIMIT(g_minGripAngle, m_gripAngle, g_maxGripAngle);
 
 run:=m_gripAngle;]]></ST>
@@ -70,14 +92,11 @@ run:=m_gripAngle;]]></ST>
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_GripAngleCalc.init">
-      <LineId Id="9" Count="0" />
-      <LineId Id="11" Count="0" />
-      <LineId Id="13" Count="2" />
-      <LineId Id="10" Count="0" />
+      <LineId Id="20" Count="8" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_GripAngleCalc.run">
-      <LineId Id="54" Count="17" />
+      <LineId Id="76" Count="29" />
       <LineId Id="22" Count="0" />
     </LineIds>
   </POU>

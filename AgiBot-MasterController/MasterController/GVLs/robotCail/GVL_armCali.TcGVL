@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <GVL Name="GVL_armCali" Id="{4b25f0e4-26a3-463d-bd1e-f771cb3aeb62}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	//arm enter calibration mode,state machine jump to ArmCali
+	g_armEnterCaliMode :Vec2b;
+	
+	//joint calibration state,  this joint will go into current mode
+	g_jointIntoCaliState :ARRAY [1..g_mArmNum] OF  vec7b;
+	
+	//joint link encoder frist position calibration
+	g_linkEncFristPosCali :ARRAY [1..g_mArmNum] OF  vec7b;
+	g_linkEncFristCaliTrigger :ARRAY [1..g_mArmNum] OF Vec7b;
+	
+	//joint link encoder second position calibration
+	g_linkEncSecondPosCali :ARRAY [1..g_mArmNum] OF  vec7b;
+	g_linkEncSecondCaliTrigger :ARRAY [1..g_mArmNum] OF Vec7b;
+	
+	//joint link encoder home position calibration
+	g_linkEncHomePosCali :ARRAY [1..g_mArmNum] OF Vec7b;
+	g_linkEncHomePosCaliTrigger :ARRAY [1..g_mArmNum] OF Vec7b;
+	
+	//joint link zero crossing or not
+	g_linkZeroCrossOrNot :ARRAY [1..g_mArmNum] OF Vec7i;
+	
+	//joint link frist limit position
+	g_linkLimitFristPos :ARRAY [1..g_mArmNum] OF Vec7di;
+	
+	//joint link second limit position
+	g_linkLimitSecondPos :ARRAY [1..g_mArmNum] OF Vec7di;
+	
+	//joint link home position
+	g_linkHomePos :ARRAY [1..g_mArmNum] OF Vec7di;
+	
+	//joint link position write calibration data
+	g_linkPosWriteCaliData : ARRAY [1..g_mArmNum] OF Vec7b;
+	g_linkPosWriteCaliDataTrigger : ARRAY [1..g_mArmNum] OF Vec7b;
+	
+	//calibration data write file
+	g_caliDataWrite :BOOL;
+	g_caliDataWriteTrigger :BOOL;
+
+	//cart link calibration
+	g_cartEnterCaliMode :BOOL;
+	g_linkEncFristPosCaliOfCart : vec4b;
+	g_linkEncFristCaliTriggerOfCart :Vec4b;
+	g_linkEncSecondPosCaliOfCart : vec4b;
+	g_linkEncSecondCaliTriggerOfCart : Vec4b;
+	g_linkEncHomePosCaliOfCart : Vec4b;
+	g_linkEncHomePosCaliTriggerOfCart : Vec4b;
+	g_linkZeroCrossOrNotOfCart : Vec4i;
+	g_linkLimitFristPosOfCart :Vec4di;
+	g_linkLimitSecondPosOfCart :Vec4di;
+	g_linkHomePosOfCart : Vec4di;
+	g_linkPosWriteCaliDataOfCart : Vec4b;
+	g_linkPosWriteCaliDataTriggerOfCart : Vec4b;
+	g_caliDataWriteOfCart :BOOL;
+	g_caliDataWriteTriggerOfCart :BOOL;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

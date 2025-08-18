@@ -36,7 +36,7 @@ STRUCT
 	m_gripHallSensor : ARRAY [1..g_mArmNum] OF UDINT;
 	
 	//slave on line
-	m_slaveOnLine : BOOL;
+	m_slaveHeartBeat : INT;
 	
 	//msater-slave matching status
 	m_IKSuccess :ARRAY [1..g_mArmNum] OF BOOL;
@@ -46,6 +46,9 @@ STRUCT
 	
 	//master arms mapping slave arms
 	m_matchedMasterArmIdx : ST_MatchedMasterArmIdx;
+	
+	// master slave pose error [position, angle*axis] in endoscope coordinate
+	m_masterSlavePoseError :ARRAY[1..g_sArmNum] OF Vec6d; 
 END_STRUCT
 END_TYPE
 ]]></Declaration>

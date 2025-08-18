@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
   <POU Name="FB_StateCtrlTest" Id="{0c47bb14-eaef-4d00-89db-6153e5307754}" SpecialFunc="None">
     <Declaration><![CDATA[// Brief: Master Arm Test
 FUNCTION_BLOCK PUBLIC FB_StateCtrlTest EXTENDS FB_MasterArmCtrlBase
@@ -50,6 +50,7 @@ IF m_testJntIdx >=1 AND m_testJntIdx <=7 THEN
 		m_cmdJntVel[m_testJntIdx]:=0;
 	ELSE
 		m_timePeriod:=0;
+		m_initJntPos[m_testJntIdx]:= i_masterArm.curJntPos[m_testJntIdx];
 	END_IF
 	
 END_IF
@@ -109,9 +110,7 @@ SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
 m_initJntPos := i_masterArm.curJntPos;
 
 m_jntOPMode := g_allPosTrqMode;
-m_jntOPMode[5]:=DriverOPMode_Trq;
-m_jntOPMode[6]:=DriverOPMode_Trq;
-m_jntOPMode[7]:=DriverOPMode_Trq;
+//m_jntOPMode[4] := DriverOPMode_PosTrq;
 
 // update commands to arm
 copyCmds(r_masterArmCtrlCmd);]]></ST>
@@ -129,6 +128,7 @@ copyCmds(r_masterArmCtrlCmd);]]></ST>
       <LineId Id="208" Count="0" />
       <LineId Id="231" Count="0" />
       <LineId Id="209" Count="1" />
+      <LineId Id="264" Count="0" />
       <LineId Id="207" Count="0" />
       <LineId Id="139" Count="0" />
       <LineId Id="134" Count="0" />
@@ -138,14 +138,13 @@ copyCmds(r_masterArmCtrlCmd);]]></ST>
       <LineId Id="119" Count="0" />
       <LineId Id="113" Count="0" />
     </LineIds>
+    <LineIds Name="FB_StateCtrlTest.calcCmdJntTrq">
+      <LineId Id="3" Count="4" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
     <LineIds Name="FB_StateCtrlTest.init">
-      <LineId Id="67" Count="4" />
-      <LineId Id="81" Count="0" />
-      <LineId Id="80" Count="0" />
-      <LineId Id="102" Count="0" />
-      <LineId Id="106" Count="0" />
-      <LineId Id="91" Count="1" />
-      <LineId Id="90" Count="0" />
+      <LineId Id="124" Count="11" />
+      <LineId Id="2" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

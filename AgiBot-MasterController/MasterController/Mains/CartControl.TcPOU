@@ -17,6 +17,7 @@ VAR
 	
 	// wait time before cart init for ethercat to be statble 
 	m_cartInitWaitTime : LREAL:=0;
+	m_cartEtherCATOPTime : LREAL:=0;
 	
 	// cart init flag
 	m_cartInit :BOOL :=FALSE;
@@ -26,11 +27,18 @@ VAR
 	m_ergonInfoHeightF : F_TRIG;
 	m_userLoggedR : R_TRIG;
 	m_ergonInfoHeight : BOOL;
+	
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// wait communication to be stable
-IF(m_cartInitWaitTime<g_robotInitWaitTime) THEN
+      <ST><![CDATA[//wait cart drive EtherCAT into OP state
+IF NOT SafetyCheck.m_safetyCheckData.m_cartEtherCATAllOP AND NOT m_cartInit THEN
+	m_cartEtherCATOPTime := m_cartEtherCATOPTime + g_cartCtrlCycleTime;
+	RETURN;
+END_IF
+
+// wait communication to be stable
+IF(m_cartInitWaitTime<g_robotInitWaitTime) OR NOT(SafetyCheck.m_loadConfigFileOK) THEN
 	m_cartInitWaitTime := m_cartInitWaitTime+g_armCtrlCycleTime;
 	RETURN;
 END_IF
@@ -106,36 +114,34 @@ GVL_interactUI.g_ergonomicCurData.m_handrailHeight := m_cartJointData.m_curJntPo
 GVL_interactUI.g_ergonomicCurData.m_footDistance:= m_cartJointData.m_curJntPos[4];
 GVL_interactUI.g_cartInMotion := m_cartStatus.m_consoleInManualAdjust;
 
-
-//work heart
-m_workHeartTon0(IN:= GVL_interactUI.g_heartBeat = 1, PT:= T#1S, Q=> , ET=> );
-m_workHeartTon1(IN:= GVL_interactUI.g_heartBeat = 0, PT:= T#1S, Q=> , ET=> );
-IF m_workHeartTon0.Q THEN
-	GVL_interactUI.g_heartBeat :=0 ;
-ELSIF m_workHeartTon1.Q THEN
-	GVL_interactUI.g_heartBeat  :=1 ;
-END_IF
+Gvl_IO.g_stopButton := SafetyCheck.m_stopButton;
+Gvl_IO.g_clutchPedal := m_masterCart.m_clutchPedalIO;
+Gvl_IO.g_endoScopePedal := m_masterCart.m_endoScopePedalIO;
+Gvl_IO.g_armSwitch := m_masterCart.m_armSwitchIO;
+Gvl_IO.g_electricCutLeft := m_masterCart.m_electricCutLeft;
+Gvl_IO.g_electricCutRight := m_masterCart.m_electricCutRight;
+Gvl_IO.g_electricCoagulLeft := m_masterCart.m_electricCoagulLeft;
+Gvl_IO.g_electricCoagulRight := m_masterCart.m_electricCoagulRight;
+Gvl_IO.g_electricCutLeftSensor := m_masterCart.m_electricCutLeftAllow;
+Gvl_IO.g_electricCoagulLeftSensor := m_masterCart.m_electricCoagulLeftAllow;
+Gvl_IO.g_electricCutRightSensor := m_masterCart.m_electricCutRightAllow;
+Gvl_IO.g_electricCoagulRightSensor := m_masterCart.m_electricCoagulRightAllow;
+Gvl_IO.g_surgonHeadIn := m_masterCart.m_surgonHeadInIO;
+Gvl_IO.g_cartLockSignalLeft := SafetyCheck.m_cartLockSignalLeft;
+Gvl_IO.g_cartLockSignalRight := SafetyCheck.m_cartLockSignalRight;
+Gvl_IO.g_cartJointCtrl := m_masterCart.m_cartJointCtrlIO;
 ]]></ST>
       </Implementation>
     </Method>
     <LineIds Name="CartControl">
-      <LineId Id="16" Count="10" />
-      <LineId Id="95" Count="1" />
-      <LineId Id="94" Count="0" />
-      <LineId Id="27" Count="0" />
-      <LineId Id="31" Count="1" />
-      <LineId Id="72" Count="0" />
-      <LineId Id="71" Count="0" />
-      <LineId Id="50" Count="0" />
+      <LineId Id="230" Count="0" />
+      <LineId Id="150" Count="5" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="157" Count="17" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="CartControl.UIInputProcess">
-      <LineId Id="95" Count="3" />
-      <LineId Id="160" Count="0" />
-      <LineId Id="99" Count="7" />
-      <LineId Id="152" Count="0" />
-      <LineId Id="157" Count="2" />
-      <LineId Id="107" Count="39" />
+      <LineId Id="217" Count="63" />
       <LineId Id="66" Count="0" />
     </LineIds>
   </POU>
