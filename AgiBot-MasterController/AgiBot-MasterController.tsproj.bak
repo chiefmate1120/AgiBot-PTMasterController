@@ -4966,9 +4966,11 @@
 				<Link VarA="TaskArmControl Inputs^MasterArmControl.m_masterInputDataPool.m_cartStatus" VarB="TaskCartControl Outputs^CartControl.m_cartStatus"/>
 				<Link VarA="TaskArmControl Inputs^MasterArmControl.m_masterInputDataPool.m_masterDynaData" VarB="TaskDynamic Outputs^RobotDynamics.m_masterDynaData"/>
 				<Link VarA="TaskArmControl Inputs^MasterArmControl.m_masterInputDataPool.m_safetyData" VarB="TaskArmControl Outputs^SafetyCheck.m_safetyCheckData"/>
+				<Link VarA="TaskDynamic Inputs^RobotDynamics.m_masterJointsData" VarB="TaskArmControl Outputs^MasterArmControl.m_masterJointsData"/>
 				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_armMotorData" VarB="TaskArmControl Outputs^MasterArmControl.m_armMotorData"/>
 				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_cartJointData" VarB="TaskCartControl Outputs^CartControl.m_cartJointData"/>
 				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_cartStatus" VarB="TaskCartControl Outputs^CartControl.m_cartStatus"/>
+				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_masterJointData" VarB="TaskArmControl Outputs^MasterArmControl.m_masterJointsData"/>
 				<Link VarA="TaskSafetyCheck Inputs^SafetyCheck.m_masterStatus" VarB="TaskArmControl Outputs^MasterArmControl.m_masterStatus"/>
 			</OwnerB>
 		</OwnerA>

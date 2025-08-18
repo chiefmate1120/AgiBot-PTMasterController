@@ -1886,7 +1886,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{0C182974-8910-4DEE-A0B7-B414028AF699}" Name="MasterController" PrjFilePath="MasterController\MasterController.plcproj" TmcFilePath="MasterController\MasterController.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="MasterController\MasterController.tmc" TmcHash="{8EC1A4FF-2199-BA4C-CCC7-1E1724F2E181}">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="MasterController\MasterController.tmc" TmcHash="{3172C1BE-3857-C05A-0636-076F41E3EA70}">
 					<Name>MasterController Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Vars VarGrpType="1">
@@ -2271,14 +2271,6 @@
 						<OwnerA Name="InputDst" Prefix="TIPC^MasterController^MasterController Instance" Type="1">
 							<OwnerB Name="TIPC^MasterController^MasterController Instance">
 								<Link VarA="MasterArmControl.m_masterInputDataPool.m_safetyData" TypeA="ST_SafetyData" InOutA="0" GuidA="{276A188E-ED54-D0EE-8D17-D05AFB2AA6B2}" VarB="TaskCartControl Outputs^SafetyCheck.m_safetyCheckData" RestoreInfo="BNotFound"/>
-							</OwnerB>
-						</OwnerA>
-					</UnrestoredVarLinks>
-					<UnrestoredVarLinks ImportTime="2025-08-18T13:05:30">
-						<OwnerA Name="OutputSrc" Prefix="TIPC^MasterController^MasterController Instance" Type="2">
-							<OwnerB Name="TIPC^MasterController^MasterController Instance">
-								<Link VarA="MasterArmControl.m_masterJointsData" TypeA="ST_MasterJointData" InOutA="1" GuidA="{707085F0-503A-17BC-CD9D-11CA7C0249CD}" VarB="TaskDynamic Inputs^RobotDynamics.m_masterJointsData" RestoreInfo="TypeMismatch" OldTypeA="ST_MasterJointData" OldGuidA="{707085F0-503A-17BC-CD9D-11CA7C0249CD}" NewTypeA="ST_MasterJointData" NewGuidA="{5D4FADF1-4437-040E-B26B-641A0BC0CB9E}"/>
-								<Link VarA="MasterArmControl.m_masterJointsData" TypeA="ST_MasterJointData" InOutA="1" GuidA="{707085F0-503A-17BC-CD9D-11CA7C0249CD}" VarB="TaskSafetyCheck Inputs^SafetyCheck.m_masterJointData" RestoreInfo="TypeMismatch" OldTypeA="ST_MasterJointData" OldGuidA="{707085F0-503A-17BC-CD9D-11CA7C0249CD}" NewTypeA="ST_MasterJointData" NewGuidA="{5D4FADF1-4437-040E-B26B-641A0BC0CB9E}"/>
 							</OwnerB>
 						</OwnerA>
 					</UnrestoredVarLinks>
