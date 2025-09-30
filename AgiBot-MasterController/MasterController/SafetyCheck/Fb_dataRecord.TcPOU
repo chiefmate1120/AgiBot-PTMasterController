@@ -194,6 +194,14 @@ END_VAR
 		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_EtherCATState[6].EtherCATDeviceState);  gCSV_Buffer[i].aBuffer[1][j]:='EtherCATStateJ6';
 		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_EtherCATState[7].EtherCATDeviceState);  gCSV_Buffer[i].aBuffer[1][j]:='EtherCATStateJ7';
 
+		//error code
+		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_masterDriverInput[1].m_driverError);  gCSV_Buffer[i].aBuffer[1][j]:='driveErrorJ1';
+		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_masterDriverInput[2].m_driverError);  gCSV_Buffer[i].aBuffer[1][j]:='driveErrorJ2';
+		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_masterDriverInput[3].m_driverError);  gCSV_Buffer[i].aBuffer[1][j]:='driveErrorJ3';
+		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_masterDriverInput[4].m_driverError);  gCSV_Buffer[i].aBuffer[1][j]:='driveErrorJ4';
+		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_masterDriverInput[5].m_driverError);  gCSV_Buffer[i].aBuffer[1][j]:='driveErrorJ5';
+		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_masterDriverInput[6].m_driverError);  gCSV_Buffer[i].aBuffer[1][j]:='driveErrorJ6';
+		gCSV_Buffer[i].aBuffer[Index[i]][j:=j+1]:=UDINT_TO_STRING(i_safetyCheckVar[i].m_masterDriverInput[7].m_driverError);  gCSV_Buffer[i].aBuffer[1][j]:='driveErrorJ7';
 	END_IF
 END_FOR
 
@@ -280,6 +288,12 @@ IF ErrWritingFalg[3] = FALSE THEN
 	gCSV_Buffer[3].aBuffer[Index[3]][c:=c+1]:=UDINT_TO_STRING(i_safetyCheckVar.m_cartEtherCATState[3].EtherCATDeviceState);  gCSV_Buffer[3].aBuffer[1][c]:='EtherCATStateJ3';
 	gCSV_Buffer[3].aBuffer[Index[3]][c:=c+1]:=UDINT_TO_STRING(i_safetyCheckVar.m_cartEtherCATState[4].EtherCATDeviceState);  gCSV_Buffer[3].aBuffer[1][c]:='EtherCATStateJ4';
 
+	//error code
+	gCSV_Buffer[3].aBuffer[Index[3]][c:=c+1]:=UDINT_TO_STRING(i_safetyCheckVar.m_cartDriverInput[1].m_driverError);  gCSV_Buffer[3].aBuffer[1][c]:='driveErrorJ1';
+	gCSV_Buffer[3].aBuffer[Index[3]][c:=c+1]:=UDINT_TO_STRING(i_safetyCheckVar.m_cartDriverInput[2].m_driverError);  gCSV_Buffer[3].aBuffer[1][c]:='driveErrorJ2';
+	gCSV_Buffer[3].aBuffer[Index[3]][c:=c+1]:=UDINT_TO_STRING(i_safetyCheckVar.m_cartDriverInput[3].m_driverError);  gCSV_Buffer[3].aBuffer[1][c]:='driveErrorJ3';
+	gCSV_Buffer[3].aBuffer[Index[3]][c:=c+1]:=UDINT_TO_STRING(i_safetyCheckVar.m_cartDriverInput[4].m_driverError);  gCSV_Buffer[3].aBuffer[1][c]:='driveErrorJ4';
+	
 END_IF
 ]]></ST>
       </Implementation>
@@ -434,7 +448,8 @@ END_IF
     <LineIds Name="Fb_dataRecord.armDataCast">
       <LineId Id="295" Count="132" />
       <LineId Id="439" Count="8" />
-      <LineId Id="428" Count="4" />
+      <LineId Id="454" Count="8" />
+      <LineId Id="429" Count="3" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.cartDataCast">
@@ -466,6 +481,7 @@ END_IF
       <LineId Id="128" Count="0" />
       <LineId Id="139" Count="0" />
       <LineId Id="142" Count="4" />
+      <LineId Id="153" Count="5" />
       <LineId Id="141" Count="0" />
       <LineId Id="36" Count="1" />
     </LineIds>

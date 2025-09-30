@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
-  <POU Name="FB_MasterMassMat" Id="{78ef2f0f-84f3-4240-98a1-5b9eb119305d}" SpecialFunc="None">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_MasterMassMat" Id="{98ec5a5b-8c67-427f-a0c1-5fe09819a45a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MasterMassMat
 VAR_INPUT
 END_VAR
@@ -66,10 +66,10 @@ END_VAR
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
-    <Folder Name="Property" Id="{3ff18d81-0a58-4a72-a432-78f455dbb252}" />
-    <Property Name="cartMassMat" Id="{19b3befc-5a78-450f-9cf5-0b7c8de73bcc}" FolderPath="Property\">
+    <Folder Name="Property" Id="{a2a88cc3-8177-45b9-8a2a-e92a999e61b9}" />
+    <Property Name="cartMassMat" Id="{5e392b2d-478c-4674-82aa-cd060d237dad}" FolderPath="Property\">
       <Declaration><![CDATA[PROPERTY PUBLIC cartMassMat : Mat6d]]></Declaration>
-      <Get Name="Get" Id="{a2634321-5b04-43ed-ab21-580e02e321b0}">
+      <Get Name="Get" Id="{cfae2a6c-4509-440a-a508-e2368e407f95}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -78,9 +78,9 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="dynaNullspace" Id="{30a51394-9830-4e7b-b9ac-4ce04dcab1e2}" FolderPath="Property\">
+    <Property Name="dynaNullspace" Id="{e60c35bf-e43e-4f7c-a263-b94579047364}" FolderPath="Property\">
       <Declaration><![CDATA[PROPERTY PUBLIC dynaNullspace : Mat7d]]></Declaration>
-      <Get Name="Get" Id="{05722a06-d81f-401d-a2f2-4817b9e00feb}">
+      <Get Name="Get" Id="{7aef4a67-80d1-489d-ae23-27418efd6a1c}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -89,7 +89,7 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Method Name="init" Id="{071da840-a9f5-466a-bad9-e6f84f188b11}">
+    <Method Name="init" Id="{8875001b-4ea6-4a82-974b-57d1dabe89c7}">
       <Declaration><![CDATA[METHOD init : BOOL
 VAR_INPUT
 	i_armIdx :INT ;
@@ -134,9 +134,9 @@ END_FOR
 ]]></ST>
       </Implementation>
     </Method>
-    <Property Name="jntMassMat" Id="{4ebef795-43bc-4ac6-a7e8-b7eb867c9e8a}" FolderPath="Property\">
+    <Property Name="jntMassMat" Id="{ea9f4175-c5a8-4a83-9775-2ce4ca717798}" FolderPath="Property\">
       <Declaration><![CDATA[PROPERTY PUBLIC jntMassMat : Mat7d]]></Declaration>
-      <Get Name="Get" Id="{70c85f5c-4b81-4a94-a0d4-1696b1e2eccd}">
+      <Get Name="Get" Id="{a508046a-219b-4f72-b5a5-b486bb600f60}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -145,7 +145,7 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Method Name="updateDynamic" Id="{4aa0f784-cf1c-4d1b-8961-ce07abdf3cc9}">
+    <Method Name="updateDynamic" Id="{851887cc-2732-4394-8620-0ab012b3b9d9}">
       <Declaration><![CDATA[// update dynamic and kinematic data 
 METHOD updateDynamic : BOOL
 VAR_IN_OUT CONSTANT
@@ -221,7 +221,7 @@ matSub(g_eye7d, tmpMat7d, m_dynaNullspace);
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="updateKinematic" Id="{30b26e54-288d-4d07-b063-018aec2f349a}">
+    <Method Name="updateKinematic" Id="{d7eec9ea-d7e0-4c73-a3ad-1deeadc32f97}">
       <Declaration><![CDATA[// only update kinematic data
 METHOD PROTECTED updateKinematic : BOOL
 VAR_IN_OUT CONSTANT

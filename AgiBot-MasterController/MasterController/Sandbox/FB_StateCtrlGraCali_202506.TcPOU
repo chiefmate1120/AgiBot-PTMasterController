@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
-  <POU Name="FB_StateCtrlGraCali" Id="{5dbfd56a-404b-4a83-aef4-e32c9f265a53}" SpecialFunc="None">
+  <POU Name="FB_StateCtrlGraCali_202506" Id="{531d8d14-1bd3-4a7e-a3de-2b1adfd1c86b}" SpecialFunc="None">
     <Declaration><![CDATA[// Brief: Master Arm Home Posture
-FUNCTION_BLOCK PUBLIC FB_StateCtrlGraCali EXTENDS FB_MasterArmCtrlBase
+FUNCTION_BLOCK PUBLIC FB_StateCtrlGraCali_202506 EXTENDS FB_MasterArmCtrlBase
 VAR CONSTANT
-	m_caliMotionSegs :INT :=21;	
+	m_caliMotionSegs :INT :=18;	
 END_VAR
 VAR
 	// cali trajectory
@@ -14,9 +14,9 @@ VAR
 		 0, -90*g_deg2rad,   0.0,  -180*g_deg2rad,   90*g_deg2rad,  -140*g_deg2rad,  0,
 		 0,  -90*g_deg2Rad,    0.0,  -180*g_deg2Rad,  90*g_deg2rad,  -40*g_deg2rad, 0.0 , 
 		// joint5
-		 0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  47*g_deg2Rad,  -90*g_deg2Rad,    0,
-		 0.0,  -90*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  313*g_deg2Rad,  -90*g_deg2Rad,     0,
-		0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  47*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  270*g_deg2Rad,  -90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,    0,
 		// joint4
 		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -150*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  -30*g_deg2Rad, -210*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
@@ -25,18 +25,14 @@ VAR
 		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
 		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
-			// joint3-2
-		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,    0,
-		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,     0,
-		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,    0,
 		// joint2
 		 0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
 		 0.0,  -120*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
 		0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
 		// joint1/7
-		 0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    15*g_deg2Rad,
-		 -30.0*g_deg2Rad,  -90*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     -15*g_deg2Rad,
-		0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    15*g_deg2Rad];
+		 0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    45*g_deg2Rad,
+		 -30.0*g_deg2Rad,  -90*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     -45*g_deg2Rad,
+		0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    45*g_deg2Rad];
 		
 	m_rightGraCaliTraj :ARRAY [1..m_caliMotionSegs, 1..g_mJntNum] OF LREAL:=
 		// joint6
@@ -44,9 +40,9 @@ VAR
 		 0, -90*g_deg2rad,   0.0,  0*g_deg2rad,   270*g_deg2rad,  140*g_deg2rad,  0,
 		 0,  -90*g_deg2Rad,    0.0,  0*g_deg2Rad,  270*g_deg2rad,  40*g_deg2rad, 0.0 , 
 		// joint5
-		 0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  313*g_deg2Rad,  90*g_deg2Rad,    0,
-		 0.0,  -90*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  47*g_deg2Rad,  90*g_deg2Rad,     0,
-		0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  313*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  90*g_deg2Rad,  90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,    0,
 		// joint4
 		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  30*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  -30*g_deg2Rad, -30*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
@@ -55,18 +51,14 @@ VAR
 		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
 		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
-			// joint3-2
-		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,    0,
-		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, 0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,     0,
-		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,    0,
 		// joint2
 		 0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
 		 0.0,  -120*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
 		0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
 		// joint1/7
-		 0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    15*g_deg2Rad,
-		 30.0*g_deg2Rad,  -90*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     -15*g_deg2Rad,
-		0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    15*g_deg2Rad];
+		 0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    45*g_deg2Rad,
+		 30.0*g_deg2Rad,  -90*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     -45*g_deg2Rad,
+		0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    45*g_deg2Rad];
 		
 	
 
@@ -87,7 +79,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
-    <Method Name="calcCmdJntPos" Id="{e433772e-da9d-426f-b7c9-9e0d224bfbba}">
+    <Method Name="calcCmdJntPos" Id="{b8af1196-17b2-45bb-b1e8-2b897062d5c6}">
       <Declaration><![CDATA[// override this function in each exact controller
 METHOD PROTECTED calcCmdJntPos : BOOL
 
@@ -137,7 +129,7 @@ IF(m_caliTrajIdx > m_caliMotionSegs) THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="init" Id="{29cd6f4d-3ac1-4c31-b46d-cbe0128ca24a}">
+    <Method Name="init" Id="{b84cb55c-49a8-4c63-863a-72920a96b291}">
       <Declaration><![CDATA[METHOD PUBLIC init : BOOL
 VAR_IN_OUT CONSTANT
 	i_masterArm	:FB_MasterArm;
@@ -196,14 +188,14 @@ m_dataLogCount:=0;
 copyCmds(r_masterArmCtrlCmd);]]></ST>
       </Implementation>
     </Method>
-    <LineIds Name="FB_StateCtrlGraCali">
+    <LineIds Name="FB_StateCtrlGraCali_202506">
       <LineId Id="9" Count="0" />
     </LineIds>
-    <LineIds Name="FB_StateCtrlGraCali.calcCmdJntPos">
+    <LineIds Name="FB_StateCtrlGraCali_202506.calcCmdJntPos">
       <LineId Id="133" Count="31" />
       <LineId Id="32" Count="0" />
     </LineIds>
-    <LineIds Name="FB_StateCtrlGraCali.init">
+    <LineIds Name="FB_StateCtrlGraCali_202506.init">
       <LineId Id="347" Count="37" />
       <LineId Id="169" Count="0" />
     </LineIds>

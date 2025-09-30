@@ -113,6 +113,7 @@ masterOutputData.m_tryMSControl[1] := BOOL_TO_INT(m_masterInputDataPool.m_cartSt
 masterOutputData.m_tryMSControl[2] := BOOL_TO_INT(m_masterInputDataPool.m_cartStatus.m_surgonReady);
 masterOutputData.m_uiResetFault := GVL_interactUI.g_uiResetFault;
 masterOutputData.m_masterStopButton := NOT SafetyCheck.m_stopButton;
+masterOutputData.m_elecKnifeCtrlWordIO := CartControl.m_masterCart.m_elecKnifeCtrlWord;
 
 FOR i:=1 TO g_mArmNum DO
 	masterOutputData.m_armState[i] := masterStatus.m_armState[i];
@@ -138,6 +139,19 @@ END_FOR
 ]]></ST>
       </Implementation>
     </Method>
+    <Property Name="scopeUpDown" Id="{74780f2a-96e0-4a49-8578-c285f88548f4}" FolderPath="property\">
+      <Declaration><![CDATA[PROPERTY scopeUpDown : UINT]]></Declaration>
+      <Get Name="Get" Id="{5c975026-b486-4a7e-a06e-a31c6e2a9094}">
+        <Declaration><![CDATA[VAR
+	publicByte : LINT;
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[publicByte := m_slaveRobotData.m_publicByte;
+scopeUpDown := SHR(TO_UINT(publicByte),5) AND 16#FF;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <Method Name="slaveInputDataCast" Id="{110717ec-abfc-4dc8-a3ed-d3c3fbcf321b}">
       <Declaration><![CDATA[// convert from MSCommu_Slavetatus for master-slave communication to local ST_SlaveStatus for control
 METHOD slaveInputDataCast : BOOL
@@ -268,7 +282,9 @@ END_IF
       <LineId Id="87" Count="0" />
     </LineIds>
     <LineIds Name="MasterArmControl.masterOutputDataCast">
-      <LineId Id="137" Count="36" />
+      <LineId Id="137" Count="14" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="152" Count="21" />
       <LineId Id="17" Count="0" />
     </LineIds>
     <LineIds Name="MasterArmControl.slaveInputDataCast">

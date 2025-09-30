@@ -65,10 +65,7 @@ END_VAR
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlInit.calcCmdJntPos">
-      <LineId Id="43" Count="2" />
-      <LineId Id="61" Count="0" />
-      <LineId Id="46" Count="0" />
-      <LineId Id="62" Count="1" />
+      <LineId Id="101" Count="6" />
       <LineId Id="15" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlInit.init">
