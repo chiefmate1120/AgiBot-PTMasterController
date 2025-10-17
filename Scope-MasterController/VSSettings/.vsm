@@ -6,11 +6,11 @@
     <Node>
       <Title>GravityCaliData</Title>
       <Expanded>True</Expanded>
-      <FileName>C:\AgiBot-PTMasterController\Scope-MasterController\GravityCaliData.tcscopex</FileName>
+      <FileName>D:\GitMaster\AgiBot-PTMasterController\Scope-MasterController\GravityCaliData.tcscopex</FileName>
       <Children>
         <Node>
           <Title>DataPool</Title>
-          <Expanded>True</Expanded>
+          <Expanded>False</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
@@ -20,7 +20,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_cmdJntPos[1] (1)</Title>
+              <Title>m_cmdJntPos[1]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -32,7 +32,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_cmdJntPos[2] (1)</Title>
+              <Title>m_cmdJntPos[2]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -44,7 +44,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_cmdJntPos[3] (1)</Title>
+              <Title>m_cmdJntPos[3]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -56,7 +56,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_cmdJntPos[4] (1)</Title>
+              <Title>m_cmdJntPos[4]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -68,7 +68,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_cmdJntPos[5] (1)</Title>
+              <Title>m_cmdJntPos[5]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -80,7 +80,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_cmdJntPos[6] (1)</Title>
+              <Title>m_cmdJntPos[6]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -92,7 +92,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_cmdJntPos[7] (1)</Title>
+              <Title>m_cmdJntPos[7]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -104,7 +104,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntPos[1] (1)</Title>
+              <Title>m_curJntPos[1]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -116,7 +116,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntPos[2] (1)</Title>
+              <Title>m_curJntPos[2]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -128,7 +128,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntPos[3] (1)</Title>
+              <Title>m_curJntPos[3]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -140,7 +140,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntPos[4] (1)</Title>
+              <Title>m_curJntPos[4]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -152,7 +152,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntPos[5] (1)</Title>
+              <Title>m_curJntPos[5]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -164,7 +164,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntPos[6] (1)</Title>
+              <Title>m_curJntPos[6]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -176,7 +176,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntPos[7] (1)</Title>
+              <Title>m_curJntPos[7]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -188,7 +188,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntTrq[1] (1)</Title>
+              <Title>m_curJntTrq[1]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -200,7 +200,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntTrq[2] (1)</Title>
+              <Title>m_curJntTrq[2]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -212,7 +212,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntTrq[3] (1)</Title>
+              <Title>m_curJntTrq[3]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -224,7 +224,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntTrq[4] (1)</Title>
+              <Title>m_curJntTrq[4]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -236,7 +236,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntTrq[5] (1)</Title>
+              <Title>m_curJntTrq[5]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -248,7 +248,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntTrq[6] (1)</Title>
+              <Title>m_curJntTrq[6]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -260,7 +260,7 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_curJntTrq[7] (1)</Title>
+              <Title>m_curJntTrq[7]</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
@@ -558,11 +558,11 @@
     <Node>
       <Title>RobotJointData</Title>
       <Expanded>True</Expanded>
-      <FileName>C:\AgiBot-PTMasterController\Scope-MasterController\RobotJointData.tcscopex</FileName>
+      <FileName>D:\GitMaster\AgiBot-PTMasterController\Scope-MasterController\RobotJointData.tcscopex</FileName>
       <Children>
         <Node>
           <Title>DataPool</Title>
-          <Expanded>True</Expanded>
+          <Expanded>False</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
@@ -572,79 +572,79 @@
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (1)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (2)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (3)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (4)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (5)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (6)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (7)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (8)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (9)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (10)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (11)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (12)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
             </Node>
             <Node>
-              <Title>m_linkEncoder (13)</Title>
+              <Title>m_linkEncoder</Title>
               <Expanded>False</Expanded>
               <FileName></FileName>
               <Children />
