@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="Fb_SafetyCheck" Id="{d7e5b419-2971-4dae-96a7-39fe3a1a6245}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK Fb_SafetyCheck
 VAR_INPUT
@@ -94,7 +94,7 @@ FOR i:=1 TO g_mJntNum BY 1 DO
 	IF i = 2 THEN
 		//m_checkDelay[i_ArmId].T_linkEncErrCode[i](IN:= (driveErrorCheck(i_armId, i, 1, i_safetyCheckVar[i_ArmId].m_masterDriverInput[4].m_driverError) > 0  AND m_checkPermit[i_ArmId].m_linkEncErr[i]), PT:=m_checkDelayTime.Ti_linkEncErrCode , Q=> , ET=> );
 	ELSE
-		m_checkDelay[i_ArmId].T_linkEncErrCode[i](IN:= (driveErrorCheck(i_armId, i, 1, i_safetyCheckVar[i_ArmId].m_masterDriverInput[i].m_driverError) > 0  AND m_checkPermit[i_ArmId].m_linkEncErr[i]), PT:=m_checkDelayTime.Ti_linkEncErrCode , Q=> , ET=> );
+		//m_checkDelay[i_ArmId].T_linkEncErrCode[i](IN:= (driveErrorCheck(i_armId, i, 1, i_safetyCheckVar[i_ArmId].m_masterDriverInput[i].m_driverError) > 0  AND m_checkPermit[i_ArmId].m_linkEncErr[i]), PT:=m_checkDelayTime.Ti_linkEncErrCode , Q=> , ET=> );
 	END_IF
 	m_checkDelay[i_ArmId].T_linkEncErr[i](IN:= (i_safetyCheckVar[i_ArmId].m_masterDriverInput[i].m_linkEncoder=g_maxLinkEnc OR i_safetyCheckVar[i_ArmId].m_masterDriverInput[i].m_linkEncoder=g_minLinkEnc) AND m_checkPermit[i_ArmId].m_linkEncErr[i], PT:=m_checkDelayTime.Ti_linkEncErr , Q=> , ET=> );
 	IF m_checkDelay[i_ArmId].T_linkEncErr[i].Q OR m_checkDelay[i_ArmId].T_linkEncErrCode[i].Q THEN

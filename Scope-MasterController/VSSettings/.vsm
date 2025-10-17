@@ -5,12 +5,12 @@
   <Children>
     <Node>
       <Title>GravityCaliData</Title>
-      <Expanded>False</Expanded>
-      <FileName>C:\Users\Ni Feijian\Career\AgiBot\Repository\RobotMaintenanceSoftware\AgiBot-PTMasterController\Scope-MasterController\GravityCaliData.tcscopex</FileName>
+      <Expanded>True</Expanded>
+      <FileName>C:\AgiBot-PTMasterController\Scope-MasterController\GravityCaliData.tcscopex</FileName>
       <Children>
         <Node>
           <Title>DataPool</Title>
-          <Expanded>False</Expanded>
+          <Expanded>True</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
@@ -269,12 +269,12 @@
         </Node>
         <Node>
           <Title>LeftArm</Title>
-          <Expanded>False</Expanded>
+          <Expanded>True</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
               <Title>Axis Group</Title>
-              <Expanded>False</Expanded>
+              <Expanded>True</Expanded>
               <FileName></FileName>
               <Children>
                 <Node>
@@ -409,12 +409,12 @@
         </Node>
         <Node>
           <Title>RightArm</Title>
-          <Expanded>False</Expanded>
+          <Expanded>True</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
               <Title>Axis Group (1)</Title>
-              <Expanded>False</Expanded>
+              <Expanded>True</Expanded>
               <FileName></FileName>
               <Children>
                 <Node>
@@ -557,12 +557,12 @@
     </Node>
     <Node>
       <Title>RobotJointData</Title>
-      <Expanded>False</Expanded>
-      <FileName>C:\Users\Ni Feijian\Career\AgiBot\Repository\RobotMaintenanceSoftware\AgiBot-PTMasterController\Scope-MasterController\RobotJointData.tcscopex</FileName>
+      <Expanded>True</Expanded>
+      <FileName>C:\AgiBot-PTMasterController\Scope-MasterController\RobotJointData.tcscopex</FileName>
       <Children>
         <Node>
           <Title>DataPool</Title>
-          <Expanded>False</Expanded>
+          <Expanded>True</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
@@ -653,12 +653,12 @@
         </Node>
         <Node>
           <Title>ArmLeft</Title>
-          <Expanded>False</Expanded>
+          <Expanded>True</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
               <Title>Axis Group (3)</Title>
-              <Expanded>False</Expanded>
+              <Expanded>True</Expanded>
               <FileName></FileName>
               <Children>
                 <Node>
@@ -709,12 +709,12 @@
         </Node>
         <Node>
           <Title>Cart</Title>
-          <Expanded>False</Expanded>
+          <Expanded>True</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
               <Title>Axis Group</Title>
-              <Expanded>False</Expanded>
+              <Expanded>True</Expanded>
               <FileName></FileName>
               <Children>
                 <Node>
@@ -765,7 +765,7 @@
         </Node>
         <Node>
           <Title>ArmRight</Title>
-          <Expanded>False</Expanded>
+          <Expanded>True</Expanded>
           <FileName></FileName>
           <Children>
             <Node>
@@ -797,196 +797,10 @@
       </Children>
     </Node>
     <Node>
-      <Title>Scope Project1</Title>
+      <Title>Scope Project1.tcscopex</Title>
       <Expanded>False</Expanded>
-      <FileName>C:\Users\Ni Feijian\Career\AgiBot\Repository\RobotMaintenanceSoftware\AgiBot-PTMasterController\Scope-MasterController\Scope Project1.tcscopex</FileName>
-      <Children>
-        <Node>
-          <Title>DataPool</Title>
-          <Expanded>False</Expanded>
-          <FileName></FileName>
-          <Children>
-            <Node>
-              <Title>m_cmdCurrent</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_cmdJntPos</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_cmdJntTrq</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_cmdMotorEncoder</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_curJntPos</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_curJntVel</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_curLinkPos</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_curMotorPos</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_current</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_linkEncoder</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>m_opMode</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-          </Children>
-        </Node>
-        <Node>
-          <Title>YT Chart (1)</Title>
-          <Expanded>False</Expanded>
-          <FileName></FileName>
-          <Children>
-            <Node>
-              <Title>Axis Group (4)</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children>
-                <Node>
-                  <Title>m_current</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_linkEncoder</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_curJntPos</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_curMotorPos</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_cmdJntTrq</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_cmdJntPos</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_cmdCurrent</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_cmdMotorEncoder</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_opMode</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-                <Node>
-                  <Title>m_curLinkPos</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-              </Children>
-            </Node>
-            <Node>
-              <Title>Axis Group</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children>
-                <Node>
-                  <Title>m_curJntVel</Title>
-                  <Expanded>False</Expanded>
-                  <FileName></FileName>
-                  <Children />
-                </Node>
-              </Children>
-            </Node>
-          </Children>
-        </Node>
-        <Node>
-          <Title>YT Chart (2)</Title>
-          <Expanded>False</Expanded>
-          <FileName></FileName>
-          <Children>
-            <Node>
-              <Title>Axis Group (1)</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-            <Node>
-              <Title>Axis Group (2)</Title>
-              <Expanded>False</Expanded>
-              <FileName></FileName>
-              <Children />
-            </Node>
-          </Children>
-        </Node>
-        <Node>
-          <Title>Trigger</Title>
-          <Expanded>False</Expanded>
-          <FileName></FileName>
-          <Children />
-        </Node>
-      </Children>
+      <FileName></FileName>
+      <Children />
     </Node>
   </Children>
 </Node>
