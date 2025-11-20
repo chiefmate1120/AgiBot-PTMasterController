@@ -1885,7 +1885,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{0C182974-8910-4DEE-A0B7-B414028AF699}" Name="MasterController" PrjFilePath="MasterController\MasterController.plcproj" TmcFilePath="MasterController\MasterController.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="MasterController\MasterController.tmc" TmcHash="{B1B69E29-6723-B780-DE5A-0A9FAE17E453}">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="MasterController\MasterController.tmc" TmcHash="{79D74217-8D26-AB61-F935-0B1A16213ECA}">
 					<Name>MasterController Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Vars VarGrpType="1">
@@ -2014,6 +2014,10 @@
 					<Vars VarGrpType="2" AreaNo="1">
 						<Name>TaskArmControl Outputs</Name>
 						<Var>
+							<Name>CartControl.m_masterCart.m_elecKnifeCtrlWord</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
 							<Name>MasterArmControl.m_masterStatus</Name>
 							<Comment><![CDATA[ master robot information, including arm status and cartesian data, output to other tasks]]></Comment>
 							<Type GUID="{670C4BE2-10FA-60C4-0087-813F4390047A}">ST_MasterStatus</Type>
@@ -2088,10 +2092,6 @@
 						<Var>
 							<Name>MasterArmControl.m_masterRobot.m_masterArms[2].m_joints[7].m_motorOutputs</Name>
 							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
-						</Var>
-						<Var>
-							<Name>CartControl.m_masterCart.m_elecKnifeCtrlWord</Name>
-							<Type>DINT</Type>
 						</Var>
 					</Vars>
 					<Vars VarGrpType="1" ContextId="1" AreaNo="16">
