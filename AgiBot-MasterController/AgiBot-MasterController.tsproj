@@ -1885,7 +1885,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{0C182974-8910-4DEE-A0B7-B414028AF699}" Name="MasterController" PrjFilePath="MasterController\MasterController.plcproj" TmcFilePath="MasterController\MasterController.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="MasterController\MasterController.tmc" TmcHash="{CF282505-926B-3526-D641-F16FFC725977}">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="MasterController\MasterController.tmc" TmcHash="{5F4F7EB5-7AD1-641B-51D3-2EE90C0810C6}">
 					<Name>MasterController Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Vars VarGrpType="1">
@@ -2014,10 +2014,6 @@
 					<Vars VarGrpType="2" AreaNo="1">
 						<Name>TaskArmControl Outputs</Name>
 						<Var>
-							<Name>CartControl.m_masterCart.m_elecKnifeCtrlWord</Name>
-							<Type>DINT</Type>
-						</Var>
-						<Var>
 							<Name>MasterArmControl.m_masterStatus</Name>
 							<Comment><![CDATA[ master robot information, including arm status and cartesian data, output to other tasks]]></Comment>
 							<Type GUID="{670C4BE2-10FA-60C4-0087-813F4390047A}">ST_MasterStatus</Type>
@@ -2092,6 +2088,10 @@
 						<Var>
 							<Name>MasterArmControl.m_masterRobot.m_masterArms[2].m_joints[7].m_motorOutputs</Name>
 							<Type GUID="{488B6305-DC6A-E4DC-738A-E6698812A209}">ST_MotorOutputs</Type>
+						</Var>
+						<Var>
+							<Name>CartControl.m_masterCart.m_elecKnifeCtrlWord</Name>
+							<Type>DINT</Type>
 						</Var>
 					</Vars>
 					<Vars VarGrpType="1" ContextId="1" AreaNo="16">
@@ -8162,11 +8162,12 @@
 		<MappingInfo Identifier="{00000000-2001-0850-0020-500820000403}" Id="#x02030040"/>
 		<MappingInfo Identifier="{00000000-2001-0850-0020-500840000403}" Id="#x02030010"/>
 		<MappingInfo Identifier="{00000000-2001-0850-0020-500850000403}" Id="#x02030020"/>
-		<MappingInfo Identifier="{00000000-2003-0850-0320-500831000403}" Id="#x02030050"/>
+		<MappingInfo Identifier="{00000000-2003-0850-0320-500811000403}" Id="#x02030050"/>
 		<MappingInfo Identifier="{08502001-2002-0850-0020-500801205008}" Id="#x02030030" Watchdog="10000000040000000400000004000000"/>
 		<MappingInfo Identifier="{08502001-2003-0850-0020-500803205008}" Id="#x02030090" Watchdog="10000000040000000400000004000000"/>
 		<MappingInfo Identifier="{08502001-2004-0850-0020-500804205008}" Id="#x020300a0" Watchdog="10000000040000000400000004000000"/>
 		<MappingInfo Identifier="{08502003-2004-0850-0320-500804205008}" Id="#x020300b0" Watchdog="04000000040000000400000004000000"/>
+		<MappingInfo Identifier="{08502003-0020-0304-0020-500820000403}" Id="#x02030060" Watchdog="00000000000000000000000000000000"/>
 		<OwnerA Name="TIPC^MasterController^MasterController Instance">
 			<OwnerB Name="TIID^LeftArm^Joint12">
 				<Link VarA="TaskArmControl Inputs^MasterArmControl.m_masterRobot.m_masterArms[1].m_joints[1].m_motorInputs^m_current" VarB="TxPdoMappingCsp^Torque actual value"/>
@@ -8253,14 +8254,68 @@
 			</OwnerB>
 			<OwnerB Name="TIID^MSCommunication^Term 8 (EK1100)^Term 10 (EL1008)">
 				<Link VarA="TaskArmControl Inputs^SafetyCheck.m_stopButton" VarB="Channel 1^StopButton"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_armSwitchIO" VarB="Channel 4^armSwitchIO"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_clutchPedalIO" VarB="Channel 2^clutchPedalIO"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_electricCoagulLeft" VarB="Channel 7^electricCoagulLeft"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_electricCoagulRight" VarB="Channel 8^electricCoagulRight"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_electricCutLeft" VarB="Channel 5^electricCutLeft"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_electricCutRight" VarB="Channel 6^electricCutRight"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_endoScopePedalIO" VarB="Channel 3^endoScopePedalIO"/>
 			</OwnerB>
 			<OwnerB Name="TIID^MSCommunication^Term 8 (EK1100)^Term 11 (EL1008)">
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_electricCoagulLeftAllow" VarB="Channel 2^electricCoagulLeftAllow"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_electricCoagulRightAllow" VarB="Channel 4^electricCoagulRightAllow"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_electricCutLeftAllow" VarB="Channel 1^electricCutlLeftAllow"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_electricCutRightAllow" VarB="Channel 3^electricCutRightAllow"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_surgonHeadInIO" VarB="Channel 5^surgonHeadIn"/>
 				<Link VarA="TaskCartControl Inputs^SafetyCheck.m_cartLockSignalLeft" VarB="Channel 7^CartLockSignalLeft"/>
 				<Link VarA="TaskCartControl Inputs^SafetyCheck.m_cartLockSignalRight" VarB="Channel 8^CartLockSignalRight"/>
+			</OwnerB>
+			<OwnerB Name="TIID^MSCommunication^Term 8 (EK1100)^Term 12 (EL1008)">
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJointCtrlIO[1]" VarB="Channel 1^Input"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJointCtrlIO[2]" VarB="Channel 2^Input"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJointCtrlIO[3]" VarB="Channel 8^Input"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJointCtrlIO[4]" VarB="Channel 7^Input"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJointCtrlIO[5]" VarB="Channel 3^Input"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJointCtrlIO[6]" VarB="Channel 4^Input"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJointCtrlIO[7]" VarB="Channel 6^Input"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJointCtrlIO[8]" VarB="Channel 5^Input"/>
 			</OwnerB>
 			<OwnerB Name="TIID^MSCommunication^Term 8 (EK1100)^Term 22 (EL6695)">
 				<Link VarA="TaskArmControl Inputs^MasterArmControl.m_slaveRobotData" VarB="IO Inputs^SlaveRobotData"/>
 				<Link VarA="TaskArmControl Outputs^MasterArmControl.m_masterRobotData" VarB="IO Outputs^MasterRobotData"/>
+			</OwnerB>
+			<OwnerB Name="TIID^MSCommunication^cart1">
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[1].m_motorInputs^m_current" VarB="TxPdoMappingCspCsv^Torque actual value"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[1].m_motorInputs^m_driverError" VarB="TxPdoMappingCspCsv^Error message"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[1].m_motorInputs^m_heartBeat" VarB="TxPdoMappingCspCsv^Heartbeat"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[1].m_motorInputs^m_linkEncoder" VarB="TxPdoMappingCspCsv^ENC"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[1].m_motorInputs^m_motorEncoder" VarB="TxPdoMappingCspCsv^Position actual value"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[1].m_motorInputs^m_statusWord" VarB="TxPdoMappingCspCsv^Statusword"/>
+			</OwnerB>
+			<OwnerB Name="TIID^MSCommunication^cart2">
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[2].m_motorInputs^m_current" VarB="TxPdoMappingCspCsv^Torque actual value"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[2].m_motorInputs^m_driverError" VarB="TxPdoMappingCspCsv^Error message"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[2].m_motorInputs^m_heartBeat" VarB="TxPdoMappingCspCsv^Heartbeat"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[2].m_motorInputs^m_linkEncoder" VarB="TxPdoMappingCspCsv^ENC"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[2].m_motorInputs^m_motorEncoder" VarB="TxPdoMappingCspCsv^Position actual value"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[2].m_motorInputs^m_statusWord" VarB="TxPdoMappingCspCsv^Statusword"/>
+			</OwnerB>
+			<OwnerB Name="TIID^MSCommunication^cart3">
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[3].m_motorInputs^m_current" VarB="TxPdoMappingCspCsv^Torque actual value"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[3].m_motorInputs^m_driverError" VarB="TxPdoMappingCspCsv^Error message"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[3].m_motorInputs^m_heartBeat" VarB="TxPdoMappingCspCsv^Heartbeat"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[3].m_motorInputs^m_linkEncoder" VarB="TxPdoMappingCspCsv^ENC"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[3].m_motorInputs^m_motorEncoder" VarB="TxPdoMappingCspCsv^Position actual value"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[3].m_motorInputs^m_statusWord" VarB="TxPdoMappingCspCsv^Statusword"/>
+			</OwnerB>
+			<OwnerB Name="TIID^MSCommunication^cart4">
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[4].m_motorInputs^m_current" VarB="TxPdoMappingCspCsv^Torque actual value"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[4].m_motorInputs^m_driverError" VarB="TxPdoMappingCspCsv^Error message"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[4].m_motorInputs^m_heartBeat" VarB="TxPdoMappingCspCsv^Heartbeat"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[4].m_motorInputs^m_linkEncoder" VarB="TxPdoMappingCspCsv^ENC"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[4].m_motorInputs^m_motorEncoder" VarB="TxPdoMappingCspCsv^Position actual value"/>
+				<Link VarA="TaskCartControl Inputs^CartControl.m_masterCart.m_cartJoints[4].m_motorInputs^m_statusWord" VarB="TxPdoMappingCspCsv^Statusword"/>
 			</OwnerB>
 			<OwnerB Name="TIID^RightArm^Joint12">
 				<Link VarA="TaskArmControl Inputs^MasterArmControl.m_masterRobot.m_masterArms[2].m_joints[1].m_motorInputs^m_current" VarB="TxPdoMappingCsp^Torque actual value"/>
