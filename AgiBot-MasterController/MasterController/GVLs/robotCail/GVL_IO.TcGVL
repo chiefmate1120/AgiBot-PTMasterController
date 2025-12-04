@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <GVL Name="GVL_IO" Id="{18725397-b09d-4cfc-b8ec-bb650bd2e6c0}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	g_clutchSingle : ARRAY [1..g_mArmNum] OF  BOOL;
+	g_stopButton : BOOL;
+	g_clutchPedal : BOOL;
+	g_endoScopePedal : BOOL;
+	g_armSwitch : BOOL;
+	g_electricCutLeft : BOOL;
+	g_electricCutRight : BOOL;
+	g_electricCoagulLeft : BOOL;
+	g_electricCoagulRight : BOOL;
+	g_electricCutLeftSensor: BOOL;
+	g_electricCoagulLeftSensor: BOOL;
+	g_electricCutRightSensor: BOOL;
+	g_electricCoagulRightSensor: BOOL;
+	g_surgonHeadIn : BOOL;
+	g_cartLockSignalLeft : BOOL;
+	g_cartLockSignalRight : BOOL;
+	g_cartJointCtrl : ARRAY [1..8] OF BOOL ;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

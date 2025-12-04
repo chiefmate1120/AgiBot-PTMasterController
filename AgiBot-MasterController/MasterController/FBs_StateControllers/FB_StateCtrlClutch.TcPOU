@@ -1,0 +1,497 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_StateCtrlClutch" Id="{093bd9ec-6cc6-4389-91e4-f8586e50bb1f}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Master Arm Clutch
+FUNCTION_BLOCK PUBLIC FB_StateCtrlClutch EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	// orientation tracking parameters
+	m_rotTrackKp : LREAL := 200;
+	m_maxTrackVel :LREAL := 3*PI;
+	
+	// redundant control parameters
+	m_jnt4AdjustKp : LREAL :=10;
+	m_jnt4MaxVel :LREAL :=pi/3 ;
+	m_linearVelLb :LREAL := 0.01;
+	m_linearVelUb :LREAL :=0.1;	
+	
+	m_initJntPos :Vec7d;
+	
+	// joint4 dynamic limit 
+	m_jntPosUb, m_jntPosLb:LREAL;
+	
+	// rotation error tracking
+	m_targetCartPose :ST_Frame;
+	m_initCartPose :ST_Frame;	
+	m_rotPlanInitFlag:BOOL;
+	m_rotPlan:Cubic_Polynomial_Interpolation;
+	m_rotPlanDuration:LREAL:=3;
+	m_rotPlanTime:LREAL:=0;
+	m_rotPlanKp:LREAL:=5;
+	m_trackAngle:LREAL;
+	m_trackAxis:Vec3d;
+	
+	// joint7 flip 
+	m_rollFlipFlag:BOOL :=FALSE;
+	m_jnt7PID :FB_PID;
+	m_jnt7Kp : LREAL :=1.0;
+	m_jnt7Kd :LREAL :=0.02;
+	m_jnt7Ki :LREAL :=5.0;
+	m_jnt7KiLimit :LREAL :=25;// define in current
+	m_jnt7CtrlLimit :LREAL :=50;// define in current
+	
+	// reach match rotation
+	m_rotMatched :BOOL :=FALSE;
+	m_rotMatchThres:LREAL := 10 *g_deg2rad;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{333a90ec-7de9-44a1-afdb-da87410216d3}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+var 
+	i,j : INT;
+	cmdRotInMonitor:Mat3d;
+	
+	detltaRot:Mat3d;
+	invRot:Mat3d;
+	
+	deltaAngle:LREAL;
+	armJntVel:Vec3d;
+	nomrArmJntVel:LREAL;
+	
+	trackAng, trackVel, trackAcc :LREAL;
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// use matched slave arm orientation as target, and transform from view coordinate to arm coordinate 
+IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_ready AND i_slaveStatus.m_endoscopeMounted THEN
+	IF NOT m_rotPlanInitFlag  THEN
+		cmdRotInMonitor := i_slaveStatus.m_curArmPose[i_slaveIdx].m_rot;//slave camera<-end Rot
+		matTranspose(i_shoulderPose.m_rot, invRot);//slave base<-camera Rot
+		matMultiply(invRot, cmdRotInMonitor, m_targetCartPose.m_rot);
+		m_targetCartPose.m_pos:=i_masterArm.curCartPose.m_pos;
+
+		m_initCartPose:= i_masterArm.curCartPose;
+		matTranspose(m_initCartPose.m_rot, invRot);//end<-base(init)
+		matMultiply(invRot,m_targetCartPose.m_rot, detltaRot);//end（init)<-base*base<-end(target)=end(init)<-end(target)
+		rot2AngAxis(detltaRot,angle=>m_trackAngle,axis=>m_trackAxis);
+		//get traj para
+		m_rotPlan.init(0,m_rotPlanDuration,0,m_trackAngle,0,0,0,0);
+		m_rotPlanInitFlag:=TRUE;
+	END_IF
+	
+	armJntVel[1]:=i_masterArm.curJntVel[1];
+	armJntVel[2]:=i_masterArm.curJntVel[2];
+	armJntVel[3]:=i_masterArm.curJntVel[3];
+	nomrArmJntVel:=norm(armJntVel);	
+	m_rotPlanTime:=m_rotPlanTime+g_armCtrlCycleTime*nomrArmJntVel*m_rotPlanKp; //cmdT
+	m_rotPlan.run(m_rotPlanTime,trackAng,trackVel,trackAcc);//cmdPos
+	detltaRot:=angAxis2Rot(trackAng,m_trackAxis);//cmdRot end(init)<-end(cmd)
+	matMultiply(m_initCartPose.m_rot, detltaRot, m_cmdCartPose.m_rot);	
+END_IF
+
+IF MasterArmControl.m_masterRobot.m_USKnifeRotClutch[i_slaveIdx] THEN
+	calcCmdJntPos_USKnife(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+ELSE
+	calcCmdJntPos_BasicInstru(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_BasicInstru" Id="{39edb72b-1f1a-4ef0-b18e-f83066079791}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_BasicInstru : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+var 
+	i,j : INT;
+	rotT,rotErr:Mat3d;
+	angle : LREAL;
+	axis,localAxis :Vec3d;
+	oriJaco:Mat3d;
+	oriJacoInv:Mat3d;
+	cartTrackVel:Vec3d;
+	jntTrackVel:Vec3d;
+	
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// first three joints is passive control
+FOR i:=1 TO 3 DO 
+	m_cmdJntPos[i]:=i_masterArm.curJntPos[i];
+	m_cmdJntVel[i]:=i_masterArm.curJntVel[i];
+END_FOR
+
+// compute cartesian tracking velocity
+matTranspose(i_masterArm.simCartPose.m_rot, rotT);
+matMultiply(rotT, m_cmdCartPose.m_rot, rotErr);
+rot2AngAxis(rotErr, angle=>angle,axis=>localAxis);
+matMultiVec(i_masterArm.simCartPose.m_rot, localAxis, axis);
+vecMultiNum(axis, LIMIT(-m_maxTrackVel, angle*m_rotTrackKp, m_maxTrackVel), cartTrackVel);
+
+// compute pinv of orientation jacobian
+FOR i:=1 TO 3 DO
+	FOR j:=1 TO 3 DO
+		oriJaco[i,j]:=i_masterArm.simJaco[i+3,j+4];
+	END_FOR
+END_FOR
+invMat3(oriJaco, oriJacoInv);
+matMultiVec(oriJacoInv, cartTrackVel, jntTrackVel);
+
+// update final command joint position and velocity
+FOR i :=5 TO 7 DO 
+	m_cmdJntVel[i]:=jntTrackVel[i-4];
+	m_cmdJntPos[i]:=m_cmdJntPos[i]+m_cmdJntVel[i]*g_armCtrlCycleTime;
+END_FOR
+
+// redundant control
+calcRedunMotion(i_masterArm);
+
+// roll flip
+IF i_masterArm.handClutchSwitch THEN
+	rollFlip(i_masterArm);
+END_IF
+
+// check current rotation match
+matTranspose(i_masterArm.curCartPose.m_rot, rotT);
+matMultiply(rotT, m_cmdCartPose.m_rot, rotErr);
+rot2AngAxis(rotErr, angle=>angle,axis=>localAxis);
+m_rotMatched := ABS(angle)<m_rotMatchThres;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_USKnife" Id="{8428292c-3e51-41c1-ba12-27886a07c446}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_USKnife : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+var 
+	i,j : INT;
+	rotT,rotErr:Mat3d;
+	angle : LREAL;
+	axis,localAxis :Vec3d;
+	oriJaco:Mat3d;
+	oriJacoInv:Mat3d;
+	cartTrackVel:Vec3d;
+	jntTrackVel:Vec3d;
+
+	cmdZAxis, curZAxis :Vec3d;
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// first three joints is passive control
+FOR i:=1 TO 3 DO 
+	m_cmdJntPos[i]:=i_masterArm.curJntPos[i];
+	m_cmdJntVel[i]:=i_masterArm.curJntVel[i];
+END_FOR
+
+// compute cartesian tracking velocity
+FOR i:=1 TO 3 DO
+	cmdZAxis[i] :=  m_cmdCartPose.m_rot[i,3];
+	curZAxis[i] := i_masterArm.simCartPose.m_rot[i,3];
+END_FOR
+angle := ACOS(LIMIT(-1,vecDot(cmdZAxis,curZAxis),1));
+axis := cross(curZAxis, cmdZAxis);
+IF ABS(angle)> g_smallAng AND ABS(angle-pi)> g_smallAng THEN
+	normalize(axis);
+END_IF
+vecMultiNum(axis, LIMIT(-m_maxTrackVel, angle*m_rotTrackKp, m_maxTrackVel), cartTrackVel);
+
+// compute pinv of orientation jacobian
+FOR i:=1 TO 3 DO
+	FOR j:=1 TO 3 DO
+		oriJaco[i,j]:=i_masterArm.simJaco[i+3,j+4];
+	END_FOR
+END_FOR
+invMat3(oriJaco, oriJacoInv);
+matMultiVec(oriJacoInv, cartTrackVel, jntTrackVel);
+
+// update final command joint position and velocity
+FOR i :=5 TO 7 DO 
+	m_cmdJntVel[i]:=jntTrackVel[i-4];
+	m_cmdJntPos[i]:=m_cmdJntPos[i]+m_cmdJntVel[i]*g_armCtrlCycleTime;
+END_FOR
+
+// redundant control
+calcRedunMotion(i_masterArm);
+
+// allow user to rotate joint7 if hand clutch is triggered
+IF i_masterArm.handClutchSwitch THEN
+	m_cmdJntPos[7] := i_masterArm.curJntPos[7];
+	m_cmdJntVel[7] := i_masterArm.curJntVel[7];
+ELSE
+	m_cmdJntPos[7] := m_initJntPos[7];
+	m_cmdJntVel[7] := 0;
+END_IF
+
+// check current rotation match
+FOR i:=1 TO 3 DO
+	cmdZAxis[i] :=  m_cmdCartPose.m_rot[i,3];
+	curZAxis[i] := i_masterArm.curCartPose.m_rot[i,3];
+END_FOR
+angle := ACOS(LIMIT(-1,vecDot(cmdZAxis,curZAxis),1));
+m_rotMatched := ABS(angle)<m_rotMatchThres;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq" Id="{760d4df4-46fa-4902-94ad-86e84f818e93}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	i:INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_cmdJntTrq[7]:= m_jnt7PID.run(m_cmdJntPos[7],i_masterArm.curJntPos[7], m_cmdJntVel[7], i_masterArm.curJntVel[7]);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcRedunMotion" Id="{e23d7933-67bc-411c-a163-bdd1a130fde2}">
+      <Declaration><![CDATA[METHOD PROTECTED calcRedunMotion : LREAL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+
+VAR 
+	j6Bias,j5Bias :LREAL;
+	velScale :LREAL;
+	linearVel :Vec3d;
+	curJntPos : Vec7d;
+	jnt4LinkPos :LREAL;
+	armJaco :Mat3d;
+	armJntVel, armW:Vec3d;
+	wristJaco, wristJacoInv:Mat3d;
+	wristJntVel:Vec3d;
+	i,j :INT;
+	cmdFFJntVel:LREAL;
+	coupleJntVel:LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// compute desired joint4 link position
+curJntPos :=  i_masterArm.cmdJntPos;
+jnt4LinkPos:=i_masterArm.jnt4MotorToLink(curJntPos[2],curJntPos[3],curJntPos[4]);
+IF 1= i_masterArm.armIdx THEN
+	j6Bias :=curJntPos[6]+PI/2;
+ELSE 
+	j6Bias := curJntPos[6]-PI/2;
+END_IF
+
+// scale based on joint5 position
+j5Bias :=  LIMIT (0, ABS(curJntPos[5] -pi), pi/2);
+j6Bias := j6Bias * ABS(COS(j5Bias));
+
+// scale based on linear velocity
+linearVel[1]:=i_masterArm.curCartTwist[1];
+linearVel[2]:=i_masterArm.curCartTwist[2];
+linearVel[3]:=i_masterArm.curCartTwist[3];
+velScale :=LIMIT(0, (norm(linearVel)-m_linearVelLb)/(m_linearVelUb-m_linearVelLb),1.0);
+
+m_cmdJntVel[4] := LIMIT(-m_jnt4MaxVel, -j6Bias * m_jnt4AdjustKp * velScale ,m_jnt4MaxVel);
+
+// compute feedforward velocity to compensate joint1 motion
+FOR i :=1 TO 3 DO
+	FOR j:=1 TO 3 DO 
+		armJaco[i,j]:= i_masterArm.jaco[i+3,j];
+		wristJaco[i,j]:= i_masterArm.jaco[i+3,j+4];
+	END_FOR
+END_FOR
+InvMat3(wristJaco, wristJacoInv);
+armJntVel:=g_zeroVec3d;
+armJntVel[1]:=i_masterArm.curJntVel[1];
+matMultiVec(armJaco, armJntVel, armW);
+matMultiVec(wristJacoInv, armW, wristJntVel);
+cmdFFJntVel:=wristJntVel[2];
+m_cmdJntVel[4]:= m_cmdJntVel[4]+cmdFFJntVel;
+
+// joint limit
+IF (m_cmdJntVel[4] > 0 AND jnt4LinkPos+m_cmdJntVel[4] * g_armCtrlCycleTime > GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-GVL_ArmJointParameters.g_jntLimitBuffer)
+	 OR ( m_cmdJntVel[4] <0 AND  jnt4LinkPos +m_cmdJntVel[4] * g_armCtrlCycleTime< GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]+GVL_ArmJointParameters.g_jntLimitBuffer) THEN
+	 m_cmdJntVel[4] :=0;
+END_IF
+m_cmdJntPos[4]:=m_cmdJntPos[4]+m_cmdJntVel[4]*g_armCtrlCycleTime;
+
+// compute feedforward velocity to compensate joint1 motion
+coupleJntVel := i_masterArm.curJntVel[2]-i_masterArm.curJntVel[3];
+m_cmdJntVel[4]:= m_cmdJntVel[4] + coupleJntVel;
+m_cmdJntPos[4]:=m_cmdJntPos[4]+coupleJntVel*g_armCtrlCycleTime;
+
+// position limit check
+m_jntPosUb:=i_masterArm.jnt4LinkToMotor(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],
+						 GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4]-GVL_ArmJointParameters.g_jntLimitBuffer);
+m_jntPosLb:=i_masterArm.jnt4LinkToMotor(i_masterArm.curJntPos[2],i_masterArm.curJntPos[3],
+						 GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]+GVL_ArmJointParameters.g_jntLimitBuffer);
+IF m_cmdJntPos[4] >=m_jntPosUb OR m_cmdJntPos[4]<m_jntPosLb THEN
+	m_cmdJntVel[4]:=0;
+	m_cmdJntPos[4]:=LIMIT(m_jntPosLb,m_cmdJntPos[4],m_jntPosUb);
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{1106e191-9e61-4227-a6e7-a957758f71da}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i:INT;
+	currentRatioMotor2Jnt: LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+
+m_jntOPMode[1] := DriverOPMode_Trq;
+m_jntOPMode[2] := DriverOPMode_Trq;
+m_jntOPMode[3] := DriverOPMode_Trq;
+m_jntOPMode[4] := DriverOPMode_PosTrq;
+m_jntOPMode[5] := DriverOPMode_PosTrq;
+m_jntOPMode[6] := DriverOPMode_PosTrq;
+m_jntOPMode[7] := DriverOPMode_Trq;
+
+m_initJntPos := i_masterArm.curJntPos;
+
+m_rotPlanInitFlag:=FALSE;
+m_rotPlanTime:=0;
+
+m_rollFlipFlag:=FALSE;
+currentRatioMotor2Jnt:=GVL_ArmJointParameters.g_motorTrqConst[7]*GVL_ArmJointParameters.g_motorReduction[7]/1000;
+m_jnt7PID.init(g_armCtrlCycleTime,m_jnt7Kp,m_jnt7Kd,m_jnt7Ki,
+	m_jnt7KiLimit* currentRatioMotor2Jnt,	m_jnt7CtrlLimit*currentRatioMotor2Jnt);
+
+// update commands to arm
+copyCmds(r_masterArmCtrlCmd);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="rollFlip" Id="{00bb31d8-1bb3-4163-ab46-e1c8b09de1fa}">
+      <Declaration><![CDATA[METHOD rollFlip : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF ABS(i_masterArm.curJntPos[7]-m_cmdJntPos[7])>PI/3 and not(m_rollFlipFlag) THEN
+	m_cmdJntPos[7]:=i_masterArm.curJntPos[7];
+	i_masterArm.flipGripper(NOT(i_masterArm.gripperRollFlip));
+	m_rollFlipFlag:=TRUE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="rotMatched" Id="{7d531c76-eb5d-4b1b-a5ec-c5b4ee0dad45}">
+      <Declaration><![CDATA[PROPERTY rotMatched : BOOL]]></Declaration>
+      <Get Name="Get" Id="{54d078b5-eeea-4fc9-800d-e42faa9dfde0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[rotMatched:=m_rotMatched;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_StateCtrlClutch">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcCmdJntPos">
+      <LineId Id="463" Count="0" />
+      <LineId Id="549" Count="1" />
+      <LineId Id="552" Count="1" />
+      <LineId Id="557" Count="0" />
+      <LineId Id="559" Count="0" />
+      <LineId Id="601" Count="0" />
+      <LineId Id="596" Count="0" />
+      <LineId Id="567" Count="5" />
+      <LineId Id="576" Count="5" />
+      <LineId Id="589" Count="0" />
+      <LineId Id="591" Count="1" />
+      <LineId Id="594" Count="0" />
+      <LineId Id="493" Count="0" />
+      <LineId Id="473" Count="5" />
+      <LineId Id="131" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcCmdJntPos_BasicInstru">
+      <LineId Id="487" Count="39" />
+      <LineId Id="131" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcCmdJntPos_USKnife">
+      <LineId Id="535" Count="17" />
+      <LineId Id="653" Count="6" />
+      <LineId Id="563" Count="0" />
+      <LineId Id="575" Count="0" />
+      <LineId Id="661" Count="3" />
+      <LineId Id="580" Count="0" />
+      <LineId Id="666" Count="1" />
+      <LineId Id="581" Count="0" />
+      <LineId Id="668" Count="0" />
+      <LineId Id="582" Count="6" />
+      <LineId Id="719" Count="7" />
+      <LineId Id="622" Count="0" />
+      <LineId Id="131" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcCmdJntTrq">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.calcRedunMotion">
+      <LineId Id="246" Count="56" />
+      <LineId Id="161" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.init">
+      <LineId Id="13" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="66" Count="5" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="139" Count="1" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="12" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.rollFlip">
+      <LineId Id="3" Count="3" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlClutch.rotMatched.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

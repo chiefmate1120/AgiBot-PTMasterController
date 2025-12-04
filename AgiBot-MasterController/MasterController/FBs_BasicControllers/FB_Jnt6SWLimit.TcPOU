@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_Jnt6SWLimit" Id="{54a7f418-dc62-4596-a34f-79af571721d2}" SpecialFunc="None">
+    <Declaration><![CDATA[// This function is used to limit joint6 workspace.
+// Currently joint6 has a unnecessilarty large workspace.
+FUNCTION_BLOCK FB_Jnt6SWLimit
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	// joint 6 software limit
+	m_jnt6SWLowLimit :LREAL;
+	m_jnt6SWUpLimit :LREAL;
+	
+	// joint6 limit controller and corresponding parameters
+	m_jntPIDCtrl: FB_PID;
+	m_jntCtrlTrq: LREAL;
+	m_jntKp :LREAL :=2;
+	m_jntKd :LREAL := 0.06;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="init" Id="{2a6bbbe6-a592-494f-a4bd-dccdf11f6894}">
+      <Declaration><![CDATA[METHOD init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR
+	currentRatioMotor2Jnt:LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_jnt6SWLowLimit := MIN(GVL_ArmKinematic.g_jnt6LowLimit[i_masterArm.armIdx],i_masterArm.curJntPos[6]);
+m_jnt6SWUpLimit := MAX(GVL_ArmKinematic.g_jnt6UpLimit[i_masterArm.armIdx],i_masterArm.curJntPos[6]);
+
+// init controller
+currentRatioMotor2Jnt:=GVL_ArmJointParameters.g_motorTrqConst[6]*GVL_ArmJointParameters.g_motorReduction[6]/1000;
+m_jntPIDCtrl.init(g_armCtrlCycleTime,m_jntKp,m_jntKd,0,0,
+		GVL_ArmJointParameters.g_motorMaxCurrent[6]*currentRatioMotor2Jnt);
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="run" Id="{d816cd2a-48ed-4ffd-a1e5-31b9dabeb9fa}">
+      <Declaration><![CDATA[METHOD run : LREAL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR
+	curJnt6Pos, cmdJnt6Pos :LREAL;
+	curJnt6Vel, cmdJnt6Vel :LREAL;
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[run :=0.0;
+curJnt6Pos := i_masterArm.curJntPos[6];
+curJnt6Vel := i_masterArm.curJntVel[6];
+
+// update limit
+updateLimit(i_masterArm);
+
+// within limit
+IF curJnt6Pos <= m_jnt6SWUpLimit AND curJnt6Pos >= m_jnt6SWLowLimit THEN
+	RETURN;
+END_IF
+
+// set limit target
+IF curJnt6Pos > m_jnt6SWUpLimit THEN
+	cmdJnt6Pos := m_jnt6SWUpLimit;
+	cmdJnt6Vel := LIMIT(-g_largeNum, curJnt6Vel, 0);
+ELSIF curJnt6Pos < m_jnt6SWLowLimit THEN
+	cmdJnt6Pos := m_jnt6SWLowLimit;
+	cmdJnt6Vel := LIMIT(0, curJnt6Vel, g_largeNum);
+END_IF
+
+// compute torque
+m_jntCtrlTrq:=m_jntPIDCtrl.run(cmdJnt6Pos, curJnt6Pos,cmdJnt6Vel, curJnt6Vel);
+
+run:=m_jntCtrlTrq;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="updateLimit" Id="{fa19eb79-ff48-4800-a61f-0e6f302cb0fb}">
+      <Declaration><![CDATA[METHOD updateLimit : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// update up limit
+IF m_jnt6SWUpLimit - GVL_ArmKinematic.g_jnt6UpLimit[i_masterArm.armIdx] > g_smallAng THEN
+	IF i_masterArm.curJntPos[6] < m_jnt6SWUpLimit THEN
+		m_jnt6SWUpLimit := MAX(GVL_ArmKinematic.g_jnt6UpLimit[i_masterArm.armIdx], i_masterArm.curJntPos[6]);
+	END_IF
+END_IF
+
+// update low limit
+IF m_jnt6SWLowLimit - GVL_ArmKinematic.g_jnt6LowLimit[i_masterArm.armIdx] < -g_smallAng THEN
+	IF i_masterArm.curJntPos[6] > m_jnt6SWLowLimit THEN
+		m_jnt6SWLowLimit := MIN(GVL_ArmKinematic.g_jnt6LowLimit[i_masterArm.armIdx], i_masterArm.curJntPos[6]);
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_Jnt6SWLimit">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Jnt6SWLimit.init">
+      <LineId Id="100" Count="0" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="35" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Jnt6SWLimit.run">
+      <LineId Id="634" Count="0" />
+      <LineId Id="632" Count="0" />
+      <LineId Id="654" Count="0" />
+      <LineId Id="658" Count="0" />
+      <LineId Id="657" Count="0" />
+      <LineId Id="659" Count="0" />
+      <LineId Id="648" Count="0" />
+      <LineId Id="635" Count="0" />
+      <LineId Id="633" Count="0" />
+      <LineId Id="636" Count="1" />
+      <LineId Id="649" Count="0" />
+      <LineId Id="639" Count="1" />
+      <LineId Id="646" Count="0" />
+      <LineId Id="655" Count="0" />
+      <LineId Id="647" Count="0" />
+      <LineId Id="641" Count="0" />
+      <LineId Id="656" Count="0" />
+      <LineId Id="638" Count="0" />
+      <LineId Id="650" Count="0" />
+      <LineId Id="643" Count="0" />
+      <LineId Id="651" Count="0" />
+      <LineId Id="615" Count="2" />
+      <LineId Id="125" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Jnt6SWLimit.updateLimit">
+      <LineId Id="12" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="14" Count="5" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,1366 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_StateCtrlMasterSlave" Id="{5b96f309-da76-444d-a9fb-2d4321895cd7}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Master Arm MasterSlave controller
+FUNCTION_BLOCK PUBLIC FB_StateCtrlMasterSlave EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	// joint4 controller
+	m_redunJntCtrl : FB_RedunJntControl;
+	m_redunJntCtrlUSKnife : FB_RedunJntCtrlUSKnife;
+	
+	// flag if project joint4 torque to nullspace
+	m_nullspaceCtrl : BOOL :=FALSE;
+	
+	// boundary limit force feedback
+	m_boundaryForce : FB_boundaryForceFeedback;
+	
+	// joint6 software limit control
+	m_jnt6LimitCtrl :FB_Jnt6SWLimit;
+	
+	// joint torque for master-slave error
+	m_boundaryTrq :Vec7d;
+	
+	// friction compensation scale
+	m_frictionCompScale :LREAL :=1.0;
+
+	
+	
+	
+	
+	
+	//*****************Variables related to accuracy testing*******************//
+	//test step
+	m_testStep:INT;
+	
+	//target spatial position
+	m_targetSpatialPos:ST_Frame;
+	
+	//Precision testing target position
+	m_targetPosArr:ARRAY[1..gvl_const.g_testPointNum] OF ST_Frame;
+	m_targetPosVecArr:ARRAY[1..gvl_const.g_testPointNum,1..7] OF LREAL;
+	
+	//accuracy test variables
+	m_pointNum:INT;
+	m_pointSum:INT;
+	m_motionCycleNum:INT;
+	m_tgtMotionCycleNum:INT;
+	
+	//DH joint position
+	//m_initDHPos,m_startDHPos,m_endDHPos :Vec7d;
+	m_startDHPos:Vec7d;
+	
+	//startJntPos,endJntPos :Vec8d;
+	m_initJntPos,m_startJntPos,m_endJntPos :Vec7d;
+	
+	//Trajectory planner
+	m_Planner: FB_TrajMoveJ;
+	
+	//Has the inverse kinematics been successfully solved
+	m_IKSucceed:BOOL;	
+	
+	//original joint position
+	m_originJntPos:Vec7d;
+	
+	//inverse kinematic idx
+	m_IK:INT;
+	
+	//time
+	m_time:LREAL;
+	
+	//arm id
+	m_armId:INT;	
+	
+	//motion parameters
+	m_maxjntVel,m_maxjntAcc,m_maxjntJerk:Vec7d;
+	
+	//joint control error and current joint position
+	m_actualJntPos,m_JntErr:Vec7d;		
+	
+	//basic function
+	m_basicFun:FB_BasicFun;
+	
+	//scale the space
+	m_calTestPnt:FB_calTestPnt;
+	
+	//additional rotation matrix
+	m_addRotMat:ARRAY[1..8] OF Mat3d;	
+	rot1:Mat3d;
+	rot2:Mat3d;
+	
+	//rotation angle
+	m_rotAngle:LREAL:=15*g_deg2Rad;	
+	
+	o_targetJntPos1,o_targetJntPos2,o_targetJntPos3:Vec7d;
+	
+	// joint position at link encoder calibrated point
+	m_linkEncCaliJntPos :ARRAY[1..g_mArmNum, 1..g_mJntNum] OF LREAL :=
+		[0.0, -PI/2, 0.0, -pi, pi, -PI/2, 0.0,
+		 0.0, -PI/2, 0.0, 0.0, pi, PI/2, 0.0];
+		 
+	// static check variables
+	m_handleTouchFlag :BOOL :=TRUE;
+	m_staticTime :LREAL :=0;
+	m_staticTimeThres :LREAL :=1.0;
+	m_gripAngThres :LREAL :=g_deg2rad*2.0;
+	m_jointStativVel :LREAL :=g_deg2Rad * 3.0;
+	m_noTouchJntDamp :Vec7d :=[1, 1, 1, 0.0, 0.05, 0.05, 0.0];
+	
+	// DOB compensation scale
+	//m_DOBScale :Vec7d:=[0.25, 0.4, 0.4, 0, 0.8, 0.25, 0];
+	m_DOBScale :Vec7d:=[0.2, 0.3, 0.3, 0, 0.7, 0.0, 0];
+	
+	m_USKnifeLpf:ARRAY[1..3] OF FB_LowPassFilter;
+	
+	m_initRotErrCheckFlag :BOOL :=FALSE;
+	m_initRotErrCheckRes :BOOL := TRUE;
+	m_maxInitRotErr :LREAL := 45.0*g_deg2rad;
+	
+	// active damping 
+//	m_activeDampDOBComp:Vec7d :=[0.1, 0.15, 0.15, 0.0, 0.3, 0.0, 0.0];
+	m_activeDamping:Vec6d :=[5, 5, 5, 0.05, 0.05, 0.05];
+	m_maxActiveDampForce:Vec6d :=[0.12, 0.12, 0.12, 0.0, 0.0, 0.002];
+	m_activeDampForce, m_activeDampTrq:Vec3d;
+	m_activeJntDampTrq:Vec7d;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="activeDamping" Id="{e60ff213-bad6-46f4-b5a9-c8ef6d09a1ed}">
+      <Declaration><![CDATA[METHOD activeDamping : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+VAR 
+	i,j:INT;
+	Jp,Jo :Mat3d;
+	JpT,JoT :Mat3d;
+	jntVel123, jntVel567:Vec3d;
+	vel, wVelLocal, wVelWrd:Vec3d;
+	rotT:Mat3d;
+	dampTrqLocal:Vec3d;
+	activeDamp123, activeDamp567 :Vec3d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// linear velocity by joint123 and angular velocity by joint567
+FOR i :=1 TO  3 DO
+	FOR j:=1 TO 3 DO
+		Jp[i,j]:= i_masterArm.jaco[i,j];
+		Jo[i,j]:= i_masterArm.jaco[i+3,j+4];
+	END_FOR
+END_FOR
+
+FOR i:=1 TO 3 DO 
+	jntVel123[i] := i_masterArm.curJntVel[i];
+	jntVel567[i] := i_masterArm.curJntVel[i+4];
+END_FOR
+
+matMultiVec(Jp, jntVel123, vel);
+matMultiVec(Jo, jntVel567, wVelWrd);
+matTranspose(i_masterArm.curCartPose.m_rot, rotT);
+matMultiVec(rotT, wVelWrd, wVelLocal);
+
+// linear and angular damping 
+FOR i:=1 TO 3 DO
+	m_activeDampForce[i]:= LIMIT(-m_maxActiveDampForce[i], -vel[i]*m_activeDamping[i], m_maxActiveDampForce[i]);
+	dampTrqLocal[i]:= LIMIT(-m_maxActiveDampForce[i+3], -wVelLocal[i]*m_activeDamping[i+3], m_maxActiveDampForce[i+3]);
+END_FOR
+matMultiVec(i_masterArm.curCartPose.m_rot, dampTrqLocal, m_activeDampTrq);
+
+// project back to joint space
+matTranspose(Jp, JpT);
+matMultiVec(JpT, m_activeDampForce, activeDamp123);
+matTranspose(Jo, JoT);
+matMultiVec(JoT, m_activeDampTrq, activeDamp567);
+
+FOR i:=1 TO 3 DO
+	m_activeJntDampTrq[i]:=activeDamp123[i];
+	m_activeJntDampTrq[i+4]:=activeDamp567[i];
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="armIKSlove" Id="{026e4879-133e-43d8-9745-3615cd84da7e}">
+      <Declaration><![CDATA[METHOD armIKSlove : BOOL
+VAR_INPUT	
+	i_masterArm :FB_MasterArm;
+	i_q4:LREAL;
+	i_targetFrame:ST_Frame;
+END_VAR
+
+VAR_OUTPUT
+	o_targetJntPos:Vec7d;
+END_VAR
+
+VAR
+	i:INT;
+	IKSucceed:BOOL;
+	targetJntPos:Vec7d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+//Call inverse kinematics
+IKSucceed:=m_basicFun.armIK(q4:= i_q4, solution_ID:= m_IK, i_curCartPose:= i_targetFrame, r_jntPos:= targetJntPos);
+IF (IKSucceed=FALSE) THEN
+	armIKSlove:=FALSE;
+	RETURN;
+END_IF
+o_targetJntPos1:=targetJntPos;
+
+
+//Constrained solution range and transform to active joint position
+FOR i:=1 TO 7 BY 1 DO
+	m_basicFun.minimumDistMot(i_current:= GVL_Const.g_jntDHInitPos[m_armId,i], i_target:= targetJntPos[i], o_target=> targetJntPos[i]);
+END_FOR
+m_basicFun.DH2activeJnt(i_DHJntPos:= targetJntPos, o_activeJntPos=> o_targetJntPos);
+o_targetJntPos2:=targetJntPos;
+
+
+//Determine whether the solution result is appropriate
+FOR i:=1 TO g_mJntNum BY 1 DO
+	IF (o_targetJntPos[i]>GVL_ArmJointParameters.g_maxJntPos[m_armId,i]) OR (o_targetJntPos[i]<GVL_ArmJointParameters.g_minJntPos[m_armId,i]) THEN
+		armIKSlove:=FALSE;
+		RETURN;
+	END_IF
+END_FOR
+armIKSlove:=TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos" Id="{b549ed00-ec1a-412a-94d0-63a741bf9608}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+	masterRot,masterRotT,slaveRot :Mat3d;
+	deltaRot:Mat3d;
+	angErr:LREAL;
+	i:INT;
+	masterZ, slaveZ :Vec3d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF (g_motionTest.m_MSPrecisionTest[i_masterArm.armIdx]=FALSE) THEN	
+	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
+		i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
+		calcCmdJntPos_USKnife(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	ELSE
+		calcCmdJntPos_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	END_IF
+	
+	m_cmdJntPos[4]:=m_redunJntCtrl.m_cmdJntPos;
+	m_cmdJntVel[4]:=m_redunJntCtrl.m_cmdJntVel;
+	
+	
+ELSE	
+	
+	//*******************add code for test*******************//
+	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
+		i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
+		calcCmdJntPos_USKnife_Test(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+		
+		m_cmdJntPos[4]:=m_redunJntCtrl.m_cmdJntPos;
+		m_cmdJntVel[4]:=m_redunJntCtrl.m_cmdJntVel;	
+	ELSE
+		calcCmdJntPos_BasicInstru_Test(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	END_IF		
+END_IF
+
+
+// check init rotation error
+IF NOT(m_initRotErrCheckFlag) THEN
+	m_initRotErrCheckFlag :=TRUE;
+	matMultiply(i_shoulderPose.m_rot, i_masterArm.curCartPose.m_rot, masterRot);
+	slaveRot:= i_slaveStatus.m_curArmPose[i_slaveIdx].m_rot;
+	// ultrosonic knife
+	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type =  InstruType_UltrasoundKnifeS OR i_slaveStatus.m_instruStauts[i_slaveIdx].m_type =  InstruType_UltrasoundKnifeU THEN
+		FOR i:=1 TO 3 DO
+			masterZ[i] := MasterRot[i,3];
+			slaveZ[i] := slaveRot[i,3];
+		END_FOR
+		angErr := ACOS(LIMIT(-1,vecDot(masterZ,slaveZ),1));
+		m_initRotErrCheckRes := ABS(angErr)<m_maxInitRotErr;
+	ELSE
+		
+		matTranspose(masterRot, masterRotT);
+		matMultiply(masterRotT,slaveRot, deltaRot);//end（init)<-base*base<-end(target)=end(init)<-end(target)
+		rot2AngAxis(deltaRot,angle=>angErr,axis=>);
+		m_initRotErrCheckRes:= (ABS(angErr)<m_maxInitRotErr);
+	END_IF
+	
+END_IF
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_BasicInstru" Id="{239c44da-fbb4-4bf5-8dd0-8022d66af60b}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_BasicInstru : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_cmdJntPos:=i_masterArm.curJntPos;
+m_cmdJntVel:=i_masterArm.curJntVel;
+m_cmdCartPose:=i_masterArm.curCartPose;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_BasicInstru_Test" Id="{18ef547c-9dd3-4879-8099-23e93d266697}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_BasicInstru_Test : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE m_testStep OF
+	0: //data initial		
+		m_targetSpatialPos:=m_targetPosArr[m_pointNum];
+		m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);		
+		m_IKSucceed:=armIKSlove(i_masterArm:= i_masterArm, i_q4:= m_startDHPos[4], i_targetFrame:= m_targetSpatialPos, o_targetJntPos=> m_endJntPos);
+		IF (m_IKSucceed=FALSE) THEN
+			m_testStep:=60;
+		END_IF
+		
+		m_startJntPos:=i_masterArm.curJntPos;	
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=60;
+		ELSE
+			m_time:=0; m_testStep:=5;
+		END_IF		
+		
+		
+	5: //pause and confirm
+		(*
+		IF (m_motionCycleNum=1) AND (m_pointNum=1) THEN
+			IF (GVL_AccuracyTestVar.g_startMotion[m_armId]=TRUE) THEN
+				m_testStep:=10;
+			END_IF
+		ELSE
+			m_testStep:=10;
+		END_IF
+		*)
+		m_testStep:=10;
+		
+		
+	10: //start the motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		m_actualJntPos:=i_masterArm.curJntPos;
+		vecSub(m_cmdJntPos, m_actualJntPos, m_JntErr);
+		IF (m_time>m_Planner.duration) AND (norm(m_JntErr)<g_jntCtrlAngTolHigh)THEN
+			m_testStep:=15;
+		END_IF
+		
+		
+	15: //Waiting for confirmation and measurement
+		IF (g_motionTest.m_nextStep[m_armId]=TRUE) THEN
+			g_motionTest.m_nextStep[m_armId]:=FALSE;
+			m_testStep:=30;
+		END_IF
+		
+		//New requirement: Before officially testing accuracy, there need to be two cycles of motion without waiting for confirmation signals
+		IF (m_motionCycleNum<=2) THEN
+			m_testStep:=30;
+		END_IF
+		
+		//for esd test
+		IF (g_motionTest.m_esdTest[m_armId]=TRUE) THEN
+			m_testStep:=30;
+		END_IF
+		
+		
+	30: //back to origin point
+		m_startJntPos:=i_masterArm.curJntPos;
+		m_endJntPos:=m_originJntPos;
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=60;
+		ELSE
+			m_time:=0; m_testStep:=40;
+		END_IF
+		
+		
+	40: //start motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> m_cmdJntPos, jntVel=> m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=50;
+		END_IF
+		
+		
+	50: //Record the motion cycle
+		m_pointNum:=m_pointNum+1;
+		IF (m_pointNum>m_pointSum) THEN
+			m_pointNum:=1;
+			m_motionCycleNum:=m_motionCycleNum+1;
+			IF (m_motionCycleNum>m_tgtMotionCycleNum) THEN
+				m_testStep:=60;
+			ELSE
+				m_testStep:=0;
+			END_IF
+		ELSE
+			m_testStep:=0;
+		END_IF
+		
+		
+	60: //stop
+		m_testStep:=-1;
+END_CASE
+
+g_motionTest.m_frontPose[m_armId]:=i_shoulderPose;
+g_motionTest.m_curStep[m_armId]:=m_testStep;
+g_motionTest.m_testPointId[m_armId]:=m_pointNum;
+g_motionTest.m_testCycleId[m_armId]:=m_motionCycleNum;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_USKnife" Id="{e3490571-181c-4e3a-9266-10457d84eb98}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_USKnife : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR CONSTANT
+	// orientation tracking parameters
+	m_rotTrackKp : LREAL := 200;
+	m_maxTrackVel :LREAL := PI;
+	m_trackAngThres :LREAL := 2* g_deg2rad;
+END_VAR
+VAR 
+	cartTrackVel :Vec3d;
+	i,j : INT;
+	invRot :Mat3d;
+	cmdRotInView:Mat3d;
+	rotT,rotErr :Mat3d;
+	angle:LREAL;
+	axis:Vec3d;
+	
+	oriJaco:Mat3d;
+	oriJacoInv:Mat3d;
+	jntTrackVel:Vec3d;
+	cmdRotInMonitor:Mat3d;
+	
+	cmdZAxis, curZAxis :Vec3d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_jntOPMode[5] := DriverOPMode_PosTrq;
+m_jntOPMode[6] := DriverOPMode_PosTrq;
+m_jntOPMode[7] := DriverOPMode_Trq;
+
+// use matched slave arm orientation as target, 
+//	and transform from view coordinate to arm coordinate 
+cmdRotInView := i_slaveStatus.m_curArmPose[i_slaveIdx].m_rot;
+matTranspose(i_shoulderPose.m_rot, invRot);
+ matMultiply(invRot, cmdRotInView, m_cmdCartPose.m_rot);
+m_cmdCartPose.m_pos:= i_masterArm.curCartPose.m_pos;
+
+// first three joints and joint7 is passive control
+FOR i:=1 TO 3 DO 
+	m_cmdJntPos[i]:=i_masterArm.curJntPos[i];
+	m_cmdJntVel[i]:=i_masterArm.curJntVel[i];
+END_FOR
+m_cmdJntPos[7]:=i_masterArm.curJntPos[7];
+m_cmdJntVel[7]:=i_masterArm.curJntVel[7];
+
+// compute cartesian tracking velocity
+FOR i:=1 TO 3 DO
+	cmdZAxis[i] := m_cmdCartPose.m_rot[i,3];
+	curZAxis[i] := i_masterArm.simCartPose.m_rot[i,3];
+END_FOR
+angle := ACOS(LIMIT(-1,vecDot(cmdZAxis,curZAxis),1));
+axis := cross(curZAxis, cmdZAxis);
+IF ABS(angle)> g_smallAng AND ABS(angle-pi)> g_smallAng THEN
+	normalize(axis);
+END_IF
+vecMultiNum(axis, LIMIT(-m_maxTrackVel, angle*m_rotTrackKp, m_maxTrackVel), cartTrackVel);
+
+// compute pinv of orientation jacobian
+FOR i:=1 TO 3 DO
+	FOR j:=1 TO 3 DO
+		oriJaco[i,j]:=i_masterArm.simJaco[i+3,j+4];
+	END_FOR
+END_FOR
+invMat3(oriJaco, oriJacoInv);
+matMultiVec(oriJacoInv, cartTrackVel, jntTrackVel);
+
+// update final command joint position and velocity
+FOR i :=5 TO 6 DO 
+	m_cmdJntVel[i]:=jntTrackVel[i-4];
+	m_cmdJntPos[i]:=m_cmdJntPos[i]+m_cmdJntVel[i]*g_armCtrlCycleTime;
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_USKnife_Test" Id="{d6d20dc6-5de8-4f3d-8d7a-8c9da981d5a3}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_USKnife_Test : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR CONSTANT
+	// orientation tracking parameters
+	m_rotTrackKp : LREAL := 200;
+	m_maxTrackVel :LREAL := PI;
+	m_trackAngThres :LREAL := 2* g_deg2rad;
+END_VAR
+VAR 
+	cartTrackVel :Vec3d;
+	i,j : INT;
+	invRot :Mat3d;
+	cmdRotInView:Mat3d;
+	rotT,rotErr :Mat3d;
+	angle:LREAL;
+	axis:Vec3d;
+	
+	oriJaco:Mat34;
+	oriJt:Mat43;
+	oriJJt:Mat3d;
+	oriJJtInv:Mat3d;
+	oriJPinv:Mat43;
+	jntTrackVel:Vec4d;
+	JpinvJ, nullJ:Mat4d;
+	eye4d :Mat4d := g_eye4d;
+	redunCtrlVel :Vec4d;
+	jnt4TrackVel :LREAL;
+	cmdZAxis, curZAxis :Vec3d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_jntOPMode[1] := DriverOPMode_PosTrq;
+m_jntOPMode[2] := DriverOPMode_PosTrq;
+m_jntOPMode[3] := DriverOPMode_PosTrq;
+m_jntOPMode[4] := DriverOPMode_PosTrq;
+m_jntOPMode[5] := DriverOPMode_PosTrq;
+m_jntOPMode[6] := DriverOPMode_PosTrq;
+m_jntOPMode[7] := DriverOPMode_PosTrq;
+
+// use matched slave arm orientation as target, 
+//	and transform from view coordinate to arm coordinate 
+cmdRotInView := i_slaveStatus.m_curArmPose[i_slaveIdx].m_rot;
+matTranspose(i_shoulderPose.m_rot, invRot);
+matMultiply(invRot, cmdRotInView, m_cmdCartPose.m_rot);
+m_cmdCartPose.m_pos:= i_masterArm.curCartPose.m_pos;
+
+
+
+
+//**************first three joints for position********************//
+// first three joints and joint7 is passive control
+FOR i:=1 TO 3 DO 
+	//m_cmdJntPos[i]:=i_masterArm.curJntPos[i];
+	//m_cmdJntVel[i]:=i_masterArm.curJntVel[i];
+END_FOR
+calcCmdJntPos_USKnife_Test_MotJ123(i_slaveIdx:= i_slaveIdx, i_shoulderPose:= i_shoulderPose, i_masterArm:= i_masterArm, i_slaveStatus:= i_slaveStatus);
+
+
+
+// joint7 is passive control
+//m_cmdJntPos[7]:=i_masterArm.curJntPos[7];
+//m_cmdJntVel[7]:=i_masterArm.curJntVel[7];
+m_cmdJntPos[7]:=m_initJntPos[7];
+m_cmdJntVel[7]:=0;
+
+
+
+// compute cartesian tracking velocity
+FOR i:=1 TO 3 DO
+	cmdZAxis[i] :=  m_cmdCartPose.m_rot[i,3];
+	curZAxis[i] := i_masterArm.simCartPose.m_rot[i,3];
+END_FOR
+angle := ACOS(LIMIT(-1,vecDot(cmdZAxis,curZAxis),1));
+axis := cross(curZAxis, cmdZAxis);
+IF ABS(angle)> g_smallAng AND ABS(angle-pi)> g_smallAng THEN
+	normalize(axis);
+END_IF
+vecMultiNum(axis, LIMIT(-m_maxTrackVel, angle*m_rotTrackKp, m_maxTrackVel), cartTrackVel);
+
+// compute pinv of orientation jacobian
+FOR i:=1 TO 3 DO
+	FOR j:=1 TO 4 DO
+		oriJaco[i,j]:=i_masterArm.simJaco[i+3,j+3];
+	END_FOR
+END_FOR
+matTranspose(oriJaco, oriJt);
+matMultiply(oriJaco ,oriJt , oriJJt);
+invMat3(oriJJt, oriJJtInv);
+matMultiply(oriJt, oriJJtInv, oriJPinv);
+matMultiVec(oriJpinv, cartTrackVel, jntTrackVel);
+
+// calculate nullspace
+matMultiply(oriJPinv, oriJaco, JpinvJ);
+matSub(eye4d , JpinvJ, nullJ);
+
+// redundant velocity
+jnt4TrackVel:=calcRedunVel(i_masterArm);
+redunCtrlVel[1]:=nullJ[1,1]*jnt4TrackVel;
+redunCtrlVel[2]:=nullJ[2,1]*jnt4TrackVel;
+redunCtrlVel[3]:=nullJ[3,1]*jnt4TrackVel;
+redunCtrlVel[4]:=nullJ[4,1]*jnt4TrackVel;
+
+// update final command joint position and velocity
+FOR i :=1 TO 3 DO 
+	m_cmdJntVel[i+3]:=jntTrackVel[i]+redunCtrlVel[i];
+	m_cmdJntPos[i+3]:=m_cmdJntPos[i+3]+m_cmdJntVel[i+3]*g_armCtrlCycleTime;
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntPos_USKnife_Test_MotJ123" Id="{0fb0766b-176d-4ee1-abb7-32b7fb6db4f2}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos_USKnife_Test_MotJ123 : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+	cmdJntPos : VEC7d;
+	cmdJntVel : VEC7d;
+	cmdJntAcc : VEC7d;
+	k:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE m_testStep OF
+	0: //data initial
+		m_targetSpatialPos:=m_targetPosArr[m_pointNum];
+		m_basicFun.activeJnt2DH(i_activeJntPos:= i_masterArm.curJntPos, o_DHJntPos=> m_startDHPos);		
+		m_IKSucceed:=armIKSlove(i_masterArm:= i_masterArm, i_q4:= m_startDHPos[4], i_targetFrame:= m_targetSpatialPos, o_targetJntPos=> m_endJntPos);
+		IF (m_IKSucceed=FALSE) THEN
+			m_testStep:=60;
+		END_IF
+		
+		m_startJntPos:=i_masterArm.curJntPos;	
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=60;
+		ELSE
+			m_time:=0; m_testStep:=5;
+		END_IF		
+		
+		
+	5: //pause and confirm
+		(*
+		IF (m_motionCycleNum=1) AND (m_pointNum=1) THEN
+			IF (GVL_AccuracyTestVar.g_startMotion[m_armId]=TRUE) THEN
+				m_testStep:=10;
+			END_IF
+		ELSE
+			m_testStep:=10;
+		END_IF
+		*)
+		m_testStep:=10;
+		
+		
+	10: //start the motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> cmdJntPos, jntVel=> cmdJntVel, jntAcc=> cmdJntAcc);
+		
+		FOR k:=1 TO 3 BY 1 DO
+			m_cmdJntPos[k]:=cmdJntPos[k];
+			m_cmdJntVel[k]:=cmdJntVel[k];
+			m_cmdJntAcc[k]:=cmdJntAcc[k];
+		END_FOR		
+		m_actualJntPos:=i_masterArm.curJntPos;
+		vecSub(m_cmdJntPos, m_actualJntPos, m_JntErr);
+		
+		m_JntErr[4]:=0; m_JntErr[5]:=0; m_JntErr[6]:=0; m_JntErr[7]:=0;
+		IF (m_time>m_Planner.duration) AND (norm(m_JntErr)<g_jntCtrlAngTolHigh)THEN
+			m_testStep:=15;
+		END_IF
+		
+		
+	15: //Waiting for confirmation and measurement
+		IF (g_motionTest.m_nextStep[m_armId]=TRUE) THEN
+			g_motionTest.m_nextStep[m_armId]:=FALSE;
+			m_testStep:=30;
+			
+			//do not go home
+			IF (g_motionTest.m_goHomeFlag=FALSE) THEN
+				m_testStep:=50;
+			END_IF
+		END_IF
+		
+		//New requirement: Before officially testing accuracy, there need to be two cycles of motion without waiting for confirmation signals
+		IF (m_motionCycleNum<=2) THEN
+			m_testStep:=30;
+		END_IF
+		
+		//for esd test
+		IF (g_motionTest.m_esdTest[m_armId]=TRUE) THEN
+			m_testStep:=30;
+		END_IF
+				
+		
+		
+	30: //back to origin point
+		m_startJntPos:=i_masterArm.curJntPos;
+		m_endJntPos:=m_originJntPos;
+		m_Planner.init(i_startJntPos:= m_startJntPos, 	i_targetJntPos:= m_endJntPos, 	i_maxJntVel:= m_maxjntVel, 	i_maxJntAcc:= m_maxjntAcc, 	i_maxJntJerk:= m_maxjntJerk);
+		IF (m_Planner.isGene=FALSE) THEN
+			m_testStep:=60;
+		ELSE
+			m_time:=0; m_testStep:=40;
+		END_IF
+		
+		
+	40: //start motion
+		m_time:=m_time+g_armCtrlCycleTime;
+		m_Planner.evaluate(t:= m_time, jntPos=> cmdJntPos, jntVel=> cmdJntVel, jntAcc=> cmdJntAcc);
+		
+		FOR k:=1 TO 3 BY 1 DO
+			m_cmdJntPos[k]:=cmdJntPos[k];
+			m_cmdJntVel[k]:=cmdJntVel[k];
+			m_cmdJntAcc[k]:=cmdJntAcc[k];
+		END_FOR
+		
+		IF (m_time>m_Planner.duration) THEN
+			m_testStep:=50;
+		END_IF
+		
+		
+	50: //Record the motion cycle
+		m_pointNum:=m_pointNum+1;
+		IF (m_pointNum>m_pointSum) THEN
+			m_pointNum:=1;
+			m_motionCycleNum:=m_motionCycleNum+1;
+			IF (m_motionCycleNum>m_tgtMotionCycleNum) THEN
+				m_testStep:=60;
+			ELSE
+				m_testStep:=0;
+			END_IF
+		ELSE
+			m_testStep:=0;
+		END_IF
+		
+		
+	60: //stop
+		m_testStep:=-1;
+END_CASE
+
+
+//copy to global variables
+g_motionTest.m_frontPose[m_armId]:=i_shoulderPose;
+g_motionTest.m_curStep[m_armId]:=m_testStep;
+g_motionTest.m_testPointId[m_armId]:=m_pointNum;
+g_motionTest.m_testCycleId[m_armId]:=m_motionCycleNum;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq" Id="{590b7c96-65ed-47d5-8eb2-8a13ee8a5533}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	i:INT;
+	activeDampRatio:LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF (g_motionTest.m_MSPrecisionTest[i_masterArm.armIdx]=FALSE) THEN
+	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
+		i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
+		calcCmdJntTrq_USKnife(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	ELSE
+		calcCmdJntTrq_BasicInstru(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	END_IF
+
+ELSE
+	
+	
+	//************************add code for test******************************//
+	IF i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeS OR 
+		i_slaveStatus.m_instruStauts[i_slaveIdx].m_type = InstruType_UltrasoundKnifeU THEN
+		calcCmdJntTrq_USKnife_Test(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	ELSE
+		calcCmdJntTrq_BasicInstru_Test(i_slaveIdx,i_shoulderPose,i_masterArm,i_slaveStatus);
+	END_IF
+END_IF
+
+// check handle touch, if false, add joint damping
+m_handleTouchFlag := handleTouchCheck(i_masterArm);
+m_frictionCompScale := 1;
+IF not(m_handleTouchFlag) THEN
+	m_frictionCompScale := 0;
+	FOR i:=1 TO 7 DO
+		m_cmdJntTrq[i] := m_cmdJntTrq[i] - m_noTouchJntDamp[i]*i_masterArm.curJntVel[i];
+	END_FOR
+END_IF
+
+// add active damping
+activeDamping(i_masterArm);
+
+// add external torque compensation
+activeDampRatio:= LIMIT(0, DINT_TO_LREAL(GVL_interactUI.g_activeDampRatio)/100.0, 1);
+IF m_handleTouchFlag THEN
+	FOR i:=1 TO 7 DO 
+		m_cmdJntTrq[i]:= m_cmdJntTrq[i] + m_DOBScale[i] * i_masterArm.m_jntExtTrq[i] + activeDampRatio * m_activeJntDampTrq[i];
+	END_FOR
+END_IF
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq_BasicInstru" Id="{924c67b8-8dc8-4b14-a8ff-535af80c10ba}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq_BasicInstru : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	nullspaceMat :Mat7d;
+	ctrlTrq : Vec7d;
+	boundaryTrq :Vec7d;
+	withinBoundary :BOOL;
+	joint6LimitTrq:LREAL;
+	i :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// boundary force feedback
+m_boundaryTrq :=m_boundaryForce.run(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+withinBoundary := (norm(m_boundaryTrq)<g_smallNum);
+
+// redundant joint4 controller
+ctrlTrq := g_zeroVec7d;
+ctrlTrq[4] := m_redunJntCtrl.run(i_masterArm, i_followEnable:=withinBoundary);
+m_cmdJntPos[4]:=m_redunJntCtrl.m_cmdJntPos;
+m_cmdJntVel[4]:=m_redunJntCtrl.m_cmdJntVel;
+	
+// project to nullspace
+IF m_nullspaceCtrl THEN
+	nullspaceMat:=i_masterArm.dynaNullspace;
+	matMultiVec(nullspaceMat,ctrlTrq, m_cmdJntTrq);
+	vecSelfMultiNum(m_cmdJntTrq, ctrlTrq[4] / m_cmdJntTrq[4]);
+ELSE
+	m_cmdJntTrq := ctrlTrq;
+END_IF
+
+// joint6  limit control
+joint6LimitTrq := m_jnt6LimitCtrl.run(i_masterArm);
+
+// add friction compensation
+FOR i:=1 TO g_mJntNum DO 
+	IF ABS(m_boundaryTrq[i])>g_smallNum OR (i=6 AND ABS(joint6LimitTrq)>g_smallAng) THEN
+		m_cmdJntTrq[i] := m_cmdJntTrq[i] + m_boundaryTrq[i];
+	ELSE
+		m_cmdJntTrq[i] := m_cmdJntTrq[i] +m_frictionCompScale * i_masterArm.jntFriction[i] + m_boundaryTrq[i];
+	END_IF
+END_FOR
+
+
+m_cmdJntTrq[6]:= m_cmdJntTrq[6]+ joint6LimitTrq;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq_BasicInstru_Test" Id="{c056a69b-5b60-4aad-a2ea-5b3722ce55b7}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq_BasicInstru_Test : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	nullspaceMat :Mat7d;
+	ctrlTrq : Vec7d;
+	boundaryTrq :Vec7d;
+	withinBoundary :BOOL;
+	joint6LimitTrq:LREAL;
+	i :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+//do nothing
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq_USKnife" Id="{89963b71-7e72-4bb1-9f43-b099432ea948}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq_USKnife : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	i :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_cmdJntTrq :=g_zeroVec7d;
+// boundary force feedback
+m_boundaryTrq :=m_boundaryForce.run(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+m_cmdJntTrq[7] := m_boundaryTrq[7];
+
+// redundant joint4 controller
+m_cmdJntTrq[4] := m_redunJntCtrlUSKnife.run(i_masterArm);
+m_cmdJntPos[4]:=m_redunJntCtrlUSKnife.m_cmdJntPos;
+m_cmdJntVel[4]:=m_redunJntCtrlUSKnife.m_cmdJntVel;
+
+// add friction compensation
+FOR i:=1 TO g_mJntNum DO 
+	m_cmdJntTrq[i] := m_cmdJntTrq[i] +m_frictionCompScale * i_masterArm.jntFriction[i];
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcCmdJntTrq_USKnife_Test" Id="{2ad5f21b-b602-4d6f-8e39-6d6ec830861b}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntTrq_USKnife_Test : BOOL
+
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	i :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+//do nothing
+
+
+(*
+m_cmdJntTrq :=g_zeroVec7d;
+
+// boundary force feedback
+m_boundaryTrq :=m_boundaryForce.run(i_slaveIdx, i_shoulderPose, i_masterArm, i_slaveStatus);
+m_cmdJntTrq[7] := m_boundaryTrq[7];
+*)
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="calcRedunVel" Id="{2d8bb2ec-2a44-4bc5-9d2d-80c4739e4cf3}">
+      <Declaration><![CDATA[METHOD PROTECTED calcRedunVel : LREAL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+
+VAR 
+	// redundant control parameters
+	m_jnt4AdjustKp : LREAL :=10;
+	m_jnt4MaxVel :LREAL :=pi/3 ;
+	m_linearVelLb :LREAL := 0.02;
+	m_linearVelUb :LREAL :=0.1;	
+	
+	j6Bias,j5Bias :LREAL;
+	velScale :LREAL;
+	linearVel :Vec3d;
+	curJntPos : Vec7d;
+	jnt4LinkPos :LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// compute desired joint4 link position
+curJntPos :=  i_masterArm.cmdJntPos;
+jnt4LinkPos:=i_masterArm.jnt4MotorToLink(curJntPos[2],curJntPos[3],curJntPos[4]);
+IF 1= i_masterArm.armIdx THEN
+	j6Bias :=curJntPos[6]+PI/2;
+ELSE 
+	j6Bias := curJntPos[6]-PI/2;
+END_IF
+
+// scale based on joint5 position
+j5Bias :=  LIMIT (0, ABS(curJntPos[5] -pi), pi/2);
+j6Bias := j6Bias * ABS(COS(j5Bias));
+
+// scale based on linear velocity
+linearVel[1]:=i_masterArm.curCartTwist[1];
+linearVel[2]:=i_masterArm.curCartTwist[2];
+linearVel[3]:=i_masterArm.curCartTwist[3];
+velScale :=LIMIT(0, (norm(linearVel)-m_linearVelLb)/(m_linearVelUb-m_linearVelLb),1.0);
+
+
+calcRedunVel := LIMIT(-m_jnt4MaxVel, -j6Bias * m_jnt4AdjustKp * velScale ,m_jnt4MaxVel);
+
+// joint limit
+IF (calcRedunVel > 0 AND jnt4LinkPos+calcRedunVel * g_armCtrlCycleTime > GVL_ArmJointParameters.g_maxJntPos[i_masterArm.armIdx,4])
+	 OR ( calcRedunVel <0 AND  jnt4LinkPos +calcRedunVel * g_armCtrlCycleTime< GVL_ArmJointParameters.g_minJntPos[i_masterArm.armIdx,4]) THEN
+	 calcRedunVel :=0;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="handleTouchCheck" Id="{a95fc147-7cd3-4d87-8333-fef73df92c52}">
+      <Declaration><![CDATA[// check if handle is touched by user
+METHOD handleTouchCheck : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm :FB_MasterArm;
+END_VAR
+
+VAR
+
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// gripper check
+IF (i_masterArm.gripAngle - g_maxGripAngle)>m_gripAngThres THEN
+	m_staticTime :=0.0;
+	handleTouchCheck := TRUE;
+	RETURN;
+END_IF
+
+// check joint 6/7, which hold still if no touching
+IF ABS(i_masterArm.curJntVel[6])> m_jointStativVel OR ABS(i_masterArm.curJntVel[7])> m_jointStativVel THEN
+	m_staticTime :=0.0;
+	handleTouchCheck := TRUE;
+	RETURN;
+END_IF
+
+// check joint 1/2/3/5
+IF m_handleTouchFlag AND ( ABS(i_masterArm.curJntVel[1]) > m_jointStativVel OR ABS(i_masterArm.curJntVel[2])> m_jointStativVel 
+	OR ABS(i_masterArm.curJntVel[3])> m_jointStativVel OR ABS(i_masterArm.curJntVel[5])> m_jointStativVel) THEN
+	m_staticTime := m_staticTime + g_armCtrlCycleTime;
+END_IF
+
+handleTouchCheck := m_staticTime < m_staticTimeThres;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{1bea1de4-0538-46fc-be44-e671d6da03c3}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i:INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+m_jntOPMode := g_allTrqMode;
+
+
+//*****************add code---init for precision test*****************//
+//variable initialization
+m_armId:=i_masterArm.armIdx;
+
+
+IF (g_motionTest.m_MSPrecisionTest[i_masterArm.armIdx]=FALSE) THEN	
+	m_jntOPMode := g_allTrqMode;
+ELSE
+	m_jntOPMode := g_allPosTrqMode;
+END_IF
+
+
+// init controller
+m_redunJntCtrl.init(i_masterArm);
+m_redunJntCtrlUSKnife.init(i_masterArm);
+m_jnt6LimitCtrl.init(i_masterArm);
+
+m_staticTime :=0.0;
+m_handleTouchFlag:=TRUE;
+
+m_initRotErrCheckFlag :=FALSE;
+m_initRotErrCheckRes := TRUE;
+
+m_activeJntDampTrq:=g_zeroVec7d;
+
+// update commands to arm
+copyCmds(r_masterArmCtrlCmd);
+
+//*****************add code---init for precision test*****************//
+//variable initialization
+m_armId:=i_masterArm.armIdx;
+
+//init IK idx
+IF (m_armId=1) THEN
+	m_IK:=4;
+ELSE
+	m_IK:=3;
+END_IF
+
+//motion parameters initial
+motionParamInit(i_masterArm);]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="initRotErrCheck" Id="{ed54632d-0691-4418-a488-79fe4425c30c}">
+      <Declaration><![CDATA[PROPERTY initRotErrCheck : BOOL]]></Declaration>
+      <Get Name="Get" Id="{d65e5c1c-f739-4bac-851a-706a9eabaf56}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[initRotErrCheck := m_initRotErrCheckRes;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="motionParamInit" Id="{3822ab97-736b-465a-baad-1ee24e3f57a7}">
+      <Declaration><![CDATA[METHOD motionParamInit : BOOL
+VAR_INPUT
+	// arm data
+	i_masterArm:FB_MasterArm;
+END_VAR
+VAR
+	i,j:INT;
+	poseVec:Vec6d;
+	originPose:ST_Frame;
+	gripperRollFlip:BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_testStep:=0;
+m_time:=0;
+
+
+//velocity---acceleration---jerk
+vecMultiNum(GVL_ArmJointParameters.g_maxJntVel,0.2,m_maxjntVel);
+vecMultiNum(m_maxjntVel,3,m_maxjntAcc);
+vecMultiNum(m_maxjntAcc,3,m_maxjntJerk);
+
+
+//accuracy test variables
+m_pointNum:=1;
+m_pointSum:=8;
+m_motionCycleNum:=1;
+m_tgtMotionCycleNum:=gvl_const.g_testMotCycNum;
+
+
+//original joint position
+FOR i:=1 TO g_mJntNum BY 1 DO
+	m_originJntPos[i]:=m_linkEncCaliJntPos[m_armId,i];
+END_FOR
+
+
+//test point record
+IF (m_armId=1) THEN
+	m_targetPosVecArr:=gvl_const.g_armPoseA1;
+ELSE
+	m_targetPosVecArr:=gvl_const.g_armPoseA2;
+END_IF
+
+
+//if need to adjust the scale factor
+IF (g_motionTest.m_scaleSpace=TRUE) THEN
+	m_calTestPnt.scaleMutiPnt(i_armIdx:= m_armId, o_testPnt=> m_targetPosVecArr);
+END_IF
+
+
+//add for esd test
+IF (g_motionTest.m_esdTest[m_armId]=TRUE) THEN
+	m_tgtMotionCycleNum:=10000;
+	IF (m_armId=1) THEN
+		m_targetPosVecArr:=gvl_const.g_esdPoseA1;
+	ELSE
+		m_targetPosVecArr:=gvl_const.g_esdPoseA2;
+	END_IF
+END_IF
+
+
+
+//additional rotation matrix---m_addRotMat
+FOR i:=1 TO gvl_const.g_testPointNum BY 1 DO
+	IF (i=1) THEN
+		m_basicFun.rotX(i_angle:= m_rotAngle, o_matrix=> m_addRotMat[i]);
+	ELSIF (i=2) THEN
+		m_basicFun.rotX(i_angle:= -m_rotAngle, o_matrix=> m_addRotMat[i]);
+		
+	ELSIF (i=3) THEN
+		m_basicFun.rotY(i_angle:= m_rotAngle, o_matrix=> m_addRotMat[i]);
+	ELSIF (i=4) THEN
+		m_basicFun.rotY(i_angle:= -m_rotAngle, o_matrix=> m_addRotMat[i]);
+		
+	ELSIF (i=5) THEN
+		m_basicFun.rotZ(i_angle:= m_rotAngle, o_matrix=> m_addRotMat[i]);
+	ELSIF (i=6) THEN
+		m_basicFun.rotZ(i_angle:= -m_rotAngle, o_matrix=> m_addRotMat[i]);
+		
+	ELSIF (i=7) THEN
+		m_basicFun.rotX(i_angle:= m_rotAngle, o_matrix=> rot1);
+		m_basicFun.rotY(i_angle:= m_rotAngle, o_matrix=> rot2);
+		matMultiply(rot1,rot2,m_addRotMat[i]);
+		
+	ELSIF (i=8) THEN
+		m_basicFun.rotX(i_angle:= -m_rotAngle, o_matrix=> rot1);
+		m_basicFun.rotY(i_angle:= m_rotAngle, o_matrix=> rot2);
+		matMultiply(rot1,rot2,m_addRotMat[i]);		
+	END_IF
+END_FOR
+
+
+
+//Accuracy testing target position
+FOR i:=1 TO gvl_const.g_testPointNum BY 1 DO
+	FOR j:=1 TO 6 BY 1 DO
+		poseVec[j]:=m_targetPosVecArr[i,j];
+	END_FOR
+	m_basicFun.xyzrpy2Frame(i_posVec:= poseVec, o_frame=> m_targetPosArr[i]);
+	gripperRollFlip:= i_masterArm.gripperRollFlip;
+	m_basicFun.armFK(i_jntPos:= m_originJntPos, i_gripperRollFlip:= gripperRollFlip, r_cartPose:= originPose);
+	m_targetPosArr[i].m_rot:=originPose.m_rot;
+	
+	//The pose of the end coordinate system changes
+	IF (g_motionTest.m_poseChange=TRUE) THEN		
+		matMultiply(originPose.m_rot,m_addRotMat[i],m_targetPosArr[i].m_rot);
+	END_IF
+END_FOR
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlMasterSlave">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.activeDamping">
+      <LineId Id="3" Count="34" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.armIKSlove">
+      <LineId Id="3" Count="25" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos">
+      <LineId Id="270" Count="49" />
+      <LineId Id="124" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_BasicInstru">
+      <LineId Id="14" Count="0" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="111" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_BasicInstru_Test">
+      <LineId Id="3" Count="101" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_USKnife">
+      <LineId Id="522" Count="30" />
+      <LineId Id="623" Count="12" />
+      <LineId Id="574" Count="0" />
+      <LineId Id="131" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_USKnife_Test">
+      <LineId Id="3" Count="75" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntPos_USKnife_Test_MotJ123">
+      <LineId Id="3" Count="124" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntTrq">
+      <LineId Id="408" Count="42" />
+      <LineId Id="245" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntTrq_BasicInstru">
+      <LineId Id="249" Count="6" />
+      <LineId Id="316" Count="0" />
+      <LineId Id="256" Count="0" />
+      <LineId Id="317" Count="0" />
+      <LineId Id="257" Count="7" />
+      <LineId Id="296" Count="1" />
+      <LineId Id="295" Count="0" />
+      <LineId Id="265" Count="9" />
+      <LineId Id="276" Count="0" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntTrq_BasicInstru_Test">
+      <LineId Id="3" Count="5" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntTrq_USKnife">
+      <LineId Id="243" Count="0" />
+      <LineId Id="204" Count="1" />
+      <LineId Id="244" Count="0" />
+      <LineId Id="258" Count="1" />
+      <LineId Id="283" Count="0" />
+      <LineId Id="285" Count="0" />
+      <LineId Id="284" Count="0" />
+      <LineId Id="261" Count="2" />
+      <LineId Id="267" Count="0" />
+      <LineId Id="269" Count="0" />
+      <LineId Id="260" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcCmdJntTrq_USKnife_Test">
+      <LineId Id="3" Count="11" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.calcRedunVel">
+      <LineId Id="3" Count="25" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.handleTouchCheck">
+      <LineId Id="107" Count="19" />
+      <LineId Id="39" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.init">
+      <LineId Id="311" Count="43" />
+      <LineId Id="127" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.initRotErrCheck.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlMasterSlave.motionParamInit">
+      <LineId Id="3" Count="95" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,121 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_StateCtrlSelfcheck" Id="{fd7811e9-2663-48f4-b572-c3f170d74307}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Master Arm Home Posture
+FUNCTION_BLOCK PUBLIC FB_StateCtrlSelfcheck EXTENDS FB_MasterArmCtrlBase
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	m_homePlanner : ARRAY[1..4] OF FB_TrajMoveJ;
+	m_homePlannerIsGene:BOOL:=FALSE;
+	m_trajCtrInd:UDINT:=1;
+	
+	m_selfcheckPosture:ARRAY[1..2] OF ARRAY[1..3] OF ARRAY [1..7] OF LREAL:=[
+	[[0,       -PI/2,       0,       -PI,       PI,       -PI/2,       0], 
+	 [0-PI/20, -PI/2-PI/12, 0-PI/12, -PI-PI/3, PI-PI/3, -PI/2-PI/6, 0-PI/2],
+	 [0+PI/20, -PI/2+PI/12, 0+PI/12, -PI+PI/3, PI+PI/3, -PI/2+PI/6, 0+PI/2]],
+	[[0,       -PI/2,       0,        0,        PI,        PI/2,       0],
+ 	 [0+PI/20, -PI/2-PI/12, 0-PI/12,  0+PI/3,  PI+PI/3,  PI/2+PI/6, 0+PI/2],
+     [0-PI/20, -PI/2+PI/12, 0+PI/12,  0-PI/3,  PI-PI/3,  PI/2-PI/6, 0-PI/2]]];	
+	 
+	m_selfcheckJntVel:Vec7d:=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+	m_selfcheckJntAcc:Vec7d:=[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0];
+	m_selfcheckJntJerk:Vec7d:=[7(4.0)];	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{3f72e305-618b-4701-9ce4-3cdaddbbc05b}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+VAR 
+	i :INT;
+	curJntVel :Vec7d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// check if planner is ready
+IF m_homePlannerIsGene = FALSE THEN
+	calcCmdJntPos:=FALSE;
+	RETURN;
+END_IF
+
+// traj plan
+
+
+IF m_trajCtrInd <=4 THEN	
+calcCmdJntPos :=m_homePlanner[m_trajCtrInd].evaluate(m_timePeriod, jntPos=> m_cmdJntPos, jntVel=>m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+	IF m_timePeriod > m_homePlanner[m_trajCtrInd].duration THEN
+		m_timePeriod := 0;
+		m_trajCtrInd := m_trajCtrInd + 1;
+	END_IF
+ELSE	
+// check if to terminate
+curJntVel :=i_masterArm.curJntVel;
+m_isFinished := norm(curJntVel)<7*g_jntStaticVelThres;
+END_IF
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{ffbfb68e-0f40-4802-8fc1-454c5ca070b4}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i,j :INT;
+	startJntPos,endJntPos :Vec7d;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+
+// traj plan
+FOR i := 1 TO 4 DO
+	IF i=1 THEN
+		startJntPos:=i_masterArm.curJntPos;
+
+		endJntPos:=m_selfcheckPosture[i_masterArm.armIdx][1];
+
+	ELSIF i=4 THEN
+		startJntPos:=m_selfcheckPosture[i_masterArm.armIdx][3];
+		endJntPos:=m_selfcheckPosture[i_masterArm.armIdx][1];		
+	ELSE
+		startJntPos:=m_selfcheckPosture[i_masterArm.armIdx][i-1];
+		endJntPos:=m_selfcheckPosture[i_masterArm.armIdx][i];
+	END_IF
+	m_homePlanner[i].init(startJntPos,endJntPos,m_selfcheckJntVel,m_selfcheckJntAcc,m_selfcheckJntJerk);	
+END_FOR
+m_homePlannerIsGene := (m_homePlanner[1].isGene AND m_homePlanner[2].isGene
+ AND m_homePlanner[3].isGene AND m_homePlanner[4].isGene);
+// update commands to arm
+m_trajCtrInd := 1;
+copyCmds(r_masterArmCtrlCmd);]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlSelfcheck">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlSelfcheck.calcCmdJntPos">
+      <LineId Id="114" Count="20" />
+      <LineId Id="32" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlSelfcheck.init">
+      <LineId Id="155" Count="21" />
+      <LineId Id="112" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

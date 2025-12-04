@@ -1,0 +1,454 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_MasterForwardDynamic" Id="{cdef8fa7-0a9d-4e4e-bf46-d59148ab6c7e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MasterForwardDynamic
+VAR CONSTANT
+	m_totalJntNum:INT:=9;
+END_VAR
+VAR
+	m_g:Vec3d :=[0, 0, 9.8];
+	m_armIdx :INT;
+	//kinematic constraint
+	//  q3 = q8 - q2;            qdot3=qdot8-qdot2;
+	//  q9 = q2-q8;              qdot9=qdot2-qdot8;
+	//  q4= q4motor+q8-q2-90;    qdot4=qdot4m+qdot8
+ 	// jacobian with active joints
+ 	// jaco_DH*qdot_DH = jaco_DH * (A * qdot_active)= jaco * qdot_active
+ 	// q_DH=[q1,q2,q3,q4,q5,q6,q7,q8,q9];
+ 	// q_active=[q1,q2,q8,q4m,q5,q6,q7]
+	m_Gt :ARRAY[1..7,1..9] OF LREAL:=
+		[1,  0,  0 , 0 , 0,  0,  0,  0,  0,
+         0,  1,  -1, -1, 0,  0,  0,  0,  1,
+         0,  0,  1 , 1 , 0,  0,  0,  1,  -1,
+         0,  0,  0 , 1 , 0,  0,  0,  0,  0,
+         0,  0,  0 , 0 , 1,  0,  0,  0,  0,
+         0,  0,  0 , 0 , 0,  1,  0,  0,  0,
+         0,  0,  0 , 0 , 0,  0,  1,  0,  0];
+	
+	// DH parameters
+	m_armDH:ARRAY[1..9] OF Vec4d;// last column is joint position
+	m_d1, m_a3,m_a4,m_d4,m_a9 :LREAL;
+	
+	// dynamic parameters
+	m_linkMass :ARRAY[1..9] OF LREAL;
+	m_linkCOM :ARRAY[1..9] OF Vec3d;
+	m_linkInertia :ARRAY[1..9] OF Mat3d;
+		
+	// frame of each joint
+	m_jntFrame :ARRAY[1..9] OF ST_Frame;
+	
+	// motor inertia at link size
+	m_motorInertia :Vec7d;
+	
+	// jntPos/vel/acc
+	m_q,m_qdot, m_qddot :ARRAY[1..9] OF LREAL;
+	m_jntTrq :Vec7d;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="init" Id="{959b54e9-c252-4f67-8481-a414e2027126}">
+      <Declaration><![CDATA[METHOD init : BOOL
+VAR_INPUT
+	i_armIdx :INT ;
+	i_g :Vec3d;
+END_VAR
+
+VAR
+	i:INT;
+	I_mass:Mat3d;
+	normCom:LREAL;
+	j,k:INT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_g:=i_g;
+
+m_armIdx:=i_armIdx;
+m_d1:=g_d1;
+m_a3:=g_a3;
+m_a4:=g_a4;
+m_d4:=g_d4;
+m_a9:=g_a9;
+
+m_linkMass:=GVL_ArmDynamics.g_linkMass;
+FOR i:=1 TO 9 DO
+	m_linkCOM[i][1]:=GVL_ArmDynamics.g_linkCOM[i,1];
+	m_linkCOM[i][2]:=GVL_ArmDynamics.g_linkCOM[i,2];
+	m_linkCOM[i][3]:=GVL_ArmDynamics.g_linkCOM[i,3];
+	
+	m_armDH[i][1]:=g_masterArmDH[i,1];
+	m_armDH[i][2]:=g_masterArmDH[i,2];
+	m_armDH[i][3]:=g_masterArmDH[i,3];
+	m_armDH[i][4]:=g_masterArmDH[i,4];
+	
+	//mass(i)*(com(:,i)'*com(:,i)*eye(3,3)-com(:,i)*com(:,i)')
+	normCom:= norm(m_linkCOM[i]);
+	normCom:=normCom*normCom;
+	matMultiNum(g_eye3d, normCom, I_mass);
+	FOR j:=1 TO 3 DO 
+		FOR k:=1 TO 3 DO
+			I_mass[j,k]:= m_linkMass[i] *( I_mass[j,k]-m_linkCOM[i][j]*m_linkCOM[i][k]);
+		END_FOR
+	END_FOR
+	
+	// I_link=I_com+I_mass
+	m_linkInertia[i][1,1]:=GVL_ArmDynamics.g_linkInertia[i,1] + I_mass[1,1];
+	m_linkInertia[i][2,2]:=GVL_ArmDynamics.g_linkInertia[i,2] + I_mass[2,2];
+	m_linkInertia[i][3,3]:=GVL_ArmDynamics.g_linkInertia[i,3] + I_mass[3,3];
+	m_linkInertia[i][1,2]:=GVL_ArmDynamics.g_linkInertia[i,4] + I_mass[1,2];
+	m_linkInertia[i][1,3]:=GVL_ArmDynamics.g_linkInertia[i,5] + I_mass[1,3];
+	m_linkInertia[i][2,3]:=GVL_ArmDynamics.g_linkInertia[i,6] + I_mass[2,3];
+	m_linkInertia[i][2,1]:=m_linkInertia[i][1,2];
+	m_linkInertia[i][3,1]:=m_linkInertia[i][1,3];
+	m_linkInertia[i][3,2]:=m_linkInertia[i][2,3];
+	
+	// add mass to com
+	vecSelfMultiNum(m_linkCOM[i], m_linkMass[i]);
+END_FOR
+
+FOR i:=1 TO 7 DO
+	m_motorInertia[i]:=GVL_ArmDynamics.g_motorInertia[i]*GVL_ArmJointParameters.g_motorReduction[i]*GVL_ArmJointParameters.g_motorReduction[i];
+END_FOR
+
+
+m_linkInertia[1][3,3]:=m_linkInertia[1][3,3]+m_motorInertia[1];
+m_linkInertia[2][3,3]:=m_linkInertia[2][3,3]+m_motorInertia[2];
+m_linkInertia[8][3,3]:=m_linkInertia[8][3,3]+m_motorInertia[3];
+m_linkInertia[4][3,3]:=m_linkInertia[4][3,3]+m_motorInertia[4];
+m_linkInertia[5][3,3]:=m_linkInertia[5][3,3]+m_motorInertia[5];
+m_linkInertia[6][3,3]:=m_linkInertia[6][3,3]+m_motorInertia[6];
+m_linkInertia[7][3,3]:=m_linkInertia[7][3,3]+m_motorInertia[7];]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="run" Id="{13324fc5-e954-4875-b278-a51690fc20ca}">
+      <Declaration><![CDATA[METHOD run : Vec7d
+VAR_IN_OUT CONSTANT
+	i_jntPos :Vec7d;
+	i_jntVel :Vec7d;
+	i_jntAcc :Vec7d;
+END_VAR
+VAR 
+	i:INT;
+	T :ST_Frame;
+	p_ddot, pc_ddot :ARRAY [1..m_totalJntNum] OF Vec3d;
+	w, w_dot :ARRAY [1..m_totalJntNum] OF Vec3d;
+	f, u :ARRAY [1..m_totalJntNum] OF Vec3d;
+	tau:ARRAY[1..9] OF LREAL;
+	
+	p_ddot_last, w_last, w_dot_last:Vec3d;
+	f_last, u_last :Vec3d;
+	T0,T1,T2 :ST_Frame;
+	z:Vec3d := [0,0,1];
+	RMat,RMatT,R1,R1T:Mat3d;
+	rVec:Vec3d;
+	RTWLast :Vec3d;
+	tmpMat,tmpMat1,tmpMat2:Mat3d;
+	tmpVec,tmpVec1,tmpVec2,tmpVec3,tmpVec4:Vec3d;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// tranform data to DH joint
+m_q[1]:=i_jntPos[1];
+m_q[2]:=i_jntPos[2];
+m_q[3]:= i_jntPos[3]-i_jntPos[2];
+m_q[4]:= i_jntPos[4]+i_jntPos[3]-i_jntPos[2]-90*g_deg2rad;
+m_q[5]:=i_jntPos[5];
+m_q[6]:=i_jntPos[6];
+m_q[7]:=i_jntPos[7];
+m_q[8]:=i_jntPos[3];
+m_q[9]:= i_jntPos[2]-i_jntPos[3];
+
+m_qdot[1]:= i_jntVel[1];
+m_qdot[2]:= i_jntVel[2];
+m_qdot[3]:= i_jntVel[3]-i_jntVel[2];
+m_qdot[4]:= i_jntVel[4]+i_jntVel[3]-i_jntVel[2];
+m_qdot[5]:= i_jntVel[5];
+m_qdot[6]:= i_jntVel[6];
+m_qdot[7]:= i_jntVel[7];
+m_qdot[8]:= i_jntVel[3];
+m_qdot[9]:= i_jntVel[2]-i_jntVel[3];
+
+m_qddot[1]:= i_jntAcc[1];
+m_qddot[2]:= i_jntAcc[2];
+m_qddot[3]:= i_jntAcc[3]-i_jntAcc[2];
+m_qddot[4]:= i_jntAcc[4]+i_jntAcc[3]-i_jntAcc[2];
+m_qddot[5]:= i_jntAcc[5];
+m_qddot[6]:= i_jntAcc[6];
+m_qddot[7]:= i_jntAcc[7];
+m_qddot[8]:= i_jntAcc[3];
+m_qddot[9]:= i_jntAcc[2]-i_jntAcc[3];
+
+// tranform a joint positon to DH ones
+FOR i:=1 TO m_totalJntNum DO
+	m_armDH[i][3]:=m_q[i];
+END_FOR
+
+// compute joint frame
+m_jntFrame[1]:=DHTrans(m_armDH[1]);
+T:=DHTrans(m_armDH[2]);
+m_jntFrame[2]:=transform(m_jntFrame[1],T);
+T:=DHTrans(m_armDH[3]);
+m_jntFrame[3]:=transform(m_jntFrame[2],T);
+T:=DHTrans(m_armDH[4]);
+m_jntFrame[4]:=transform(m_jntFrame[3],T);
+T:=DHTrans(m_armDH[5]);
+m_jntFrame[5]:=transform(m_jntFrame[4],T);
+T:=DHTrans(m_armDH[6]);
+m_jntFrame[6]:=transform(m_jntFrame[5],T);
+T:=DHTrans(m_armDH[7]);
+m_jntFrame[7]:=transform(m_jntFrame[6],T);
+T:=DHTrans(m_armDH[8]);
+m_jntFrame[8]:=transform(m_jntFrame[1],T);
+T:=DHTrans(m_armDH[9]);
+m_jntFrame[9]:=transform(m_jntFrame[8],T);
+
+
+// link vel/acc/force
+FOR i:=1 TO m_totalJntNum DO
+	p_ddot[i]:= g_zeroVec3d;
+	pc_ddot[i]:= g_zeroVec3d;
+	w[i]:= g_zeroVec3d;
+	w_dot[i]:= g_zeroVec3d;
+	f[i]:= g_zeroVec3d;
+	u[i]:= g_zeroVec3d;
+END_FOR
+
+// feedforward kinematic
+FOR i:=1 TO m_totalJntNum DO // i represent each link
+    //First Joint Initialization
+    IF i=1 THEN
+        p_ddot_last:=g_zeroVec3d;
+        w_last:=g_zeroVec3d;
+        w_dot_last:=g_zeroVec3d;
+        T0.m_rot:=g_eye3d;
+		T0.m_pos := g_zeroVec3d;
+    ELSIF i=8 THEN
+        p_ddot_last:=p_ddot[1];
+        w_last:=w[1];
+        w_dot_last:=w_dot[1]; 
+        T0:=m_jntFrame[1];
+    else
+        p_ddot_last:=p_ddot[i-1];
+        w_last:=w[i-1];
+        w_dot_last:=w_dot[i-1]; 
+        T0:=m_jntFrame[i-1];
+    END_IF
+
+    T1:=m_jntFrame[i];
+	//rotation of Ri in Ri-1;
+	matTranspose(T0.m_rot, tmpMat);
+	matMultiply(tmpMat,T1.m_rot, RMat);
+	// r_i-1,i in Ri;
+	matTranspose(T1.m_rot, tmpMat);
+	vecSub(T1.m_pos, T0.m_pos, tmpVec);
+	matMultiVec(tmpMat, tmpVec, rVec);
+
+    IF i=-1 THEN // Translation Joint
+//        w[:,i]:=R'*w_last;
+//        w_dot[:,i]:=R'*w_dot_last;
+//        p_ddot[:,i]:=R'*p_ddot_last+m_qddot[i]*z+2*m_qdot[i]*cross[R'*w_last,z]+cross[R'*w_dot_last,r]+cross[R'*w_last,cross[R'*w_last,r]];
+
+    ELSE // Rotation Joint
+//        w[:,i]:=R'*w_last+m_qdot[i]*z;
+//        w_dot[:,i]:=R'*w_dot_last+m_qddot[i]*z+m_qdot[i]*cross[R'*w_last,z];
+//        p_ddot[:,i]:=R'*p_ddot_last+cross[R'*w_dot_last,r]+cross[R'*w_last,cross[R'*w_last,r]];
+		matTranspose(RMat, RMatT);
+		matMultiVec(RMatT, w_last, RTWLast);
+		
+		vecMultiNum(z, m_qdot[i], tmpVec);
+		vecAdd(RTWLast, tmpVec, w[i]);
+		
+		matMultiVec(RMatT, w_dot_last, tmpVec);
+		vecMultiNum(z, m_qddot[i], tmpVec1);
+		vecAdd(tmpVec, tmpVec1, w_dot[i]);
+		tmpVec1:=cross(RTWLast, z);
+		vecSelfMultiNum(tmpVec1, m_qdot[i]);
+		vecSelfAdd(w_dot[i], tmpVec1);
+		
+		matMultiVec(RMatT, p_ddot_last, tmpVec);
+		matMultiVec(RMatT, w_dot_last, tmpVec1);
+		tmpVec2:=cross(tmpVec1, rVec);
+		vecAdd(tmpVec, tmpVec2, p_ddot[i]);
+		tmpVec := cross(RTWLast, rVec);
+		tmpVec1 := cross(RTWLast, tmpVec);
+		vecSelfAdd(p_ddot[i], tmpVec1);
+    END_IF
+
+    // macc center acceleration, pre-multply mass
+    //pc_ddot[:,i]:=mass[i]* p_ddot[:,i]+cross[w_dot[:,i],fm[:,i]]+cross[w[:,i],cross[w[:,i],fm[:,i]]];
+	vecMultiNum(p_ddot[i], m_linkMass[i], tmpVec);
+	tmpVec1:= cross(w_dot[i], m_linkCOM[i]);
+	vecAdd(tmpVec, tmpVec1, pc_ddot[i]);
+	tmpVec:=cross(w[i],m_linkCOM[i]);
+	tmpVec1:=cross(w[i], tmpVec);
+	vecSelfAdd(pc_ddot[i], tmpVec1);
+END_FOR
+
+// Inverse iteration of force and torque
+FOR i:=m_totalJntNum TO 1 BY -1 DO 
+    T1:=m_jntFrame[i];
+    R1:=T1.m_rot;
+    IF i=m_totalJntNum OR i = 7 THEN
+        //End force
+        f_last:=g_zeroVec3d;
+        u_last:=g_zeroVec3d;
+        Rmat:=g_eye3d;
+        rVec:=g_zeroVec3d; 
+    else
+        f_last:=f[i+1];
+        u_last:=u[i+1];
+        T2:=m_jntFrame[i+1];
+		//rotation of Ri+1 in Ri;
+		matTranspose(T1.m_rot, tmpMat);
+		matMultiply(tmpMat,T2.m_rot, RMat);
+		// r_i,i-1 in Ri;
+		matTranspose(T1.m_rot, tmpMat);
+		vecSub(T1.m_pos, T2.m_pos, tmpVec);
+		matMultiVec(tmpMat, tmpVec, rVec);
+    END_IF
+
+//    f[:,i]:=R*f_last+pc_ddot[:,i]-mass[i]*T1[1:3,1:3]'*g;
+//    u[:,i]:=R*u_last+cross[R*f_last,r]-cross[R1'*g,-fm[:,i]]-cross[p_ddot[:,i],fm[:,i]]+linkI{i}*w_dot[:,i]+cross[w[:,i],linkI{i}*w[:,i]];
+		matTranspose(R1, R1T);
+		
+		matMultiVec(RMat, f_last, tmpVec);
+		vecAdd(tmpVec, pc_ddot[i], f[i]);
+		matMultiVec(R1T, m_g, tmpVec);
+		vecSelfMultiNum(tmpVec, m_linkMass[i]);
+		vecSelfSub(f[i], tmpVec);
+		
+		matMultiVec(RMat, u_last, tmpVec);
+		matMultiVec(RMat, f_last, tmpVec1);
+		tmpVec2:= cross(tmpVec1, rVec);
+		vecAdd(tmpVec, tmpVec2, u[i]);
+		matMultiVec(R1T, m_g, tmpVec);
+		tmpVec1:=cross(tmpVec, m_linkCOM[i]);
+		vecSelfAdd(u[i], tmpVec1);
+		tmpVec:=cross(p_ddot[i], m_linkCOM[i]);
+		vecSelfSub(u[i], tmpVec);
+		matMultiVec(m_linkInertia[i], w_dot[i], tmpVec);
+		vecSelfAdd(u[i], tmpVec);
+		matMultiVec(m_linkInertia[i], w[i], tmpVec);
+		tmpVec1:= cross(w[i], tmpVec);
+		vecSelfAdd(u[i], tmpVec1);
+END_FOR
+
+// add joint8 force back to joint1
+f_last:=f[8];
+u_last:=u[8];
+T1:=m_jntFrame[1];
+T2:=m_jntFrame[8];
+//rotation of Ri+1 in Ri;
+matTranspose(T1.m_rot, tmpMat);
+matMultiply(tmpMat,T2.m_rot, RMat);
+// r_i,i-1 in Ri;
+matTranspose(T1.m_rot, tmpMat);
+vecSub(T1.m_pos, T2.m_pos, tmpVec);
+matMultiVec(tmpMat, tmpVec, rVec);	
+//u[1]:=u[1] + R*u_last+cross[R*f_last,r];
+matMultiVec(RMat, u_last, tmpVec);
+vecSelfAdd(u[1], tmpVec);
+matMultiVec(RMat, f_last, tmpVec);
+tmpVec1:=cross(tmpVec, rVec);
+vecSelfAdd(u[1], tmpVec1);
+
+//joint torque
+FOR i:=1 TO m_totalJntNum DO
+//    z:=[0 0 1]';
+//    if i:=:=-1 %Translation Joint
+//        tau[i]:=f[:,i]'*z;
+//    else
+//        tau[i]:=u[:,i]'*z;
+//    end
+	tau[i]:= u[i][3];
+END_FOR
+
+// convert to active joint torque
+matMultiVec(m_Gt, tau, m_jntTrq);
+run := m_jntTrq;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_MasterForwardDynamic">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterForwardDynamic.init">
+      <LineId Id="119" Count="55" />
+      <LineId Id="94" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterForwardDynamic.run">
+      <LineId Id="557" Count="0" />
+      <LineId Id="416" Count="0" />
+      <LineId Id="710" Count="0" />
+      <LineId Id="545" Count="0" />
+      <LineId Id="547" Count="0" />
+      <LineId Id="711" Count="3" />
+      <LineId Id="548" Count="0" />
+      <LineId Id="716" Count="0" />
+      <LineId Id="715" Count="0" />
+      <LineId Id="717" Count="0" />
+      <LineId Id="550" Count="1" />
+      <LineId Id="718" Count="3" />
+      <LineId Id="549" Count="0" />
+      <LineId Id="723" Count="0" />
+      <LineId Id="722" Count="0" />
+      <LineId Id="724" Count="0" />
+      <LineId Id="555" Count="1" />
+      <LineId Id="726" Count="3" />
+      <LineId Id="552" Count="0" />
+      <LineId Id="559" Count="1" />
+      <LineId Id="572" Count="2" />
+      <LineId Id="420" Count="0" />
+      <LineId Id="575" Count="16" />
+      <LineId Id="435" Count="0" />
+      <LineId Id="449" Count="2" />
+      <LineId Id="596" Count="0" />
+      <LineId Id="599" Count="5" />
+      <LineId Id="598" Count="0" />
+      <LineId Id="458" Count="8" />
+      <LineId Id="608" Count="0" />
+      <LineId Id="467" Count="12" />
+      <LineId Id="616" Count="0" />
+      <LineId Id="613" Count="0" />
+      <LineId Id="610" Count="0" />
+      <LineId Id="617" Count="1" />
+      <LineId Id="621" Count="1" />
+      <LineId Id="482" Count="9" />
+      <LineId Id="624" Count="1" />
+      <LineId Id="645" Count="0" />
+      <LineId Id="626" Count="4" />
+      <LineId Id="635" Count="0" />
+      <LineId Id="632" Count="1" />
+      <LineId Id="636" Count="2" />
+      <LineId Id="640" Count="3" />
+      <LineId Id="646" Count="1" />
+      <LineId Id="492" Count="2" />
+      <LineId Id="496" Count="0" />
+      <LineId Id="648" Count="0" />
+      <LineId Id="650" Count="2" />
+      <LineId Id="654" Count="1" />
+      <LineId Id="497" Count="15" />
+      <LineId Id="658" Count="1" />
+      <LineId Id="657" Count="0" />
+      <LineId Id="666" Count="2" />
+      <LineId Id="661" Count="0" />
+      <LineId Id="516" Count="3" />
+      <LineId Id="675" Count="1" />
+      <LineId Id="672" Count="1" />
+      <LineId Id="670" Count="0" />
+      <LineId Id="677" Count="16" />
+      <LineId Id="520" Count="6" />
+      <LineId Id="695" Count="5" />
+      <LineId Id="694" Count="0" />
+      <LineId Id="530" Count="0" />
+      <LineId Id="702" Count="4" />
+      <LineId Id="531" Count="1" />
+      <LineId Id="534" Count="6" />
+      <LineId Id="708" Count="0" />
+      <LineId Id="541" Count="2" />
+      <LineId Id="709" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

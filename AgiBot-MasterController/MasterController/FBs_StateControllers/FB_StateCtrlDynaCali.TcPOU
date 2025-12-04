@@ -1,0 +1,255 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_StateCtrlDynaCali" Id="{9ec40fb0-5513-4ed9-babf-e07e71772a70}" SpecialFunc="None">
+    <Declaration><![CDATA[// Brief: Slave Arm Gravity Calibration
+FUNCTION_BLOCK PUBLIC FB_StateCtrlDynaCali EXTENDS FB_MasterArmCtrlBase
+VAR CONSTANT
+	g_optTrajAmp : ARRAY[1..77] OF LREAL := 
+	[	0.0904567134749668    ,    -0.159625494603245    ,     0.624582478297261    ,    -0.139399892434152    ,   -0.0336312636996568    ,   -0.0149166780257504    ,    -0.462992637783282,
+        -0.384972996358527    ,    -0.130204848786045    ,    0.0558979626025497    , -0.000423919151139779    ,   0.00666844685660473    ,    -0.543111737526109    ,   0.00167762856388647,
+     	-0.000894657388989863 ,     -0.00205340175367658 ,     -0.00275466846765899 ,       -0.697463864715945 ,     -0.00451173542078255 ,     0.000212468223514135 ,   0.293892688375456  ,
+        0.0397926934586561    ,     0.168481191185378    ,     0.113376418221888    ,    0.0543608553333196    ,   -0.0706857584520822    ,    0.0915178710087467    ,    -0.128115792384079,
+        0.076560276726884     ,    -0.14512456577901     ,    0.526410483906732     ,    0.313647463389075     ,    0.282855455513108     ,    0.606573487679503     ,    -0.49878311590787 ,
+        0.291949007712058     ,   -0.569441638943473     ,   0.0562648946466879     ,    0.520053711856669     ,   0.0083813653208964     ,   -0.254153540190208     ,   -0.294003916069819 ,
+        0.491678518190631     ,     0.36277814917002     ,    -0.20220280468761     ,    0.676519315513124     ,    0.197698864278613     ,  -0.0723597616316628     ,   -0.119176583565341 ,
+        0.0228642854941252    ,    -0.217361100359417    ,     0.425024641176912    ,    -0.612979696363172    ,     0.254962273997644    ,   -0.0186349002195936    ,   0.00615420409439839,
+        0.733512058798359     ,    0.504531290558413     ,    0.100195033531402     ,    0.379385125631534     ,    0.470610186191119     ,     1.03974259059405     ,      1.1137678605724 ,
+        -0.421336595843271    ,     0.305073000335208    ,     0.165752824982532    ,     -1.35225683054549    ,   -0.0119040887029255    ,     0.624604975825687    ,     -0.58157964056991,
+        -0.303756983961509    ,     -1.52639268786843    ,     -0.02054163430347    ,     -3.36002563551284    ,      3.93002040435283    ,      -1.2955527670382    ,    0.0160597013168741];
+		
+	g_accBlendCoeff :ARRAY[1..42] OF LREAL :=
+		[0 ,                        0 ,                        0 ,       -0.166230273775757  ,       0.282606146746861 ,      -0.0833281358694411,
+		0  ,                       0  ,                       0  ,        0.52997126513478   ,     -0.364730581662676  ,      0.0596954899117815 ,
+		0  ,                       0  ,                       0  ,      -0.671713210950015   ,      0.620103362289355  ,      -0.138910565191056 ,
+		0  ,                       0  ,                       0  ,        -1.2199197106269   ,        1.0007317020087  ,      -0.201920927027189 ,
+		0  ,                       0  ,                       0  ,       -1.21492614253053   ,      0.901000363750162  ,      -0.176860019040322 ,
+		0  ,                       0  ,                       0  ,       0.100718986263266   ,     -0.345687994271295  ,       0.121054989996933 ,
+		0  ,                       0  ,                       0  ,       -2.28364839955691   ,       2.16683382693563  ,      -0.492838057817598];
+		
+	g_decBlendCoeff :ARRAY[1..42] OF LREAL :=
+	[    24368.2565994039  ,       -11239.7417389375  ,        2066.34724665256  ,       -189.284242676184   ,       8.64056002155505  ,      -0.157266109313281 ,
+         -7244.70959776333 ,         3129.96998067994 ,        -539.215191473461 ,         46.3137847715352  ,       -1.98372340556091 ,       0.0339037015105797,
+          22930.1181277345 ,        -10423.7263266681 ,         1890.05009364681 ,        -170.888036002701  ,        7.70523172315327 ,       -0.138622743423264,
+          20119.2192672631 ,        -9086.38426248668 ,         1636.55408730931 ,        -146.969844612969  ,        6.58211639312523 ,       -0.117626634542976,
+         -20155.1947127863 ,         9372.31876237634 ,        -1737.15991340314 ,         160.415554876691  ,       -7.38032417504921 ,        0.135347223673889,
+         -31705.9323271818 ,         14714.3472002436 ,        -2720.50975832001 ,         250.513044241043  ,       -11.4907344366601 ,         0.21007145364102,
+          86800.5229998761 ,        -39565.7720048007 ,         7192.73015798163 ,        -651.926547396511  ,        29.4634047446631 ,        -0.53123588837362];
+		 
+	g_baseFre:LREAL :=0.12;
+	g_trajOrd:INT :=5;
+	g_blendT:LREAL :=2.0;
+	g_exciteT:LREAL :=8.0;
+	g_baseW :LREAL := 2*pi*g_baseFre;
+
+END_VAR
+
+VAR
+	// calibration trajectory coefficient
+	m_accCoeff :ARRAY[1..6, 1..g_mJntNum] OF LREAL;
+	m_decCoeff :ARRAY[1..6, 1..g_mJntNum] OF LREAL;
+	m_sinAmp :ARRAY[1..g_trajOrd, 1..g_mJntNum] OF LREAL;
+	m_cosAmp :ARRAY[1..g_trajOrd, 1..g_mJntNum] OF LREAL;
+	m_q0 :ARRAY[1..g_mJntNum] OF LREAL;
+	m_t0, m_t1, m_t2, m_t3 :LREAL ;
+	
+	// traj filter to q0
+	m_initTraj :ARRAY[1..g_mJntNum] OF FB_secOrdTrajFilter;
+	
+	m_caliStartFlag :BOOL :=FALSE;
+	
+	m_caliPos, m_caliVel, m_caliAcc :Vec7d;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="calcCmdJntPos" Id="{e8388ef5-ff5f-4bc0-805c-b4f37a5ed6ad}">
+      <Declaration><![CDATA[// override this function in each exact controller
+METHOD PROTECTED calcCmdJntPos : BOOL
+VAR_IN_OUT CONSTANT
+	i_slaveIdx :INT;
+	i_shoulderPose :ST_Frame;
+	i_masterArm :FB_MasterArm;
+	i_slaveStatus :ST_SlaveStatus;
+END_VAR
+
+VAR 
+	i,j :INT;
+	baseW :LREAL;
+	t, t2,t3, t4, t5:LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// move to initial joint posture
+IF NOT m_caliStartFlag THEN
+	FOR i:=1 TO g_mJntNum DO
+		m_initTraj[i].run(m_q0[i], 0, o_cmdAcc=>m_cmdJntPos[i], o_cmdVel=>m_cmdJntVel[i], o_cmdPos=> m_cmdJntPos[i]);
+	END_FOR
+	m_timePeriod :=0;
+	RETURN;
+END_IF
+
+// compute calibration trajectory
+t:=LIMIT(m_t0, m_timePeriod, m_t3);
+t2:=t*t;
+t3:=t2*t;
+t4:=t3*t;
+t5:=t4*t;
+// acceleration
+IF t<m_t1 THEN
+	FOR i:=1 TO g_mJntNum DO
+		m_caliPos[i]:=m_accCoeff[1,i]+m_accCoeff[2,i]*t+m_accCoeff[3,i]*t2+m_accCoeff[4,i]*t3+m_accCoeff[5,i]*t4+m_accCoeff[6,i]*t5;
+		m_caliVel[i]:=m_accCoeff[2,i]+2*m_accCoeff[3,i]*t+3*m_accCoeff[4,i]*t2+4*m_accCoeff[5,i]*t3+5*m_accCoeff[6,i]*t4;
+		m_caliAcc[i]:=2*m_accCoeff[3,i]+2*3*m_accCoeff[4,i]*t+3*4*m_accCoeff[5,i]*t2+4*5*m_accCoeff[6,i]*t3;
+	END_FOR
+
+// deceleration
+ELSIF t>=m_t2 THEN
+	FOR i:=1 TO g_mJntNum DO 
+		m_caliPos[i]:=m_decCoeff[1,i]+m_decCoeff[2,i]*t+m_decCoeff[3,i]*t2+m_decCoeff[4,i]*t3+m_decCoeff[5,i]*t4+m_decCoeff[6,i]*t5;
+		m_caliVel[i]:=m_decCoeff[2,i]+2*m_decCoeff[3,i]*t+3*m_decCoeff[4,i]*t2+4*m_decCoeff[5,i]*t3+5*m_decCoeff[6,i]*t4;
+		m_caliAcc[i]:=2*m_decCoeff[3,i]+2*3*m_decCoeff[4,i]*t+3*4*m_decCoeff[5,i]*t2+4*5*m_decCoeff[6,i]*t3;
+	END_FOR
+
+// excition
+else
+    t:=t-m_t1;
+	m_caliPos:=g_zeroVec7d;
+	m_caliVel:=g_zeroVec7d;
+	m_caliAcc:=g_zeroVec7d;
+    FOR j:=1 TO g_mJntNum DO
+		FOR i:=1 TO g_trajOrd DO 
+			m_caliPos[j]:=m_caliPos[j]+SIN(g_baseW*i*t)*m_sinAmp[i,j]/(g_baseW*i)-COS(g_baseW*i*t)*m_cosAmp[i,j]/(g_baseW*i);
+			m_caliVel[j]:=m_caliVel[j]+COS(g_baseW*i*t)*m_sinAmp[i,j]+SIN(g_baseW*i*t)*m_cosAmp[i,j];
+			m_caliACC[j]:=m_caliAcc[j]-g_baseW*i*SIN(g_baseW*i*t)*m_sinAmp[i,j]+g_baseW*i*COS(g_baseW*i*t)*m_cosAmp[i,j];
+		END_FOR
+	END_FOR 
+END_IF
+
+FOR i:=1 TO g_mJntNum DO 
+	m_caliPos[i] := m_caliPos[i] + m_q0[i];
+END_FOR
+
+IF m_timePeriod > m_t3 THEN
+	m_isFinished :=TRUE;
+END_IF
+
+FOR i:=1 TO g_mJntNum DO 
+	m_cmdJntPos[i]:= m_caliPos[i];
+	m_cmdJntVel[i]:= m_caliVel[i];
+	m_cmdJntAcc[i]:= m_caliAcc[i];
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="init" Id="{1fed4a27-3de6-4ef1-8a15-2cb2fd5aafb3}">
+      <Declaration><![CDATA[METHOD PUBLIC init : BOOL
+VAR_IN_OUT CONSTANT
+	i_masterArm	:FB_MasterArm;
+END_VAR
+VAR_IN_OUT 
+	r_masterArmCtrlCmd :ST_ArmCtrlCmds;
+END_VAR
+
+VAR
+	i,j :INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+
+m_t0:=0;
+m_t1:=g_blendT; 
+m_t2:=m_t1+g_exciteT;
+m_t3:=m_t2+g_blendT;
+
+FOR i:=1 TO g_mJntNum DO 
+	FOR j:=1 TO 6 DO
+		m_accCoeff[j,i] := g_accBlendCoeff[(i-1)*6+j];
+		m_decCoeff[j,i] := g_decBlendCoeff[(i-1)*6+j];
+	END_FOR
+END_FOR
+
+FOR i:=1 TO g_mJntNum DO
+	FOR j:=1 TO g_trajOrd DO
+		m_sinAmp[j,i] := g_optTrajAmp[(i-1)*g_trajOrd*2+j];
+		m_cosAmp[j,i] := g_optTrajAmp[(i-1)*g_trajOrd*2+g_trajOrd+j];
+	END_FOR
+END_FOR
+
+FOR i:=1 TO g_mJntNum DO
+	m_q0[i] := g_optTrajAmp[70+i];
+END_FOR
+
+
+FOR i := 1 TO g_mJntNum DO
+	m_initTraj[i].init(i_masterArm.curJntPos[i], 0, GVL_ArmJointParameters.g_maxJntVel[i]/2 , GVL_ArmJointParameters.g_maxJntVel[i] , g_armCtrlCycleTime);
+END_FOR
+m_caliStartFlag :=false;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_StateCtrlDynaCali">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlDynaCali.calcCmdJntPos">
+      <LineId Id="156" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="148" Count="2" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="152" Count="0" />
+      <LineId Id="154" Count="0" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="224" Count="3" />
+      <LineId Id="159" Count="0" />
+      <LineId Id="197" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="222" Count="1" />
+      <LineId Id="220" Count="1" />
+      <LineId Id="200" Count="2" />
+      <LineId Id="228" Count="0" />
+      <LineId Id="231" Count="1" />
+      <LineId Id="229" Count="1" />
+      <LineId Id="205" Count="3" />
+      <LineId Id="233" Count="2" />
+      <LineId Id="213" Count="0" />
+      <LineId Id="240" Count="0" />
+      <LineId Id="243" Count="1" />
+      <LineId Id="241" Count="1" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="157" Count="0" />
+      <LineId Id="246" Count="1" />
+      <LineId Id="255" Count="0" />
+      <LineId Id="254" Count="0" />
+      <LineId Id="256" Count="1" />
+      <LineId Id="249" Count="0" />
+      <LineId Id="248" Count="0" />
+      <LineId Id="250" Count="0" />
+      <LineId Id="252" Count="1" />
+      <LineId Id="251" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlDynaCali.init">
+      <LineId Id="57" Count="0" />
+      <LineId Id="236" Count="4" />
+      <LineId Id="243" Count="1" />
+      <LineId Id="254" Count="0" />
+      <LineId Id="256" Count="0" />
+      <LineId Id="258" Count="0" />
+      <LineId Id="257" Count="0" />
+      <LineId Id="255" Count="0" />
+      <LineId Id="249" Count="1" />
+      <LineId Id="259" Count="0" />
+      <LineId Id="261" Count="0" />
+      <LineId Id="263" Count="0" />
+      <LineId Id="262" Count="0" />
+      <LineId Id="260" Count="0" />
+      <LineId Id="264" Count="0" />
+      <LineId Id="253" Count="0" />
+      <LineId Id="265" Count="1" />
+      <LineId Id="268" Count="3" />
+      <LineId Id="267" Count="0" />
+      <LineId Id="152" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

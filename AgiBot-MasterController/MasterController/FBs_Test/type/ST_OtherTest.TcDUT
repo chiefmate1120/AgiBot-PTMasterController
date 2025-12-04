@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <DUT Name="ST_OtherTest" Id="{1a146624-523d-4fc8-8303-49ee332a0f36}">
+    <Declaration><![CDATA[TYPE ST_OtherTest :
+STRUCT
+	//gravity Balance Test start signal
+	g_gravityBalanceTest:ARRAY[1..g_mArmNum] OF BOOL;
+	
+	//during motion flag
+	g_duringMotion:ARRAY[1..g_mArmNum] OF BOOL;	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

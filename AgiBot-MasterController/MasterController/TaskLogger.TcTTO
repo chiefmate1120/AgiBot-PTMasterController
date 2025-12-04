@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Task Name="TaskLogger" Id="{67c65125-5f5a-44f7-9a86-895dcbc50aae}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>2000</CycleTime>
+    <Priority>3</Priority>
+    <PouCall>
+      <Name>runTimeLogger</Name>
+    </PouCall>
+    <TaskFBGuid>{02fe5154-bf1c-4891-bc0d-aae377da0b8d}</TaskFBGuid>
+    <Fb_init>{d3b10dc2-3158-4000-9c03-e84c9fa99162}</Fb_init>
+    <Fb_exit>{0e3984a7-65d6-467c-8e28-d62170bcc66d}</Fb_exit>
+    <CycleUpdate>{931f8a44-0823-42ef-9b32-e8c70ae06d5a}</CycleUpdate>
+    <PostCycleUpdate>{71f2adde-8cea-4f21-bb7d-f645978e1afe}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

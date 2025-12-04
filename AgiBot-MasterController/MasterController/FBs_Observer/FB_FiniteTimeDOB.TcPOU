@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_FiniteTimeDOB" Id="{05f3303d-0a1b-4a65-b0f2-1268ae401b42}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PUBLIC FB_FiniteTimeDOB
+VAR
+	// NOTE: robot gravity is calculated in seperate gravity model
+	// FD model just used for coriolis force caculation
+	m_g :vec3d :=g_zeroVec3d;
+	
+	// observer frequency
+	m_obvFrq :LREAL;
+	m_obvCT :LREAL;
+	
+	// observer parameters
+	m_K1 :Vec7d :=[120, 120, 120, 120, 120, 120, 120 ];
+	m_K2 :Vec7d :=[3600, 3600, 3600, 3600, 3600, 3600, 3600];
+	m_ord1 :LREAL :=0.9;
+	m_ord2 :LREAL :=0.8;
+	
+	// observed external torque
+	m_ObvTrq :Vec7d;
+	m_ObvTrqFilt :Vec7d;
+	
+	// observed momentum 
+	m_ObvMomentum :Vec7d;
+	
+	// filter
+	m_ObvTrqLpf :ARRAY[1..7] OF FB_LowPassFilter;
+	m_cutoffFreq :LREAL:= 15.0;
+	
+	// robot dynamic
+	m_armDynamic :FB_MasterForwardDynamic;
+	
+	// last mass matrix
+	m_lastMassMat :Mat7d;
+	m_lastMassMatInit:BOOL :=FALSE;
+	m_massMatDot :Mat7d;
+	
+	//C'*q_dot
+	m_CTransQdot:Vec7d;
+	
+	// deadband
+	m_extTrqDB :Vec7d:=[0.1, 0.1, 0.1, 0.01, 0.005, 0.005, 0.005];
+	
+	// max external torque
+	m_maxObvTrq :Vec7d:=[2.5, 3, 3, 0.1, 0.3, 0.1, 0.01];
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="init" Id="{bf461def-7644-4be9-b52c-bd5b49de6d30}">
+      <Declaration><![CDATA[METHOD init : BOOL
+VAR_INPUT
+	i_armIdx:INT;
+END_VAR
+VAR
+	i:INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_ObvTrq :=g_zeroVec7d;
+m_ObvMomentum :=g_zeroVec7d;
+m_lastMassMatInit:=false;
+
+m_obvFrq :=g_armDynamicFreq;
+m_obvCT := 1.0/m_obvFrq;
+
+FOR i:=1 TO 7 DO
+	m_ObvTrqLpf[i].init(1, m_cutoffFreq, m_obvFrq);
+END_FOR
+
+m_armDynamic.init(i_armIdx, m_g);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="run" Id="{8738b8e7-3c3e-4445-a618-9624dedb4ff3}">
+      <Declaration><![CDATA[METHOD run : Vec7d
+VAR_INPUT
+	i_jntPos :Vec7d;
+	i_jntVel :Vec7d;
+	i_jntTrq :Vec7d;
+	i_massMat : Mat7d;
+	i_jntGravity :Vec7d;
+END_VAR
+VAR
+	i,j :INT;
+	CQdot :Vec7d;
+	p,pErr :Vec7d;
+	nonLinearTrq:Vec7d;
+	p_dot,trq_dot :Vec7d;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT m_lastMassMatInit THEN
+	m_lastMassMat := i_massMat;
+	m_lastMassMatInit := TRUE;
+END_IF
+
+// compute C'*q_dot
+FOR i:=1 TO 7 DO
+	FOR j:=1 TO 7 DO
+		m_massMatDot[i,j]:= (i_massMat[i,j]-m_lastMassMat[i,j])/m_obvCT;
+	END_FOR
+END_FOR
+m_lastMassMat:=i_massMat;
+matMultiVec(m_massMatDot, i_jntVel, m_CTransQdot);
+CQdot := m_armDynamic.run(i_jntPos, i_jntVel, g_zeroVec7d);
+vecSelfSub(m_CTransQdot,CQdot );
+
+// momentum
+matMultiVec(i_massMat, i_jntVel, p);
+vecSub(p, m_obvMomentum, pErr);
+
+// non-linear torque
+vecAdd(i_jntTrq, m_CTransQdot, nonLinearTrq);
+vecSelfSub(nonLinearTrq, i_jntGravity);
+
+// observe
+FOR i:=1 TO 7 DO 
+	p_dot[i] := m_ObvTrq[i] + nonLinearTrq[i] + m_K1[i]*EXPT(ABS(pErr[i]), m_ord1) * sign(pErr[i]);
+	trq_dot[i] :=m_K2[i]*EXPT(ABS(pErr[i]), m_ord2) * sign(pErr[i]);
+END_FOR
+
+FOR i:=1 TO 7 DO 
+	m_ObvMomentum[i]:=m_ObvMomentum[i] + p_dot[i] * m_obvCT;
+	m_ObvTrq[i]:=m_ObvTrq[i]+trq_dot[i]*m_obvCT;
+	m_ObvTrqFilt[i]:= m_ObvTrqLpf[i].run(m_ObvTrq[i]);
+END_FOR
+
+// deadband
+FOR i:=1 TO 7 DO
+	IF ABS(m_ObvTrqFilt[i])< m_extTrqDB[i] THEN
+		run[i]:= 0 ;
+	ELSE
+		run[i]:= m_ObvTrqFilt[i]-m_extTrqDB[i]*sign(m_ObvTrqFilt[i]);
+		run[i] := LIMIT(-m_maxObvTrq[i], run[i], m_maxObvTrq[i]);
+	END_IF
+END_FOR
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_FiniteTimeDOB">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_FiniteTimeDOB.init">
+      <LineId Id="29" Count="10" />
+      <LineId Id="16" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_FiniteTimeDOB.run">
+      <LineId Id="157" Count="45" />
+      <LineId Id="29" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
