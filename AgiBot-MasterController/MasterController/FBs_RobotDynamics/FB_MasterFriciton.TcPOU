@@ -57,6 +57,29 @@ END_FOR
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="resetParams" Id="{5dd53cbf-c094-4999-b217-8373cf297a3e}">
+      <Declaration><![CDATA[METHOD resetParams : BOOL
+VAR
+	i:INT;
+	frictionParam:ARRAY[1..14] OF LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF m_armIdx = 1 THEN
+	frictionParam:=GVL_ArmDynamics.g_leftFrictionCali;
+ELSE
+	frictionParam:=GVL_ArmDynamics.g_rightFrictionCali;
+END_IF
+
+m_frictionParamA := g_zeroVec7d;
+m_frictionParamB := g_zeroVec7d;
+FOR i:=1 TO 7 DO
+	m_frictionParamA[i] := frictionParam[2*i-1];
+	m_frictionParamB[i] := frictionParam[2*i];
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="run" Id="{0e064868-95f9-4591-a903-e34a876d9e26}">
       <Declaration><![CDATA[METHOD run : vec7d
 VAR_IN_OUT CONSTANT
@@ -90,6 +113,14 @@ END_FOR]]></ST>
     </LineIds>
     <LineIds Name="FB_MasterFriciton.init">
       <LineId Id="49" Count="10" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MasterFriciton.resetParams">
+      <LineId Id="69" Count="0" />
+      <LineId Id="71" Count="1" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="49" Count="3" />
+      <LineId Id="56" Count="3" />
       <LineId Id="21" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterFriciton.run">

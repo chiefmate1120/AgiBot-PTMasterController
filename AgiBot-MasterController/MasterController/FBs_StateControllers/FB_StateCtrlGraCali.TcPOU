@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_StateCtrlGraCali" Id="{5dbfd56a-404b-4a83-aef4-e32c9f265a53}" SpecialFunc="None">
     <Declaration><![CDATA[// Brief: Master Arm Home Posture
 FUNCTION_BLOCK PUBLIC FB_StateCtrlGraCali EXTENDS FB_MasterArmCtrlBase
 VAR CONSTANT
-	m_caliMotionSegs :INT :=21;	
+	m_caliMotionSegs :INT :=24;	
 END_VAR
 VAR
 	// cali trajectory
@@ -17,22 +17,26 @@ VAR
 		 0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  47*g_deg2Rad,  -90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  313*g_deg2Rad,  -90*g_deg2Rad,     0,
 		0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  47*g_deg2Rad,  -90*g_deg2Rad,    0,
-		// joint4
-		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -150*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
-		 0.0,  -90*g_deg2Rad,  -30*g_deg2Rad, -210*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
-		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -150*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
-		// joint3
+		// joint4 3-1
+		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  25*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		// joint4 3-2
+		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -270*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  25*g_deg2Rad, -270*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -270*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		// joint5 3-1
 		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
 		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
-			// joint3-2
+		// joint5 3-2
 		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,     0,
 		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  90*g_deg2Rad,  -90*g_deg2Rad,    0,
-		// joint2
-		 0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
-		 0.0,  -120*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
-		0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		// joint2/3
+		 0.0,  (-90-58)*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
+		 0.0,  (-90+58)*g_deg2Rad,  58*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     0,
+		0.0,  (-90-58)*g_deg2Rad,   -30*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    0,
 		// joint1/7
 		 0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,    15*g_deg2Rad,
 		 -30.0*g_deg2Rad,  -90*g_deg2Rad,  0*g_deg2Rad, -180*g_deg2Rad,  180*g_deg2Rad,  -90*g_deg2Rad,     -15*g_deg2Rad,
@@ -47,22 +51,26 @@ VAR
 		 0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  313*g_deg2Rad,  90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  47*g_deg2Rad,  90*g_deg2Rad,     0,
 		0.0,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  313*g_deg2Rad,  90*g_deg2Rad,    0,
-		// joint4
-		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  30*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
-		 0.0,  -90*g_deg2Rad,  -30*g_deg2Rad, -30*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
-		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  30*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
-		// joint3
+		// joint4 3-1
+		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  25*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		// joint4 3-2
+		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  90*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  -90*g_deg2Rad,  25*g_deg2Rad, 90*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
+		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  90*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		// joint5 3-1
 		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
 		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
-			// joint3-2
+		// joint5 3-2
 		 0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,    0,
 		 0.0,  -90*g_deg2Rad,  30*g_deg2Rad, 0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,     0,
 		0.0,  -90*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  270*g_deg2Rad,  90*g_deg2Rad,    0,
-		// joint2
-		 0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
-		 0.0,  -120*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
-		0.0,  -75*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		// joint2/3
+		 0.0,  (-90-58)*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
+		 0.0,  (-90+58)*g_deg2Rad,  58*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     0,
+		0.0,  (-90-58)*g_deg2Rad,   -30*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    0,
 		// joint1/7
 		 0.0*g_deg2Rad,  -90*g_deg2Rad,   0*g_deg2Rad,  0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,    15*g_deg2Rad,
 		 30.0*g_deg2Rad,  -90*g_deg2Rad,  0*g_deg2Rad, 0*g_deg2Rad,  180*g_deg2Rad,  90*g_deg2Rad,     -15*g_deg2Rad,
@@ -80,6 +88,10 @@ VAR
 	
 	m_dataLogCount :INT:=0;
 	m_dataLogInterval:INT:=4;
+	
+	m_caliStep:INT:=0;
+	m_caliExtCaller:NT_StartProcess;;
+
 	
 	
 END_VAR
@@ -100,41 +112,100 @@ END_VAR
 VAR 
 	i :INT;
 	curJntVel :Vec7d;
-END_VAR]]></Declaration>
+END_VAR
+]]></Declaration>
       <Implementation>
-        <ST><![CDATA[// check if planner is ready
-IF m_caliPlanner[m_caliTrajIdx].isGene = FALSE THEN
-	calcCmdJntPos:=FALSE;
+        <ST><![CDATA[IF m_isFinished OR GVL_armCali.g_gravityCaliFailed THEN
 	RETURN;
 END_IF
 
-// traj plan
-calcCmdJntPos :=m_caliPlanner[m_caliTrajIdx].evaluate(m_timePeriod, jntPos=> m_cmdJntPos, jntVel=>m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+// check if planner is ready
+//IF m_caliPlanner[m_caliTrajIdx].isGene = FALSE THEN
+//	calcCmdJntPos:=FALSE;
+//	RETURN;
+//END_IF
 
-// check if to transit to next segment
-curJntVel :=i_masterArm.curJntVel;
-IF(m_timePeriod > m_caliPlanner[m_caliTrajIdx].duration  AND norm(curJntVel)<7*g_jntStaticVelThres) THEN
-	m_caliTrajIdx:=m_caliTrajIdx+1;
-	m_timePeriod:=0;
-END_IF
+CASE m_caliStep OF 
+	0:
+		// traj plan
+		calcCmdJntPos :=m_caliPlanner[m_caliTrajIdx].evaluate(m_timePeriod, jntPos=> m_cmdJntPos, jntVel=>m_cmdJntVel, jntAcc=> m_cmdJntAcc);
+		
+		// check if to transit to next segment
+		curJntVel :=i_masterArm.curJntVel;
+		IF(m_timePeriod > m_caliPlanner[m_caliTrajIdx].duration  AND norm(curJntVel)<7*g_jntStaticVelThres) THEN
+			m_caliTrajIdx:=m_caliTrajIdx+1;
+			m_timePeriod:=0;
+		END_IF
+		
+		// log data
+		m_dataLogCount := m_dataLogCount+1;
+		IF m_dataLogCount >= m_dataLogInterval THEN
+			i:=i_masterArm.armIdx;
+			AGILOG_DEBUG(i, 0, 2);
+			AGILOG_DEBUG(m_cmdJntPos, 0, 2);
+			AGILOG_DEBUG(i_masterArm.curJntPos, 0, 2);
+			AGILOG_DEBUG(i_masterArm.curJntTrq, 0, 1);
+		
+			m_dataLogCount:=0;
+		END_IF
+		
+		// check if to terminated
+		IF(m_caliTrajIdx > m_caliMotionSegs) THEN
+			AGILOG_DebugStop();
+			m_caliStep:=1;
+		END_IF
+	1:
+		IF i_masterArm.m_armIdx = 2 THEN
+			m_caliStep:=3;
+			return;
+		END_IF
+		m_caliExtCaller(NETID:='',PATHSTR:='C:\Robot\masterArmDynamicCali.exe',START:=TRUE);
+		m_caliStep:=2;
+	2:
+		IF GVL_ArmDynamics.g_caliSuccess THEN
+			m_caliExtCaller(NETID:='',PATHSTR:='C:\Robot\masterArmDynamicCali.exe',START:=FALSE);
+			m_caliStep:=3;
+		END_IF
+		IF m_caliExtCaller.ERR THEN 
+			GVL_armCali.g_gravityCaliFailed:=TRUE;
+		END_IF
+	3:
+		IF GVL_ArmDynamics.g_caliSuccess THEN
+			GVL_armCali.g_gravityCaliFinished:=TRUE;
+			m_caliStep:=4;
+		END_IF
 
-// log data
-m_dataLogCount := m_dataLogCount+1;
-IF m_dataLogCount >= m_dataLogInterval THEN
-	i:=i_masterArm.armIdx;
-	AGILOG_DEBUG(i, 0, 2);
-	AGILOG_DEBUG(m_cmdJntPos, 0, 2);
-	AGILOG_DEBUG(i_masterArm.curJntPos, 0, 2);
-	AGILOG_DEBUG(i_masterArm.curJntTrq, 0, 1);
+	4:
+		m_jntOPMode:=g_allPosTrqMode;
+		IF GVL_armCali.g_caliDataVerifyOfGravity THEN
+			RobotDynamics.m_frictionModel[i_masterArm.armIdx].resetParams();
+			RobotDynamics.m_gravityModel[i_masterArm.armIdx].resetParams();
+			m_timePeriod:=0;
+			m_caliStep:=5;
+		END_IF
 
-	m_dataLogCount:=0;
-END_IF
+	5:
+		IF m_timePeriod >0.5 THEN
+			m_caliStep:=6;
+		END_IF
+	6:
+		m_jntOPMode:=g_allTrqMode;
+		m_cmdJntPos:=i_masterArm.curJntPos;
+		IF NOT(GVL_armCali.g_caliDataVerifyOfGravity) THEN
+			RobotDynamics.m_frictionModel[i_masterArm.armIdx].init(i_masterArm.armIdx);
+			RobotDynamics.m_gravityModel[i_masterArm.armIdx].init(i_masterArm.armIdx);
+			m_timePeriod :=0;
+			m_caliStep:=7;
+		END_IF
+	7:
+		IF m_timePeriod >0.5 THEN
+			m_caliStep:=4;
+		END_IF
+	8:
+		m_caliExtCaller(NETID:='',PATHSTR:='C:\Robot\masterArmDynamicCali.exe',START:=FALSE);
+END_CASE
 
-// check if to terminated
-IF(m_caliTrajIdx > m_caliMotionSegs) THEN
-	AGILOG_DebugStop();
-	m_isFinished:=TRUE;
-END_IF]]></ST>
+	]]></ST>
       </Implementation>
     </Method>
     <Method Name="init" Id="{29cd6f4d-3ac1-4c31-b46d-cbe0128ca24a}">
@@ -189,23 +260,92 @@ FOR i:=1 TO m_caliMotionSegs DO
 	m_caliPlanner[i].init(startJntPos,endJntPos,maxVel, m_caliMaxJntAcc, m_caliMaxJntAcc);
 END_FOR
 
-AGILOG_DebugStart('masterGravityCalibration.txt');
+//AGILOG_DebugStart('masterGravityCalibration.txt');
 m_dataLogCount:=0;
 
 // update commands to arm
-copyCmds(r_masterArmCtrlCmd);]]></ST>
+copyCmds(r_masterArmCtrlCmd);
+
+m_caliStep:=1;
+m_caliExtCaller(NETID:='',PATHSTR:='',START:=FALSE);
+GVL_armCali.g_gravityCaliFinished:=FALSE;
+GVL_armCali.g_gravityCaliFailed:=FALSE;
+GVL_ArmDynamics.g_caliSuccess:=FALSE;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="reset" Id="{fab3257a-0aa5-4c01-a388-e5c8a74498c0}">
+      <Declaration><![CDATA[{warning '添加方法实现'}
+METHOD reset : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[m_isFinished:=FALSE;
+AGILOG_DebugStop();
+GVL_armCali.g_gravityCaliFinished:=false;
+]]></ST>
       </Implementation>
     </Method>
     <LineIds Name="FB_StateCtrlGraCali">
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlGraCali.calcCmdJntPos">
-      <LineId Id="133" Count="31" />
-      <LineId Id="32" Count="0" />
+      <LineId Id="305" Count="3" />
+      <LineId Id="133" Count="4" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="244" Count="0" />
+      <LineId Id="247" Count="26" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="274" Count="0" />
+      <LineId Id="396" Count="1" />
+      <LineId Id="399" Count="0" />
+      <LineId Id="398" Count="0" />
+      <LineId Id="292" Count="0" />
+      <LineId Id="276" Count="1" />
+      <LineId Id="404" Count="2" />
+      <LineId Id="283" Count="3" />
+      <LineId Id="289" Count="0" />
+      <LineId Id="291" Count="0" />
+      <LineId Id="325" Count="0" />
+      <LineId Id="407" Count="0" />
+      <LineId Id="326" Count="0" />
+      <LineId Id="294" Count="1" />
+      <LineId Id="403" Count="0" />
+      <LineId Id="334" Count="2" />
+      <LineId Id="339" Count="0" />
+      <LineId Id="402" Count="0" />
+      <LineId Id="290" Count="0" />
+      <LineId Id="342" Count="0" />
+      <LineId Id="337" Count="1" />
+      <LineId Id="340" Count="1" />
+      <LineId Id="343" Count="1" />
+      <LineId Id="408" Count="0" />
+      <LineId Id="345" Count="0" />
+      <LineId Id="348" Count="0" />
+      <LineId Id="346" Count="0" />
+      <LineId Id="349" Count="0" />
+      <LineId Id="351" Count="0" />
+      <LineId Id="347" Count="0" />
+      <LineId Id="353" Count="0" />
+      <LineId Id="357" Count="1" />
+      <LineId Id="354" Count="0" />
+      <LineId Id="400" Count="1" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="331" Count="0" />
+      <LineId Id="328" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlGraCali.init">
       <LineId Id="347" Count="37" />
       <LineId Id="169" Count="0" />
+      <LineId Id="404" Count="0" />
+      <LineId Id="401" Count="0" />
+      <LineId Id="403" Count="0" />
+      <LineId Id="406" Count="0" />
+      <LineId Id="423" Count="0" />
+      <LineId Id="422" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StateCtrlGraCali.reset">
+      <LineId Id="7" Count="0" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="10" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>
