@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_StateCtrlMotionTest" Id="{70f647e6-7c05-4a0c-b17e-4c9a147b0142}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_StateCtrlMotionTest EXTENDS FB_MasterArmCtrlBase
 VAR_INPUT
@@ -7,6 +7,11 @@ END_VAR
 VAR_OUTPUT
 END_VAR
 VAR
+//	m_uiControlMode:ARRAY[1..2,0..GVL_Const.g_controlModeNum] OF BOOL;	
+//	m_uiControlModeL:ARRAY[1..2,0..GVL_Const.g_controlModeNum] OF BOOL;
+//	m_controlModeInit:ARRAY[1..2,0..GVL_Const.g_controlModeNum] OF BOOL;
+//	m_controlMode_TRIG:ARRAY[1..2,0..GVL_Const.g_controlModeNum] OF  R_TRIG;
+//	m_controlMode_FTRIG:ARRAY[1..2,0..GVL_Const.g_controlModeNum] OF  F_TRIG;
 	//arm id
 	m_armId:INT;	
 	
@@ -334,7 +339,7 @@ VAR_IN_OUT CONSTANT
 END_VAR
 
 VAR
-	i:INT;
+	i,j:INT;
 	tmpFrame:ST_Frame;
 END_VAR
 ]]></Declaration>
@@ -360,6 +365,19 @@ g_motionTest.m_curJntCurrent[m_armId]:=i_masterArm.filtJntCurrent;
 //joint enable
 m_jntEnableFlag :=g_motionTest.m_jntEnable[i_masterArm.armIdx];
 
+//FOR i:=1 TO 2  DO
+//	FOR j:=1 TO GVL_Const.g_controlModeNum DO 
+//		//Monitoring button signal rising edge
+//		m_controlMode_TRIG[i,j](CLK:=m_uiControlMode[i,j],Q=>);
+		
+//		IF (m_controlMode_TRIG[i,j].Q) AND (g_motionTest.m_controlMode[i]=0) THEN 			
+//			g_motionTest.m_controlMode[i]:=j;			
+//		END_IF
+		
+//		//Monitoring button signal falling edge
+//		m_controlMode_FTRIG[i,j](CLK:=m_uiControlMode[i,j]);
+//	END_FOR	
+//END_FOR	
 
 //Initialization of motion parameters
 m_startMotion:=g_motionTest.m_startMotion[m_armId];
@@ -484,7 +502,8 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
+        <ST><![CDATA[
+SUPER^.Init(i_masterArm,r_masterArmCtrlCmd);
 
 //variable initialization
 m_armId:=i_masterArm.armIdx;
@@ -1090,7 +1109,10 @@ END_CASE]]></ST>
       <LineId Id="325" Count="0" />
       <LineId Id="275" Count="1" />
       <LineId Id="310" Count="0" />
-      <LineId Id="308" Count="1" />
+      <LineId Id="308" Count="0" />
+      <LineId Id="423" Count="11" />
+      <LineId Id="309" Count="0" />
+      <LineId Id="435" Count="0" />
       <LineId Id="36" Count="0" />
       <LineId Id="39" Count="1" />
       <LineId Id="220" Count="1" />
@@ -1139,7 +1161,41 @@ END_CASE]]></ST>
       <LineId Id="11" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMotionTest.init">
-      <LineId Id="163" Count="69" />
+      <LineId Id="12" Count="4" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="19" Count="2" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="39" Count="3" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="43" Count="3" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="53" Count="6" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="60" Count="8" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="76" Count="7" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="85" Count="1" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="143" Count="1" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="147" Count="0" />
       <LineId Id="145" Count="0" />
     </LineIds>
     <LineIds Name="FB_StateCtrlMotionTest.jntContinuousPoint">

@@ -11,6 +11,25 @@ STRUCT
 	m_carEnterCycleTest:BOOL;	
 	m_carEnterESDTest:BOOL;
 	
+	m_armCmdJntPos : ARRAY[1..g_mArmNum,1..2] OF Vec7d:= [[10, -80, -10, -160, 160, -110, 0], [-10, -100, 10, -200, 200, -70, 360],
+																										 [-10, -80, -10, -20, 200, 110, 0], [10, -100, 10, 20, 160, 70, 360]];
+	m_armCmdJntVel : ARRAY[1..g_mArmNum] OF Vec7d := [[20, 30, 30, 30, 30, 30, 50], [20, 30, 30, 30, 30, 30, 50]];
+	
+	m_targetCycleNum:ARRAY[1..g_mArmNum] OF INT:=[2(10000)];
+	m_curCycleNum:ARRAY[1..g_mArmNum] OF INT;
+	m_curCycleTime:ARRAY[1..g_mArmNum] OF LREAL;
+	
+	//target joint position
+	m_targetJntPosCar:ARRAY[1..2] OF Vec4d := [[30, -30, 50, 10] , [100, -40, 100, 120]] ;
+	m_targetJntVelCar:Vec4d :=[15,2.0 ,10.0,7.5];
+	
+	//cycle number and motion point number
+	m_targetCycleNumCar: INT:= 10000;
+	m_curCycleNumCar: INT;
+	m_curCycleTimeCar:LREAL;
+	
+	
+	
 	//start motion flag
 	m_startMotion:ARRAY[1..g_mArmNum] OF BOOL;
 	m_startMotionCar:BOOL;
@@ -28,29 +47,24 @@ STRUCT
 	
 	//target joint position
 	m_targetJntPos:ARRAY[1..g_mArmNum,1..10] OF Vec7d;
-	m_targetJntPosCar:ARRAY[1..10] OF Vec4d;
+	
 	
 	//point sum
 	m_pointSum:ARRAY[1..g_mArmNum] OF INT;
 	m_pointSumCar:INT;
 	
 	//cycle number and motion point number
-	m_targetCycleNum:ARRAY[1..g_mArmNum] OF INT;
-	m_curCycleNum:ARRAY[1..g_mArmNum] OF INT;
 	m_curPointNum:ARRAY[1..g_mArmNum] OF INT;
-	
-	//cycle number and motion point number
-	m_targetCycleNumCar: INT;
-	m_curCycleNumCar: INT;
+
 	m_curPointNumCar: INT;
 	
 	//cycle time
 	m_tgtCycleTime:ARRAY[1..g_mArmNum] OF LREAL; //hours
-	m_curCycleTime:ARRAY[1..g_mArmNum] OF LREAL;
+	
 	
 	//cycle time
 	m_tgtCycleTimeCar:LREAL; //hours
-	m_curCycleTimeCar:LREAL;
+
 	
 	//motion pause and finish
 	m_pause:ARRAY[1..g_mArmNum] OF BOOL;
@@ -59,8 +73,8 @@ STRUCT
 	m_finishCar:BOOL;
 	
 	//joint enable
-	m_jntEnable:ARRAY[1..g_mArmNum] OF Vec7i;
-	//m_jntEnableCar:Vec4i:=[1,1,1,1];
+	m_disableJntMotion : ARRAY[1..g_mArmNum] OF Vec7b := [2([7(FALSE)])];
+	m_jntEnable:ARRAY[1..g_mArmNum] OF Vec7i := [2([7(1)])];
 	
 	//output the arm joint position
 	m_armDHJntPos:ARRAY[1..g_mArmNum] OF Vec7d;
@@ -71,9 +85,6 @@ STRUCT
 	
 	//target joint velocity
 	m_targetJntVel:ARRAY[1..g_mArmNum] OF Vec7d;
-	
-	//target joint position
-	m_targetJntVelCar:Vec4d;
 	
 	//cover command position
 	m_coverCmdPos:ARRAY[1..g_mArmNum] OF BOOL;

@@ -269,7 +269,9 @@ ELSE
 	GVL_interactUI.g_scopeTurnOverEnable := FALSE;
 END_IF
 
-]]></ST>
+GVL_interactUI.g_handClutchToggleLeft := BOOL_TO_UINT(m_masterRobot.m_masterArms[1].m_handClutchSwitch);
+GVL_interactUI.g_handClutchToggleRight := BOOL_TO_UINT(m_masterRobot.m_masterArms[2].m_handClutchSwitch);
+GVL_interactUI.g_endoScopePedalToggle := BOOL_TO_UINT(m_masterInputDataPool.m_cartStatus.m_endoscopeSwitch);]]></ST>
       </Implementation>
     </Method>
     <LineIds Name="MasterArmControl">
@@ -303,6 +305,7 @@ END_IF
     <LineIds Name="MasterArmControl.UIOutputProcess">
       <LineId Id="79" Count="28" />
       <LineId Id="19" Count="0" />
+      <LineId Id="114" Count="1" />
     </LineIds>
   </POU>
 </TcPlcObject>

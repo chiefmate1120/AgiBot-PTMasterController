@@ -92,10 +92,12 @@ END_VAR
 VAR
 	i: INT;
 	k:INT;
+	curJntPos : Vec7d;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 //update system information
+curJntPos := m_unitFun.masterArmUnit2User(i_masterArm.curJntPos);
 FOR i:=1 TO g_mJntNum BY 1 DO
 	k:=i_masterArm.armIdx;
 	
@@ -104,7 +106,7 @@ FOR i:=1 TO g_mJntNum BY 1 DO
 	g_systemInfo.m_armJntInfo[k,i].m_motorOutput:=i_masterArm.m_joints[i].m_motorOutputs;
 	
 	//joint position and max/min
-	g_systemInfo.m_armJntInfo[k,i].m_curJntPos:=i_masterArm.curJntPos[i];
+	g_systemInfo.m_armJntInfo[k,i].m_curJntPos:=curJntPos[i];
 	g_systemInfo.m_armJntInfo[k,i].m_jntMax:=GVL_ArmJointParameters.g_maxJntPos[k,i];
 	g_systemInfo.m_armJntInfo[k,i].m_jntMin:=GVL_ArmJointParameters.g_minJntPos[k,i];
 	
@@ -151,17 +153,19 @@ END_VAR
 
 VAR
 	i: INT;
+	curJntPos : Vec4d;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 //update system information
+curJntPos := m_unitFun.carArmUnit2User(m_masterCart.m_curJntPos);
 FOR i:=1 TO 4 BY 1 DO
 	//motor input and output information
 	g_systemInfo.m_cartJntInfo[i].m_motorInput:=m_masterCart.m_cartJoints[i].m_motorInputs;
 	g_systemInfo.m_cartJntInfo[i].m_motorOutput:=m_masterCart.m_cartJoints[i].m_motorOutputs;
 	
 	//joint position and max/min
-	g_systemInfo.m_cartJntInfo[i].m_curJntPos:=m_masterCart.m_curJntPos[i];
+	g_systemInfo.m_cartJntInfo[i].m_curJntPos:=curJntPos[i];
 	g_systemInfo.m_cartJntInfo[i].m_jntMax:=GVL_CartJointParameters.g_maxJntPos[i];
 	g_systemInfo.m_cartJntInfo[i].m_jntMin:=GVL_CartJointParameters.g_minJntPos[i];
 END_FOR
@@ -592,7 +596,9 @@ END_CASE
     </LineIds>
     <LineIds Name="MainTestPart.armInfoUpdate">
       <LineId Id="12" Count="0" />
-      <LineId Id="18" Count="3" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="19" Count="2" />
       <LineId Id="24" Count="1" />
       <LineId Id="40" Count="1" />
       <LineId Id="26" Count="3" />
@@ -612,6 +618,7 @@ END_CASE
     <LineIds Name="MainTestPart.carInfoUpdate">
       <LineId Id="8" Count="0" />
       <LineId Id="28" Count="0" />
+      <LineId Id="116" Count="0" />
       <LineId Id="9" Count="0" />
       <LineId Id="34" Count="0" />
       <LineId Id="36" Count="0" />

@@ -358,9 +358,6 @@
     <Compile Include="FBs_Observer\FB_JntObserver.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="FBs_RobotDynamics\FB_MasterGravity.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="FBs_RobotDynamics\FB_MasterMassMat.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -454,6 +451,9 @@
     <Compile Include="FBs_Test\FBs_MasterArm\FB_StateCtrlCycleTest.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FBs_Test\FBs_MasterArm\FB_StateCtrlCycleTest_1.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="FBs_Test\FBs_MasterArm\FB_StateCtrlDragFreeTest.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -545,19 +545,15 @@
       <SubType>Code</SubType>
       <DependentUpon>视图管理器.TcVMO</DependentUpon>
     </Compile>
-    <Compile Include="FBs_Test\UI\CycleTest\cycle_a1.TcVIS">
+    <Compile Include="FBs_Test\UI\CycleTest\leftArmCycleTest.TcVIS">
       <SubType>Code</SubType>
       <DependentUpon>视图管理器.TcVMO</DependentUpon>
     </Compile>
-    <Compile Include="FBs_Test\UI\CycleTest\cycle_a2.TcVIS">
+    <Compile Include="FBs_Test\UI\CycleTest\cartCycleTest.TcVIS">
       <SubType>Code</SubType>
       <DependentUpon>视图管理器.TcVMO</DependentUpon>
     </Compile>
-    <Compile Include="FBs_Test\UI\CycleTest\cycle_car.TcVIS">
-      <SubType>Code</SubType>
-      <DependentUpon>视图管理器.TcVMO</DependentUpon>
-    </Compile>
-    <Compile Include="FBs_Test\UI\CycleTest\cycle_ESD.TcVIS">
+    <Compile Include="FBs_Test\UI\CycleTest\RightArmCycleTest.TcVIS">
       <SubType>Code</SubType>
       <DependentUpon>视图管理器.TcVMO</DependentUpon>
     </Compile>
@@ -617,6 +613,9 @@
     <Compile Include="FBs_TrajectoryPlanning\FB_TrajMoveJ.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FBs_TrajectoryPlanning\FB_CartTrajMoveJ.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="FBs_TrajectoryPlanning\linear_trajectory_with_quintic_polynomial_blends.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -636,6 +635,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="AgiMaths\addVec7.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FBs_RobotDynamics\FB_MasterGravity.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="FBs_Filters\FB_LowPassFilter.TcPOU">

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="Fb_SafetyCheck" Id="{d7e5b419-2971-4dae-96a7-39fe3a1a6245}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK Fb_SafetyCheck
 VAR_INPUT
@@ -91,11 +91,11 @@ END_FOR
 
 //关节编码器监测
 FOR i:=1 TO g_mJntNum BY 1 DO	
-	IF i = 2 THEN
-		//m_checkDelay[i_ArmId].T_linkEncErrCode[i](IN:= (driveErrorCheck(i_armId, i, 1, i_safetyCheckVar[i_ArmId].m_masterDriverInput[4].m_driverError) > 0  AND m_checkPermit[i_ArmId].m_linkEncErr[i]), PT:=m_checkDelayTime.Ti_linkEncErrCode , Q=> , ET=> );
-	ELSE
-		m_checkDelay[i_ArmId].T_linkEncErrCode[i](IN:= (driveErrorCheck(i_armId, i, 1, i_safetyCheckVar[i_ArmId].m_masterDriverInput[i].m_driverError) > 0  AND m_checkPermit[i_ArmId].m_linkEncErr[i]), PT:=m_checkDelayTime.Ti_linkEncErrCode , Q=> , ET=> );
-	END_IF
+	//IF i = 2 THEN
+	//	//m_checkDelay[i_ArmId].T_linkEncErrCode[i](IN:= (driveErrorCheck(i_armId, i, 1, i_safetyCheckVar[i_ArmId].m_masterDriverInput[4].m_driverError) > 0  AND m_checkPermit[i_ArmId].m_linkEncErr[i]), PT:=m_checkDelayTime.Ti_linkEncErrCode , Q=> , ET=> );
+	//ELSE
+	//	m_checkDelay[i_ArmId].T_linkEncErrCode[i](IN:= (driveErrorCheck(i_armId, i, 1, i_safetyCheckVar[i_ArmId].m_masterDriverInput[i].m_driverError) > 0  AND m_checkPermit[i_ArmId].m_linkEncErr[i]), PT:=m_checkDelayTime.Ti_linkEncErrCode , Q=> , ET=> );
+	//END_IF
 	m_checkDelay[i_ArmId].T_linkEncErr[i](IN:= (i_safetyCheckVar[i_ArmId].m_masterDriverInput[i].m_linkEncoder=g_maxLinkEnc OR i_safetyCheckVar[i_ArmId].m_masterDriverInput[i].m_linkEncoder=g_minLinkEnc) AND m_checkPermit[i_ArmId].m_linkEncErr[i], PT:=m_checkDelayTime.Ti_linkEncErr , Q=> , ET=> );
 	IF m_checkDelay[i_ArmId].T_linkEncErr[i].Q OR m_checkDelay[i_ArmId].T_linkEncErrCode[i].Q THEN
 		errCodeAssign(i_ArmId, i_ArmId,  0, i,  16#3003 ,m_unrcvLevel );
@@ -455,6 +455,41 @@ END_FOR
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="checkCurrentCaliState" Id="{d62c5d05-5794-46d7-8597-285f447f9439}">
+      <Declaration><![CDATA[METHOD checkCurrentCaliState : UDINT
+VAR_IN_OUT CONSTANT
+	i_InputVariable :ARRAY[1..g_maxNum] OF checkInputVariable;
+END_VAR
+
+VAR
+	arm : INT;
+	joint : INT;
+END_VAR
+
+VAR_STAT
+	clearFaultTime : FB_TON;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR arm := 1 TO g_mArmNum DO
+	FOR joint := 1 TO g_mJntNum DO
+		IF 1 = driveErrorCheck(arm,joint,4,i_InputVariable[i].m_masterDriverInput[j].m_driverError) THEN
+			checkCurrentCaliState:=SHL(arm,24)+SHL(j,16)+16#2016;
+			g_ArrayErrCodeArm[arm][0] := checkCurrentCaliState;
+			EXIT;
+		END_IF
+	END_FOR
+END_FOR
+
+clearFaultTime(IN:=  GVL_interactUI.g_uiResetFault=1, PT:= T#150MS, Q=> , ET=> );
+IF GVL_interactUI.g_uiResetFault=1 THEN
+	checkCurrentCaliState := 0;
+	IF clearFaultTime.Q THEN
+		GVL_interactUI.g_uiResetFault:=0;
+	END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="checkOPStatus" Id="{3d1e8b99-1cb7-4b50-92fc-5aa7708cc80d}">
       <Declaration><![CDATA[METHOD checkOPStatus : UDINT
 VAR_IN_OUT CONSTANT
@@ -516,43 +551,50 @@ END_VAR
 VAR_INPUT
 	i_armId:INT;
 	i_jntId :INT;
-	i_checkMode : INT;//1 link encoder error ,2 motor hall error, 3 motor phase loss 
+	i_checkMode : INT;//1 link encoder error ,2 motor hall error, 3 motor phase loss,4 motor current calibration
 	i_driverError :UDINT;
 END_VAR
 VAR
 	driveErrMassage : UDINT;
-	errorTemp :ARRAY [1..3] OF UDINT; //check mode number
+	errorTemp :ARRAY [1..4] OF UDINT; //check mode number
 	checkMode : INT;
 	encErrorJnt : ARRAY [1..3] OF UDINT;
 	motorHallErrorJnt : ARRAY [1..3] OF UDINT;
 	motorPhaseLossJnt : ARRAY [1..3] OF UDINT;
+	motorCurrentCaliState : ARRAY [1..2] OF UDINT;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[driveErrMassage := i_driverError;
 encErrorJnt[1] := SHR(driveErrMassage,6) AND 16#07;
 encErrorJnt[2] := SHR(driveErrMassage,9) AND 16#07;
 encErrorJnt[3] := SHR(driveErrMassage,12) AND 16#07;
+motorCurrentCaliState[1] := SHR(driveErrMassage,16) AND 16#01;
+motorCurrentCaliState[2] := SHR(driveErrMassage,17) AND 16#01;
 motorHallErrorJnt[2] := SHR(driveErrMassage,22) AND 16#01;
 motorPhaseLossJnt[2] := SHR(driveErrMassage,23) AND 16#01;
 motorHallErrorJnt[1] := SHR(driveErrMassage,27) AND 16#01;
 motorPhaseLossJnt[1] := SHR(driveErrMassage,30) AND 16#01;
+
 
 IF i_armId <= g_sArmNum THEN
 	IF i_jntId = 2  THEN
 		errorTemp[1] :=encErrorJnt[2];
 		errorTemp[2] :=motorHallErrorJnt[2];
 		errorTemp[3] :=motorPhaseLossJnt[2];
+		errorTemp[4] := motorCurrentCaliState[2];
 	ELSE
 		errorTemp[1] :=encErrorJnt[1];
 		errorTemp[2] :=motorHallErrorJnt[1];
 		errorTemp[3] :=motorPhaseLossJnt[1];
+		errorTemp[4] := motorCurrentCaliState[1];
 	END_IF
 ELSE
 	errorTemp[1] :=encErrorJnt[1];
 	errorTemp[2] :=motorHallErrorJnt[1];
 	errorTemp[3] :=motorPhaseLossJnt[1];
+	errorTemp[4] := motorCurrentCaliState[1];
 END_IF
-checkMode := LIMIT (1, i_checkMode, 3);
+checkMode := LIMIT (1, i_checkMode, 4);
 driveErrorCheck := errorTemp[checkMode];
 ]]></ST>
       </Implementation>
@@ -837,6 +879,16 @@ END_FOR
       <LineId Id="291" Count="5" />
       <LineId Id="74" Count="0" />
     </LineIds>
+    <LineIds Name="Fb_SafetyCheck.checkCurrentCaliState">
+      <LineId Id="67" Count="0" />
+      <LineId Id="122" Count="1" />
+      <LineId Id="130" Count="1" />
+      <LineId Id="128" Count="1" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="79" Count="7" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
     <LineIds Name="Fb_SafetyCheck.checkOPStatus">
       <LineId Id="67" Count="19" />
       <LineId Id="5" Count="0" />
@@ -848,13 +900,23 @@ END_FOR
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="Fb_SafetyCheck.driveErrorCheck">
-      <LineId Id="51" Count="11" />
+      <LineId Id="51" Count="3" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="55" Count="3" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="59" Count="3" />
       <LineId Id="73" Count="1" />
+      <LineId Id="106" Count="0" />
       <LineId Id="65" Count="0" />
       <LineId Id="77" Count="1" />
-      <LineId Id="66" Count="2" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="67" Count="1" />
       <LineId Id="79" Count="1" />
-      <LineId Id="69" Count="1" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="70" Count="0" />
       <LineId Id="81" Count="0" />
       <LineId Id="87" Count="0" />
       <LineId Id="37" Count="0" />

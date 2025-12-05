@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <POU Name="FB_MasterRobot" Id="{8cbdb2ba-9735-46e3-8cbc-296330acc8cc}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MasterRobot
 VAR
@@ -160,15 +160,17 @@ IF m_scopeArmIndex = m_matchedMasterArmIdx.left1ArmIdx OR m_scopeArmIndex = m_ma
 	END_IF
 	// switch tele-controlled arm index when arm switch is triggerd
 	IF m_armSwitch THEN
-		IF m_teleSlaveArmIdx[2] = m_matchedMasterArmIdx.right1ArmIdx AND i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.right2ArmIdx]=SlaveArmState_InstruReady THEN
+		IF m_teleSlaveArmIdx[2] = m_matchedMasterArmIdx.right1ArmIdx AND 
+						(i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.right2ArmIdx]=SlaveArmState_InstruReady OR i_masterInputDataPool.m_slaveStatus.m_trocarOnFlag[m_matchedMasterArmIdx.right2ArmIdx]) THEN
 			nextTeleSlaveArmIdx[2] := m_matchedMasterArmIdx.right2ArmIdx;
 		ELSIF 
-			m_teleSlaveArmIdx[2]=m_matchedMasterArmIdx.right2ArmIdx AND i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.right1ArmIdx]=SlaveArmState_InstruReady THEN
+			m_teleSlaveArmIdx[2]=m_matchedMasterArmIdx.right2ArmIdx AND 
+						(i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.right1ArmIdx]=SlaveArmState_InstruReady OR i_masterInputDataPool.m_slaveStatus.m_trocarOnFlag[m_matchedMasterArmIdx.right1ArmIdx]) THEN
 			nextTeleSlaveArmIdx[2] := m_matchedMasterArmIdx.right1ArmIdx;
 		ELSE
-			IF  i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.right1ArmIdx]=SlaveArmState_InstruReady THEN
+			IF  i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.right1ArmIdx]=SlaveArmState_InstruReady OR i_masterInputDataPool.m_slaveStatus.m_trocarOnFlag[m_matchedMasterArmIdx.right1ArmIdx] THEN
 				nextTeleSlaveArmIdx[2] := m_matchedMasterArmIdx.right1ArmIdx;
-			ELSIF i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.right2ArmIdx]=SlaveArmState_InstruReady THEN
+			ELSIF i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.right2ArmIdx]=SlaveArmState_InstruReady  OR i_masterInputDataPool.m_slaveStatus.m_trocarOnFlag[m_matchedMasterArmIdx.right2ArmIdx] THEN
 				nextTeleSlaveArmIdx[2] := m_matchedMasterArmIdx.right2ArmIdx;
 			ELSE
 				IF armDistributionFromUIFlag THEN
@@ -194,15 +196,17 @@ ELSIF m_scopeArmIndex = m_matchedMasterArmIdx.right1ArmIdx OR m_scopeArmIndex = 
 	END_IF
 	// switch tele-controlled arm index when arm switch is triggerd
 	IF m_armSwitch THEN
-		IF m_teleSlaveArmIdx[1]=m_matchedMasterArmIdx.left1ArmIdx AND i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.left2ArmIdx]=SlaveArmState_InstruReady THEN
+		IF m_teleSlaveArmIdx[1]=m_matchedMasterArmIdx.left1ArmIdx AND 
+					(i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.left2ArmIdx]=SlaveArmState_InstruReady OR i_masterInputDataPool.m_slaveStatus.m_trocarOnFlag[m_matchedMasterArmIdx.left2ArmIdx]) THEN
 			nextTeleSlaveArmIdx[1] := m_matchedMasterArmIdx.left2ArmIdx;
 		ELSIF 
-			m_teleSlaveArmIdx[1]=m_matchedMasterArmIdx.left2ArmIdx AND i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.left1ArmIdx]=SlaveArmState_InstruReady THEN
+			m_teleSlaveArmIdx[1]=m_matchedMasterArmIdx.left2ArmIdx AND 
+					(i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.left1ArmIdx]=SlaveArmState_InstruReady OR  i_masterInputDataPool.m_slaveStatus.m_trocarOnFlag[m_matchedMasterArmIdx.left1ArmIdx]) THEN
 			nextTeleSlaveArmIdx[1] := m_matchedMasterArmIdx.left1ArmIdx;
 		ELSE
-			IF  i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.left1ArmIdx]=SlaveArmState_InstruReady THEN
+			IF  i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.left1ArmIdx]=SlaveArmState_InstruReady OR i_masterInputDataPool.m_slaveStatus.m_trocarOnFlag[m_matchedMasterArmIdx.left1ArmIdx] THEN
 				nextTeleSlaveArmIdx[1] := m_matchedMasterArmIdx.left1ArmIdx;
-			ELSIF i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.left2ArmIdx]=SlaveArmState_InstruReady THEN
+			ELSIF i_masterInputDataPool.m_slaveStatus.m_armState[m_matchedMasterArmIdx.left2ArmIdx]=SlaveArmState_InstruReady OR i_masterInputDataPool.m_slaveStatus.m_trocarOnFlag[m_matchedMasterArmIdx.left2ArmIdx] THEN
 				nextTeleSlaveArmIdx[1] := m_matchedMasterArmIdx.left2ArmIdx;
 			ELSE
 				IF armDistributionFromUIFlag THEN
@@ -626,6 +630,9 @@ FOR i:=1 TO g_mArmNum DO
 			// to clutch
 			ELSIF enableClutch THEN
 				m_nextMasterArmState[i] := MasterArmState_Clutch; 
+			//to cycle test
+			ELSIF g_cycleTest.m_enterCycleTestMode[i] THEN
+				m_nextMasterArmState[i] := MasterArmState_CycleTest; 
 			// to cart
 			ELSIF i_masterInputDataPool.m_cartStatus.m_consoleInAdjust THEN
 				m_nextMasterArmState[i] := MasterArmState_Cart;		
@@ -674,15 +681,20 @@ FOR i:=1 TO g_mArmNum DO
 			// to standby
 			ELSIF NOT i_masterInputDataPool.m_slaveStatus.m_slaveAllowInMS OR NOT m_slaveOnLine THEN
 				m_nextMasterArmState[i]:=MasterArmState_Standby;
+			//to cycle test
+			ELSIF g_cycleTest.m_enterCycleTestMode[i] THEN
+				m_nextMasterArmState[i] := MasterArmState_CycleTest; 	
+			
 			END_IF
 		
 		//MasterSlave
 		MasterArmState_MasterSlave:
-			IF (g_motionTest.m_MSPrecisionTest[i]=FALSE)THEN							
+			IF (g_motionTest.m_MSPrecisionTest[i]=FALSE)THEN			
 				// to standdy
-				IF  (SlaveArmState_InstruReady <> m_instruArmState[i] AND SlaveArmState_MasterSlave <> m_instruArmState[i])
-					OR SlaveArmState_ScopeReady <> m_scopeArmState OR NOT(i_masterInputDataPool.m_cartStatus.m_surgonReady)
-					OR m_armSwitchFlag[i] THEN
+				IF  (SlaveArmState_InstruReady <> m_instruArmState[i] AND SlaveArmState_MasterSlave <> m_instruArmState[i] AND SlaveArmState_Stop <> m_instruArmState[i])
+					OR (SlaveArmState_ScopeReady <> m_scopeArmState AND SlaveArmState_Stop <> m_scopeArmState AND SlaveArmState_EndoScope <> m_scopeArmState)
+					OR NOT(i_masterInputDataPool.m_cartStatus.m_surgonReady) OR m_armSwitchFlag[i] 
+					OR (i_masterInputDataPool.m_cartStatus.m_endoscopeSwitch AND ((NOT i_masterInputDataPool.m_UIData.m_masterArmDisableFlag[1])AND (NOT i_masterInputDataPool.m_UIData.m_masterArmDisableFlag[2])) )THEN
 					m_nextMasterArmState[i]:=MasterArmState_Standby;
 				// to clutch
 				ELSIF enableClutch THEN
@@ -690,11 +702,13 @@ FOR i:=1 TO g_mArmNum DO
 				//to standby
 				ELSIF NOT m_slaveOnLine THEN
 					m_nextMasterArmState[i] := MasterArmState_Standby;
-				END_IF
+				// to match
+				ELSIF NOT(m_armMasterSlave[i].initRotErrCheck) THEN
+					m_nextMasterArmState[i]:=MasterArmState_Matching;
+				ELSE
+					m_masterSlaveFlag[i] := TRUE;
+				END_IF		
 			ELSE
-				IF enableClutch THEN
-					//m_nextMasterArmState[i] := MasterArmState_Clutch; 
-				END_IF
 								
 				// to standdy
 				IF  (SlaveArmState_InstruReady <> m_instruArmState[i] AND SlaveArmState_MasterSlave <> m_instruArmState[i])
@@ -708,8 +722,6 @@ FOR i:=1 TO g_mArmNum DO
 					m_nextMasterArmState[i] := MasterArmState_Standby;
 				END_IF				
 			END_IF
-			
-			
 			
 		//Clutch
 		MasterArmState_Clutch:
@@ -790,6 +802,11 @@ FOR i:=1 TO g_mArmNum DO
 			IF m_armCtrl[i].isFinished THEN
 				m_nextMasterArmState[i] :=MasterArmState_Standby;
 			END_IF
+			
+		MasterArmState_CycleTest:
+			IF m_armCtrl[i].isFinished OR NOT g_cycleTest.m_enterCycleTestMode[i] THEN
+				m_nextMasterArmState[i] :=MasterArmState_Standby;
+			END_IF
 	END_CASE
 	
 	
@@ -817,14 +834,14 @@ FOR i:=1 TO g_mArmNum DO
 	END_IF	
 	
 	// to MasterArmState_TestCycle
-	IF (g_cycleTest.m_enterCycleTestMode[i] OR g_cycleTest.m_enterESDTest[i]) AND NOT(m_masterArmState[i]=MasterArmState_CycleTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_CycleTest;
-	END_IF
+	//IF (g_cycleTest.m_enterCycleTestMode[i] OR g_cycleTest.m_enterESDTest[i]) AND NOT(m_masterArmState[i]=MasterArmState_CycleTest) THEN
+	//	m_nextMasterArmState[i] := MasterArmState_CycleTest;
+	//END_IF
 	
 	//MasterArmState_TestCycle exit
-	IF (g_cycleTest.m_enterCycleTestMode[i]=FALSE) AND (g_cycleTest.m_enterESDTest[i]=FALSE) AND(m_masterArmState[i]=MasterArmState_CycleTest) THEN
-		m_nextMasterArmState[i] := MasterArmState_Standby;
-	END_IF
+	//IF (g_cycleTest.m_enterCycleTestMode[i]=FALSE) AND (g_cycleTest.m_enterESDTest[i]=FALSE) AND(m_masterArmState[i]=MasterArmState_CycleTest) THEN
+	//	m_nextMasterArmState[i] := MasterArmState_Standby;
+	//END_IF
 	
 	// to MasterArmState_TestFriction
 	IF (g_frictionTest.m_testMode[i]=TRUE) AND NOT(m_masterArmState[i]=MasterArmState_FrictionTest) THEN
@@ -955,14 +972,22 @@ END_FOR]]></ST>
       <LineId Id="795" Count="0" />
       <LineId Id="785" Count="0" />
       <LineId Id="780" Count="0" />
-      <LineId Id="696" Count="23" />
+      <LineId Id="696" Count="2" />
+      <LineId Id="808" Count="0" />
+      <LineId Id="699" Count="2" />
+      <LineId Id="809" Count="0" />
+      <LineId Id="702" Count="17" />
       <LineId Id="787" Count="2" />
       <LineId Id="797" Count="0" />
       <LineId Id="790" Count="2" />
       <LineId Id="796" Count="0" />
       <LineId Id="793" Count="0" />
       <LineId Id="786" Count="0" />
-      <LineId Id="720" Count="32" />
+      <LineId Id="720" Count="2" />
+      <LineId Id="810" Count="0" />
+      <LineId Id="723" Count="2" />
+      <LineId Id="811" Count="0" />
+      <LineId Id="726" Count="26" />
       <LineId Id="96" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.controllerTransit">
@@ -1004,7 +1029,22 @@ END_FOR]]></ST>
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.stateMachine">
-      <LineId Id="3655" Count="352" />
+      <LineId Id="3308" Count="81" />
+      <LineId Id="3678" Count="2" />
+      <LineId Id="3390" Count="47" />
+      <LineId Id="3688" Count="1" />
+      <LineId Id="3686" Count="1" />
+      <LineId Id="3438" Count="3" />
+      <LineId Id="3655" Count="0" />
+      <LineId Id="3442" Count="17" />
+      <LineId Id="3656" Count="12" />
+      <LineId Id="3460" Count="0" />
+      <LineId Id="3669" Count="0" />
+      <LineId Id="3461" Count="78" />
+      <LineId Id="3681" Count="1" />
+      <LineId Id="3684" Count="1" />
+      <LineId Id="3683" Count="0" />
+      <LineId Id="3540" Count="106" />
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterRobot.updateShoulderPose">
