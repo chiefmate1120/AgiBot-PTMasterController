@@ -32,6 +32,7 @@ VAR_GLOBAL CONSTANT
 	g_jntCtrlMotionVel :ARRAY[1..7] OF LREAL :=[0.015,2*g_deg2Rad,0.01,0.0075]; //0.0075
 	g_jntCtrlMotionAcc :ARRAY[1..7] OF LREAL :=[0.015*2,2*2*g_deg2Rad,0.01*2,0.0075*2]; //0.0075
 	
+	g_jntVelMax : ARRAY[1..4] OF LREAL := [0.015,2*g_deg2Rad,0.01,0.0075];
 	//cart monitor angle parameter
 	g_monitorAnglePara : ST_MonitorAnglePara;
 END_VAR]]></Declaration>

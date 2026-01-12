@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <GVL Name="GVL_ArmJointParameters" Id="{cf487053-15bb-46bd-a4ed-bbb1df690beb}">
     <Declaration><![CDATA[{attribute 'global_init_slot' := '49991'}
 {attribute 'qualified_only'}
@@ -34,6 +34,13 @@ VAR_GLOBAL CONSTANT
 	g_maxJntPos: ARRAY[1..2,1..7] OF LREAL:=[60*g_deg2Rad,	60*g_deg2Rad-pi/2,		60*g_deg2Rad,		-pi/2,				135*g_deg2Rad+pi,		245*g_deg2Rad-pi/2,		g_largeNum,
 								             60*g_deg2Rad,	60*g_deg2Rad-pi/2,		60*g_deg2Rad,		-pi/2+240*g_deg2Rad,			135*g_deg2Rad+pi,		65*g_deg2Rad+pi/2,		g_largeNum];	
 	g_jntLimitBuffer:LREAL := 2*g_deg2rad;
+	
+	g_minJntPosUI: ARRAY[1..2] OF ARRAY[1..7] OF LREAL:=[[-60*g_deg2Rad,	-60*g_deg2Rad-pi/2,		-45*g_deg2Rad, 	-pi/2-240*g_deg2Rad, 	-135*g_deg2Rad+pi,		-65*g_deg2Rad-pi/2,		-g_largeNum],
+											[-60*g_deg2Rad,	-60*g_deg2Rad-pi/2,		-45*g_deg2Rad,	-pi/2-5*g_deg2Rad,		-135*g_deg2Rad+pi,		-245*g_deg2Rad+pi/2,	-g_largeNum]];
+	g_maxJntPosUI: ARRAY[1..2] OF ARRAY[1..7] OF LREAL:=[[60*g_deg2Rad,	60*g_deg2Rad-pi/2,		60*g_deg2Rad,		-pi/2+5*g_deg2Rad,			135*g_deg2Rad+pi,		245*g_deg2Rad-pi/2,		g_largeNum],
+								             [60*g_deg2Rad,	60*g_deg2Rad-pi/2,		60*g_deg2Rad,		-pi/2+240*g_deg2Rad,			135*g_deg2Rad+pi,		65*g_deg2Rad+pi/2,		g_largeNum]];		
+
+
 	
 	// joint velocity limit
 	g_maxJntVel :ARRAY[1..7] OF LREAL :=[7(2*pi)];
