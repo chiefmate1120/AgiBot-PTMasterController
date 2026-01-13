@@ -1283,7 +1283,7 @@
       <XmlArchive>
         <Data>
           <o xml:space="preserve" t="RecipeDefinitionObject">
-            <v n="UniqueIdGenerator">"277"</v>
+            <v n="UniqueIdGenerator">"297"</v>
             <o n="Recipes" t="RecipeList">
               <l n="Recipes" t="ArrayList" />
             </o>
@@ -1855,7 +1855,7 @@
                   <v n="VarTypeAsString">"DINT"</v>
                   <v n="Name">""</v>
                   <n n="Boundaries" />
-                  <v n="Id">61</v>
+                  <v n="Id">292</v>
                   <v n="Comment">""</v>
                   <v n="VarUserDefTypeAsString">"DINT"</v>
                 </o>
@@ -1865,7 +1865,7 @@
                   <v n="VarTypeAsString">"DINT"</v>
                   <v n="Name">""</v>
                   <n n="Boundaries" />
-                  <v n="Id">62</v>
+                  <v n="Id">293</v>
                   <v n="Comment">""</v>
                   <v n="VarUserDefTypeAsString">"DINT"</v>
                 </o>
@@ -1875,9 +1875,9 @@
                   <v n="VarTypeAsString">"DINT"</v>
                   <v n="Name">""</v>
                   <n n="Boundaries" />
-                  <v n="Id">63</v>
+                  <v n="Id">297</v>
                   <v n="Comment">""</v>
-                  <v n="VarUserDefTypeAsString">"DINT"</v>
+                  <v n="VarUserDefTypeAsString">"Invalid Type"</v>
                 </o>
                 <o>
                   <v n="VarName">"GVL_ArmJointCaliData.g_minHallSensorValue[2]"</v>
@@ -1885,9 +1885,9 @@
                   <v n="VarTypeAsString">"DINT"</v>
                   <v n="Name">""</v>
                   <n n="Boundaries" />
-                  <v n="Id">64</v>
+                  <v n="Id">295</v>
                   <v n="Comment">""</v>
-                  <v n="VarUserDefTypeAsString">"DINT"</v>
+                  <v n="VarUserDefTypeAsString">"Invalid Type"</v>
                 </o>
               </l>
             </o>
