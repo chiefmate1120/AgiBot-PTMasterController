@@ -6,6 +6,7 @@ VAR_GLOBAL
 	g_motionTest 	: ST_PTMotionTest;
 	g_cycleTest 	: ST_PTCycleTest;
 	g_caliData 		: ST_PTCaliData;
+	g_hallCali		: ST_PTHallCali;
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>
