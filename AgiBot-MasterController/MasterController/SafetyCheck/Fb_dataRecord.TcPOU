@@ -316,6 +316,10 @@ END_VAR
 		mErrNameLocation[arm,1]:=LREAL_TO_FMTSTR(arm,0, TRUE);
 		mErrNameLocation[arm,2]:=LREAL_TO_FMTSTR(joint,0, TRUE);
 		mErrNameLocation[arm,3]:=DWORD_TO_HEXSTR(UDINT_TO_DWORD(errID),0, TRUE);
+		mErrNameLocation[arm,4]:=CONCAT('Version', g_SWVersion);
+		mErrNameLocation[arm,5]:=CONCAT('MonitorAngleVer', g_cartMonitorAngleParametersVer);
+		mErrNameLocation[arm,6]:=CONCAT('CartJointParaVer', g_cartJointParametersVer);
+		mErrNameLocation[arm,7]:=CONCAT('ArmJointParaVer', g_armJointParametersVer);
 		m_Index[arm]:=INT_TO_UDINT(Index[arm]);
 		errWritingAllowed[arm]:=TRUE;
 	END_IF
@@ -397,7 +401,10 @@ END_VAR
 	gCSV_Buffer[_iBuffer].aBuffer[0][1] := mErrNameLocation[_iBuffer,1];
 	gCSV_Buffer[_iBuffer].aBuffer[0][2] := mErrNameLocation[_iBuffer,2];
 	gCSV_Buffer[_iBuffer].aBuffer[0][3] := mErrNameLocation[_iBuffer,3];
-	//gCSV_Buffer[_iBuffer].aBuffer[4][0] := mErrNameLocation[_iBuffer,4];
+	gCSV_Buffer[_iBuffer].aBuffer[0][4] := mErrNameLocation[_iBuffer,4];
+	gCSV_Buffer[_iBuffer].aBuffer[0][5] := mErrNameLocation[_iBuffer,5];
+	gCSV_Buffer[_iBuffer].aBuffer[0][6] := mErrNameLocation[_iBuffer,6];
+	gCSV_Buffer[_iBuffer].aBuffer[0][7] := mErrNameLocation[_iBuffer,7];
 	
 	(*The second line shows the variable name*)
 	gCSV_Buffer[_iBuffer].aBuffer[1][0] := 'SystemTime';
@@ -486,7 +493,7 @@ END_IF
       <LineId Id="36" Count="1" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.errCodeAnalysis">
-      <LineId Id="34" Count="17" />
+      <LineId Id="55" Count="21" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.run">
@@ -506,7 +513,9 @@ END_IF
       <LineId Id="38" Count="0" />
       <LineId Id="8" Count="3" />
       <LineId Id="37" Count="0" />
-      <LineId Id="12" Count="21" />
+      <LineId Id="12" Count="4" />
+      <LineId Id="42" Count="2" />
+      <LineId Id="17" Count="16" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="Fb_dataRecord.writerCSV">

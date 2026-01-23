@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
   <GVL Name="GVL_SystemParameters" Id="{6ebbff17-e303-4344-870e-d2871229e24f}">
     <Declaration><![CDATA[VAR_GLOBAL CONSTANT
 	
-	g_SWVersion : STRING := 'PT(1.1.0.1)';
+	g_SWVersion : STRING := 'PT(1.4.2.1)';
 	
 	g_mArmNum :INT := 2;	
 	g_mJntNum :INT := 7;	
@@ -28,11 +28,16 @@
 	g_robotSafetyDriveOPWaitTime : LREAL :=5.0;
 	g_robotSafetyReadFileWaitTime : LREAL :=3.0;
 	
+	//motor parameters and monitor angle parameters , get from recipe
+	g_cartJointParametersVer : STRING := 'Ver1';
+	g_armJointParametersVer : STRING := 'Ver1';
+	g_cartMonitorAngleParametersVer : STRING := 'Ver1';
+	g_systemArmJointPara : ST_systemJointParameters;
 	
 	//RECIPE
 	RecipeDefinitionName : STRING := 'MatserArmLinkENCValue';
 	RecipeDefinitionNameCart : STRING := 'MasterCartLinkENCValue';
-	RecipeDefinitionNameMonitor : STRING := 'MonitorAngleParameters';
+	RecipeDefinitionNameVersion : STRING := 'MasterMotorParaVersion';
 	RecipeDefinitionNameGravity : STRING := 'MasterArmGravityParams';
 	
 	//device NetID  and device box addr
@@ -43,10 +48,10 @@ END_VAR
 
 VAR_GLOBAL
 	//slave arms and setup arms NetId
-	g_masterArmNetID: ARRAY[1..g_mArmNum] OF T_AmsNetId :=['169.254.122.138.6.1','169.254.122.138.3.1'];
+	g_masterArmNetID: ARRAY[1..g_mArmNum] OF T_AmsNetId :=['169.254.219.236.2.1','169.254.219.236.5.1'];
 	
 	//cart device NetId
-	g_masterCartNetID: T_AmsNetId := '169.254.122.138.5.1';
+	g_masterCartNetID: T_AmsNetId := '169.254.219.236.5.1';
 	
 	//MSCommunication device NetId
 	g_masterMSComNetID: T_AmsNetId;

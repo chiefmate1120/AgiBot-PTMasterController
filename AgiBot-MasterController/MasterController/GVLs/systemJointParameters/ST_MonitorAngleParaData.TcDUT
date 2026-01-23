@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_MonitorAngleParaData" Id="{46404cf7-845d-468a-88dc-d2d969863e31}">
+    <Declaration><![CDATA[//TODO : monitor angle paramaters
+TYPE ST_MonitorAngleParaData :
+STRUCT
+	A : LREAL := 222.0;
+	B : LREAL := 177.0;
+	C : LREAL := 291.7852;
+	D : LREAL := 286.0173;
+	E : LREAL := 170.5;
+	F : LREAL := 131.5;
+	G : LREAL := 366.0;
+	H : LREAL := -30.0;
+	I : LREAL := 280.0;
+	J : LREAL := 291.5;
+	K : LREAL := 303.4;
+	L : LREAL :=0.0951261780104712;
+	linkPosMin : LREAL := 49.9455;
+	linkPosMax : LREAL := 121.92525482;
+	motorPosMin : LREAL:=-1.02;
+	motorPosMax : LREAL:=0.087;
+	monitorPosMin : LREAL:=0.0;
+	monitorPosMax : LREAL :=0.5235;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

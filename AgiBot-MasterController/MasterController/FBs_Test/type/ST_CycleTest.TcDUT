@@ -20,7 +20,7 @@ STRUCT
 	m_curCycleTime:ARRAY[1..g_mArmNum] OF LREAL;
 	
 	//target joint position
-	m_targetJntPosCar:ARRAY[1..2] OF Vec4d := [[30, -30, 50, 10] , [100, -40, 100, 120]] ;
+	m_targetJntPosCar:ARRAY[1..2] OF Vec4d := [[100, -30, 50, 10] , [250, -40, 150, 120]] ;
 	m_targetJntVelCar:Vec4d :=[15,2.0 ,10.0,7.5];
 	
 	//cycle number and motion point number

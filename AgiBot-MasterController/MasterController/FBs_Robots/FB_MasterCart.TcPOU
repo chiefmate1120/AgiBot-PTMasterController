@@ -92,6 +92,7 @@ VAR
 	m_CartCycleTrajIdx : INT;
 	m_curCycleNum : INT;
 	m_cycleMotionTime : LREAL;
+	m_cycleMotionCumulativeTime : LREAL;
 	m_waitBreakOpenTime : LREAL := 0.5;
 	
 	//target joint position
@@ -151,7 +152,7 @@ VAR
 	//motion start
 	m_jntTestStartMotion:BOOL;
 	m_jntTestStartMotionLast:BOOL;
-	
+	m_sequentialMotionDisable : Vec4b;
 	
 	//*********************add code for joint current test**************************//
 	//test step
@@ -181,6 +182,7 @@ VAR
 	m_linkZeroCrossOrNot : Vec4i;
 	linkLimitFristPos : Vec4di;
 	linkLimitSecondPos : Vec4di;
+	
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -271,13 +273,17 @@ VAR_INPUT
 	
 END_VAR
 
-VAR
+VAR_STAT
 	i, j:INT;
 	curJntVel : Vec4d;
 	cmdJntPos :ARRAY [1..2] OF Vec4d;
+	disableJointNum : UINT;
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[m_cartCycleTestR(CLK:= g_cycleTest.m_carEnterCycleTest, Q=> );
+        <ST><![CDATA[IF NOT m_jntEnableCondition[1] OR NOT m_jntEnableCondition[2] OR NOT m_jntEnableCondition[3] OR NOT m_jntEnableCondition[4] THEN
+	RETURN;
+END_IF
+m_cartCycleTestR(CLK:= g_cycleTest.m_carEnterCycleTest, Q=> );
 IF m_cartCycleTestR.Q THEN
 	
     //get commend joint position
@@ -314,6 +320,7 @@ IF m_cartCycleTestR.Q THEN
 	m_cycleMotionTime := 0;
 	m_jntCycleIdx := 1;
 	m_targetCycleNum:=g_cycleTest.m_targetCycleNumCar;
+	m_cycleMotionCumulativeTime := 0;
 	RETURN;
 END_IF
 
@@ -325,18 +332,36 @@ IF  g_cycleTest.m_carEnterCycleTest THEN
 	
 	m_cartCycleTestReloadR(CLK:=m_cartCycleTrajIdx = 2, Q=> );
 	IF m_cartCycleTestReloadR.Q THEN
+		disableJointNum := 0;
+		m_jntCycleIdx := m_jntCycleIdx + 1;
 		FOR i := 1 TO 4 DO
-			IF i = m_jntCycleIdx THEN
-				g_motionTest.m_jntEnableCar[i] := FALSE;
+			IF g_motionTest.m_jntEnableCar[i] AND i = m_jntCycleIdx THEN
+				m_jntCycleIdx := m_jntCycleIdx + 1;
+			END_IF
+			IF m_jntCycleIdx > 4 THEN
+				m_jntCycleIdx := 1;
+			END_IF
+		END_FOR
+		
+		FOR i := 1 TO 4 DO
+			disableJointNum := disableJointNum + BOOL_TO_UINT(g_motionTest.m_jntEnableCar[i]) ;
+			IF i = m_jntCycleIdx AND NOT g_motionTest.m_jntEnableCar[i] THEN
+				m_sequentialMotionDisable[i] := FALSE;
 				cmdJntPos[1][i]:=m_targetJntPos[1][i];
 				cmdJntPos[2][i]:=m_targetJntPos[2][i];
 				
 			ELSE
 				cmdJntPos[1][i]:=m_curJntPos[i];
 				cmdJntPos[2][i]:=m_curJntPos[i];
-				g_motionTest.m_jntEnableCar[i] := TRUE;
+				m_sequentialMotionDisable[i] := TRUE;
 			END_IF
 		END_FOR
+		
+		//check cycle joint number, return if all disable
+		IF disableJointNum >= 4 THEN
+			g_cycleTest.m_carEnterCycleTest := FALSE;
+			RETURN;
+		END_IF
 		
 		FOR i:=2 TO m_cartCycleMotionNum DO
 			IF i = m_cartCycleMotionNum THEN
@@ -348,6 +373,7 @@ IF  g_cycleTest.m_carEnterCycleTest THEN
 	END_IF
 	
 	m_cycleMotionTime := m_cycleMotionTime + g_cartCtrlCycleTime;
+	m_cycleMotionCumulativeTime := m_cycleMotionCumulativeTime + g_cartCtrlCycleTime;
 	//wait break open
 	IF m_cycleMotionTime < m_waitBreakOpenTime THEN
 		RETURN;
@@ -372,8 +398,8 @@ IF  g_cycleTest.m_carEnterCycleTest THEN
 	END_IF
 END_IF
 
-g_cycleTest.m_curCycleNumCar := m_curCycleNum;
-g_cycleTest.m_curCycleTimeCar := m_cycleMotionTime;
+g_cycleTest.m_curCycleNumCar := m_curCycleNum/4;
+g_cycleTest.m_curCycleTimeCar := m_cycleMotionCumulativeTime/3600;
 
 //update the encoder information
 FOR i:=1 TO 4 BY 1 DO
@@ -738,12 +764,11 @@ m_cartStatus.m_initFlag :=true;
       <Declaration><![CDATA[METHOD manualAdjust : INT
 VAR_INPUT
 END_VAR
-VAR_STAT
+VAR
 	i : INT;
 	posErr : LREAL;
 	velScale : LREAL;
 	maxPosErr : LREAL;
-	cmdJntVel : LREAL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[// update joint command positon
@@ -769,7 +794,7 @@ FOR i := 1 TO 4 DO
 		//joint 1 and joint 3 position error limit
 		IF (i = 1 AND sign(m_cmdJntVel[i]) = -1) OR (i = 3 AND sign(m_cmdJntVel[i]) = 1) THEN
 			velScale := MIN(1.0, ABS(posErr/maxPosErr));
-			m_cmdJntVel[i] := m_cmdJntVel[i] * velScale;
+			m_cmdJntVel[i] := m_cmdJntVel[i] * velScale;	
 		END_IF
 		
 		// limit handle
@@ -998,7 +1023,7 @@ FOR i:=1 TO 4 DO
 	
 	//car joint cycle test-----add code for test
 	IF (g_motionTest.m_enterJntTestCar) OR (g_motionTest.m_carJntCurTest) OR g_cycleTest.m_carEnterCycleTest THEN
-		IF (NOT g_motionTest.m_jntEnableCar[i]) THEN
+		IF (NOT g_motionTest.m_jntEnableCar[i]) AND m_jntEnableCondition[i] AND NOT m_sequentialMotionDisable[i] THEN
 			m_cartJoints[i].enable();
 		ELSE
 			m_cartJoints[i].disable();
@@ -1148,7 +1173,6 @@ END_IF
 
 //compensate for the error by the monitor rotation,  joint 1 enable  when the monitor is rotating .
 IF m_jntCmdMotionDir[2] <> 0 AND m_jntEnableCondition[2] THEN
-	m_jntCmdMotionDir[1] := 1;
 	m_monitorRotaOffsetPos := calcMonitorAngleOffset(m_curLinkPos[2], m_monitorAngle );
 	m_monitorRotaOffsetFlag := TRUE;
 ELSE
@@ -1204,7 +1228,13 @@ END_FOR
 m_curLinkPos[2]:= monitorAngLink2Motor(m_cartJoints[2].linkPos);
 
 // get monitor angle
-m_cartStatus.m_monitorAngle:= monitorAngLink2Image(m_cartJoints[2].linkPos);
+m_monitorAngle:= monitorAngLink2Image(m_cartJoints[2].linkPos);
+IF MasterArmControl.scopeUpDown = 2 THEN
+	m_cartStatus.m_monitorAngle := 20.0 * g_deg2rad;
+ELSE
+	m_cartStatus.m_monitorAngle := 45.0 * g_deg2rad;
+END_IF
+
 
 // check if monitor in motion
 m_cartStatus.m_monitorInAdjust:=m_cartJoints[2].isEnabled();
@@ -1251,6 +1281,7 @@ END_FOR]]></ST>
       <LineId Id="12" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.cartTestCycle">
+      <LineId Id="340" Count="2" />
       <LineId Id="175" Count="0" />
       <LineId Id="212" Count="0" />
       <LineId Id="297" Count="0" />
@@ -1270,6 +1301,7 @@ END_FOR]]></ST>
       <LineId Id="250" Count="2" />
       <LineId Id="302" Count="0" />
       <LineId Id="249" Count="0" />
+      <LineId Id="390" Count="0" />
       <LineId Id="253" Count="0" />
       <LineId Id="214" Count="0" />
       <LineId Id="211" Count="0" />
@@ -1280,7 +1312,18 @@ END_FOR]]></ST>
       <LineId Id="326" Count="0" />
       <LineId Id="260" Count="0" />
       <LineId Id="299" Count="0" />
-      <LineId Id="303" Count="1" />
+      <LineId Id="375" Count="0" />
+      <LineId Id="367" Count="0" />
+      <LineId Id="362" Count="0" />
+      <LineId Id="365" Count="1" />
+      <LineId Id="363" Count="0" />
+      <LineId Id="369" Count="1" />
+      <LineId Id="368" Count="0" />
+      <LineId Id="364" Count="0" />
+      <LineId Id="339" Count="0" />
+      <LineId Id="303" Count="0" />
+      <LineId Id="389" Count="0" />
+      <LineId Id="304" Count="0" />
       <LineId Id="306" Count="0" />
       <LineId Id="310" Count="0" />
       <LineId Id="322" Count="0" />
@@ -1291,11 +1334,17 @@ END_FOR]]></ST>
       <LineId Id="307" Count="0" />
       <LineId Id="305" Count="0" />
       <LineId Id="312" Count="0" />
-      <LineId Id="314" Count="5" />
+      <LineId Id="372" Count="1" />
+      <LineId Id="376" Count="0" />
+      <LineId Id="378" Count="0" />
+      <LineId Id="377" Count="0" />
+      <LineId Id="371" Count="0" />
+      <LineId Id="343" Count="5" />
       <LineId Id="313" Count="0" />
       <LineId Id="301" Count="0" />
       <LineId Id="298" Count="0" />
       <LineId Id="265" Count="0" />
+      <LineId Id="391" Count="0" />
       <LineId Id="262" Count="2" />
       <LineId Id="261" Count="0" />
       <LineId Id="296" Count="0" />
@@ -1336,22 +1385,7 @@ END_FOR]]></ST>
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.manualAdjust">
-      <LineId Id="106" Count="1" />
-      <LineId Id="162" Count="0" />
-      <LineId Id="150" Count="0" />
-      <LineId Id="108" Count="6" />
-      <LineId Id="172" Count="0" />
-      <LineId Id="116" Count="2" />
-      <LineId Id="137" Count="1" />
-      <LineId Id="141" Count="0" />
-      <LineId Id="140" Count="0" />
-      <LineId Id="136" Count="0" />
-      <LineId Id="148" Count="0" />
-      <LineId Id="156" Count="1" />
-      <LineId Id="159" Count="0" />
-      <LineId Id="158" Count="0" />
-      <LineId Id="147" Count="0" />
-      <LineId Id="119" Count="11" />
+      <LineId Id="282" Count="37" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.manualAdjustCali">
@@ -1397,15 +1431,15 @@ END_FOR]]></ST>
       <LineId Id="119" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.updateIO">
-      <LineId Id="395" Count="31" />
-      <LineId Id="494" Count="0" />
-      <LineId Id="427" Count="6" />
-      <LineId Id="495" Count="0" />
-      <LineId Id="434" Count="51" />
+      <LineId Id="604" Count="91" />
       <LineId Id="91" Count="0" />
     </LineIds>
     <LineIds Name="FB_MasterCart.updateStatus">
-      <LineId Id="303" Count="41" />
+      <LineId Id="245" Count="21" />
+      <LineId Id="293" Count="1" />
+      <LineId Id="296" Count="1" />
+      <LineId Id="295" Count="0" />
+      <LineId Id="267" Count="20" />
       <LineId Id="59" Count="0" />
     </LineIds>
   </POU>

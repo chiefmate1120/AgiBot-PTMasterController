@@ -214,9 +214,6 @@
     <Compile Include="DUTs\Structure\UICommunication\ST_InstruTypeInfo.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Structure\UICommunication\ST_MonitorAnglePara.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="DUTs\Structure\UICommunication\ST_scope_info.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -774,6 +771,18 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
+    <Compile Include="GVLs\systemJointParameters\ST_CartJointParametersData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="GVLs\systemJointParameters\ST_MonitorAngleParaData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="GVLs\systemJointParameters\ST_slaveArmJointParametersData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="GVLs\systemJointParameters\ST_systemJointParameters.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Logger\AGILOG_DEBUG.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -936,6 +945,7 @@
     <Folder Include="GVLs\Configs\Robot5" />
     <Folder Include="GVLs\Instrument" />
     <Folder Include="GVLs\robotCail" />
+    <Folder Include="GVLs\systemJointParameters" />
     <Folder Include="Logger" />
     <Folder Include="Recipe" />
     <Folder Include="SafetyCheck\safetyCheckDUT" />

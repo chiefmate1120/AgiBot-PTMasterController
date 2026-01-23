@@ -105,6 +105,12 @@ VAR_GLOBAL
 	
 	//ui setting , clutch control state
 	g_endoScopeCtrlState : UINT;
+	
+	//Third party video ctrl enable
+	g_scopePedalCtrlEnable : BOOL;
+	
+	//Third party video status
+	g_scopePedalStatus : BOOL;
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>

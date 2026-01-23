@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_systemJointParameters" Id="{96fd230f-db0a-49e5-99e8-1099d6046cef}">
+    <Declaration><![CDATA[TYPE ST_systemJointParameters :
+STRUCT
+	//*************************Matser Arm Joint Parameters******************//
+
+	
+	
+	
+	
+	//*************************Cart Joint Parameters******************//
+	//base
+	m_cartJointParaVer1 : ST_CartJointParametersData;
+	
+	//modify monitor lift, armset, pedal,abs encoder,  pedal motor
+	m_cartJointParaVer2 : ST_CartJointParametersData:= 
+	(m_absEncoderRes := [4096,131072,4096,4096], m_motorReduction :=[2*pi/0.0004682,3317.76,2*pi/0.0004682,1.5*26.0*2*pi/0.004],	
+	m_absEncoderReduction:=[2*pi/0.060, 1 , 2*pi/0.060, 2*pi/0.060], 
+	m_motorTrqConst :=[3(0.0292),103.1/3800],  m_motorMaxCurrent  :=[4(3800)]);
+	
+	
+	//*************************Cart Joint Parameters******************//	
+	//robot 13 ~
+	m_monitorAngleVer1 : ST_MonitorAngleParaData := 
+	(A := 222.0, B := 222.0, C:= 241.7852, D := 316.0173, E := 202.5, F := 61, G := 137.0, 
+	H := 15.0, I := 87.5, J :=  241.5, K := 269, L := -0.379622132,
+	linkPosMin := 45.9455, linkPosMax:= 123.92525482, motorPosMin:= -0.9598,
+	motorPosMax:= -0.41465969, monitorPosMin := 0, monitorPosMax:= 0.5235);
+	
+	//robot 8 ~ 12
+	m_monitorAngleVer2 : ST_MonitorAngleParaData := 
+	(A := 222.0, B := 177.0, C:= 291.7852, D := 286.0173, E := 170.5, F := 131.5, G := 366.0, 
+	H :=  -30.0, I := 280.0, J :=  291.5, K := 303.4, L := 0.0951261780104712,
+	linkPosMin := 45.9455, linkPosMax:= 121.92525482, motorPosMin:= -1.02,
+	motorPosMax:= 0.087, monitorPosMin := 0, monitorPosMax:= 0.5235);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

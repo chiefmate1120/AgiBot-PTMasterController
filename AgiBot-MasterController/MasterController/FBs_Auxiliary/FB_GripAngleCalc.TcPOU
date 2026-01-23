@@ -92,11 +92,13 @@ run:=m_gripAngle;]]></ST>
       <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="FB_GripAngleCalc.init">
-      <LineId Id="20" Count="8" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="33" Count="4" />
+      <LineId Id="26" Count="2" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="FB_GripAngleCalc.run">
-      <LineId Id="76" Count="29" />
+      <LineId Id="119" Count="29" />
       <LineId Id="22" Count="0" />
     </LineIds>
   </POU>
