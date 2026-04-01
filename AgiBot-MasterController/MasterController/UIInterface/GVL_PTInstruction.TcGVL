@@ -4,7 +4,7 @@
     <Declaration><![CDATA[{attribute 'qualified_only'}
 VAR_GLOBAL
 	g_motionTest 	: ST_PTMotionTest;
-	g_cycleTest 	: ST_PTCycleTest;
+	g_cycleTest 	: ST_PTCycleTest_1;
 	g_caliData 		: ST_PTCaliData;
 	g_hallCali		: ST_PTHallCali_1;
 	g_dynamicCali	: ST_PTDynamics;
